@@ -14,20 +14,58 @@ const userDataPath = path.join(
   'SettingForge'
 );
 
-app.setPath('userData', userDataPath);
+app.setPath(
+  'userData',
+  userDataPath
+);
 
 let mainWindow;
 
-function getModuleStorageRoot(moduleId) {
+/* =========================================================
+   STORAGE PATH VALIDATION
+   ========================================================= */
+
+function requireStorageName(
+  value,
+  label
+) {
+  if (
+    typeof value !== 'string' ||
+    !/^[A-Za-z0-9._-]+$/.test(value)
+  ) {
+    throw new Error(
+      `Invalid storage ${label}.`
+    );
+  }
+
+  return value;
+}
+
+/* =========================================================
+   STORAGE PATH HELPERS
+   ========================================================= */
+
+function getModuleStorageRoot(
+  moduleId
+) {
+  const safeModuleId =
+    requireStorageName(
+      moduleId,
+      'module ID'
+    );
+
   const root = path.join(
     app.getPath('userData'),
     'modules',
-    moduleId
+    safeModuleId
   );
 
-  fs.mkdirSync(root, {
-    recursive: true,
-  });
+  fs.mkdirSync(
+    root,
+    {
+      recursive: true,
+    }
+  );
 
   return root;
 }
@@ -36,14 +74,25 @@ function getCollectionRoot(
   moduleId,
   collection
 ) {
+  const safeCollection =
+    requireStorageName(
+      collection,
+      'collection'
+    );
+
   const root = path.join(
-    getModuleStorageRoot(moduleId),
-    collection
+    getModuleStorageRoot(
+      moduleId
+    ),
+    safeCollection
   );
 
-  fs.mkdirSync(root, {
-    recursive: true,
-  });
+  fs.mkdirSync(
+    root,
+    {
+      recursive: true,
+    }
+  );
 
   return root;
 }
@@ -53,40 +102,60 @@ function getItemPath(
   collection,
   key
 ) {
+  const safeKey =
+    requireStorageName(
+      key,
+      'key'
+    );
+
   return path.join(
     getCollectionRoot(
       moduleId,
       collection
     ),
-    `${key}.json`
+    `${safeKey}.json`
   );
 }
+
+/* =========================================================
+   STORAGE OPERATIONS
+   ========================================================= */
 
 function readItem(
   moduleId,
   collection,
   key
 ) {
-  const filePath = getItemPath(
-    moduleId,
-    collection,
-    key
-  );
+  const filePath =
+    getItemPath(
+      moduleId,
+      collection,
+      key
+    );
 
-  if (!fs.existsSync(filePath)) {
+  if (
+    !fs.existsSync(
+      filePath
+    )
+  ) {
     return null;
   }
 
-  const raw = fs.readFileSync(
-    filePath,
-    'utf8'
-  );
+  const raw =
+    fs.readFileSync(
+      filePath,
+      'utf8'
+    );
 
-  if (!raw.trim()) {
+  if (
+    !raw.trim()
+  ) {
     return null;
   }
 
-  return JSON.parse(raw);
+  return JSON.parse(
+    raw
+  );
 }
 
 function listCollection(
@@ -99,25 +168,37 @@ function listCollection(
       collection
     );
 
-  const files = fs
-    .readdirSync(collectionRoot)
-    .filter((fileName) =>
-      fileName.endsWith('.json')
-    );
+  const files =
+    fs
+      .readdirSync(
+        collectionRoot
+      )
+      .filter(
+        (fileName) =>
+          fileName.endsWith(
+            '.json'
+          )
+      );
 
-  return files.map((fileName) => {
-    const filePath = path.join(
-      collectionRoot,
-      fileName
-    );
+  return files.map(
+    (fileName) => {
+      const filePath =
+        path.join(
+          collectionRoot,
+          fileName
+        );
 
-    const raw = fs.readFileSync(
-      filePath,
-      'utf8'
-    );
+      const raw =
+        fs.readFileSync(
+          filePath,
+          'utf8'
+        );
 
-    return JSON.parse(raw);
-  });
+      return JSON.parse(
+        raw
+      );
+    }
+  );
 }
 
 function writeItem(
@@ -126,11 +207,12 @@ function writeItem(
   key,
   value
 ) {
-  const filePath = getItemPath(
-    moduleId,
-    collection,
-    key
-  );
+  const filePath =
+    getItemPath(
+      moduleId,
+      collection,
+      key
+    );
 
   const temporaryPath =
     `${filePath}.tmp`;
@@ -148,8 +230,14 @@ function writeItem(
     'utf8'
   );
 
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
+  if (
+    fs.existsSync(
+      filePath
+    )
+  ) {
+    fs.unlinkSync(
+      filePath
+    );
   }
 
   fs.renameSync(
@@ -163,20 +251,31 @@ function deleteItem(
   collection,
   key
 ) {
-  const filePath = getItemPath(
-    moduleId,
-    collection,
-    key
-  );
+  const filePath =
+    getItemPath(
+      moduleId,
+      collection,
+      key
+    );
 
-  if (!fs.existsSync(filePath)) {
+  if (
+    !fs.existsSync(
+      filePath
+    )
+  ) {
     return false;
   }
 
-  fs.unlinkSync(filePath);
+  fs.unlinkSync(
+    filePath
+  );
 
   return true;
 }
+
+/* =========================================================
+   IPC STORAGE HANDLERS
+   ========================================================= */
 
 function registerStorageHandlers() {
   ipcMain.handle(
@@ -239,118 +338,102 @@ function registerStorageHandlers() {
   );
 }
 
+/* =========================================================
+   WINDOW
+   ========================================================= */
+
 function createWindow() {
-  mainWindow = new BrowserWindow({
-    title: 'SettingForge',
-    width: 1440,
-    height: 900,
-    minWidth: 1000,
-    minHeight: 700,
-    backgroundColor: '#1e1f22',
+  mainWindow =
+    new BrowserWindow({
+      title:
+        'SettingForge',
 
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      preload: path.join(
-        __dirname,
-        'preload.cjs'
-      ),
-    },
-  });
+      width:
+        1440,
 
-  function requireStorageName(
-    value,
-    label
-  ) {
-    if (
-      typeof value !== 'string' ||
-      !/^[A-Za-z0-9._-]+$/.test(value)
-    ) {
-      throw new Error(
-        `Invalid storage ${label}.`
-      );
-    }
+      height:
+        900,
 
-    return value;
-  }
+      minWidth:
+        1000,
 
-  function getCollectionRoot(
-  moduleId,
-  collection
-) {
-  const safeCollection =
-    requireStorageName(
-      collection,
-      'collection'
-    );
+      minHeight:
+        700,
 
-  const root = path.join(
-    getModuleStorageRoot(moduleId),
-    safeCollection
+      backgroundColor:
+        '#1e1f22',
+
+      webPreferences: {
+        contextIsolation:
+          true,
+
+        nodeIntegration:
+          false,
+
+        preload:
+          path.join(
+            __dirname,
+            'preload.cjs'
+          ),
+      },
+    });
+
+  mainWindow.setMenuBarVisibility(
+    false
   );
-
-  fs.mkdirSync(root, {
-    recursive: true,
-  });
-
-  return root;
-}
-
-function getCollectionRoot(
-  moduleId,
-  collection
-) {
-  const safeCollection =
-    requireStorageName(
-      collection,
-      'collection'
-    );
-
-  const root = path.join(
-    getModuleStorageRoot(moduleId),
-    safeCollection
-  );
-
-  fs.mkdirSync(root, {
-    recursive: true,
-  });
-
-  return root;
-}
-
-  mainWindow.setMenuBarVisibility(false);
 
   mainWindow.loadURL(
     'http://localhost:5174'
   );
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+  mainWindow.on(
+    'closed',
+    () => {
+      mainWindow = null;
+    }
+  );
 }
 
-app.whenReady().then(() => {
-  console.log(
-    'SettingForge userData:',
-    app.getPath('userData')
-  );
+/* =========================================================
+   APP LIFECYCLE
+   ========================================================= */
 
-  registerStorageHandlers();
-  createWindow();
+app.whenReady().then(
+  () => {
+    console.log(
+      'SettingForge userData:',
+      app.getPath(
+        'userData'
+      )
+    );
 
-  app.on('activate', () => {
-    if (
-      BrowserWindow
-        .getAllWindows()
-        .length === 0
-    ) {
-      createWindow();
-    }
-  });
-});
+    registerStorageHandlers();
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
+    createWindow();
+
+    app.on(
+      'activate',
+      () => {
+        if (
+          BrowserWindow
+            .getAllWindows()
+            .length === 0
+        ) {
+          createWindow();
+        }
+      }
+    );
   }
-});
+);
+
+app.on(
+  'window-all-closed',
+  () => {
+    if (
+      process.platform !==
+      'darwin'
+    ) {
+      app.quit();
+    }
+  }
+);
