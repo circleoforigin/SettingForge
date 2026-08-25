@@ -1,0 +1,278 @@
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+
+  background: #1e1f22;
+  color: white;
+}
+
+/* ---------- GLOBAL MENU BAR ---------- */
+
+.menu-bar {
+  position: relative;
+
+  height: 32px;
+  flex: 0 0 32px;
+
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+
+  background: #2b2d31;
+  border-bottom: 1px solid #3a3c41;
+}
+
+.menu-item {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: #d8d8d8;
+
+  padding: 6px 10px;
+
+  font: inherit;
+  font-size: 14px;
+
+  cursor: default;
+}
+
+.menu-item:hover {
+  background: #3a3c41;
+  color: white;
+  border-radius: 4px;
+}
+
+.app-title {
+  position: absolute;
+  left: 25%;
+  right: 0;
+
+  text-align: center;
+
+  font-size: 14px;
+  font-weight: 500;
+  color: #b8bac0;
+
+  pointer-events: none;
+}
+
+/* ---------- HOST WORKSPACE ---------- */
+
+.host-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: #1e1f22;
+}
+
+.empty-workspace {
+  text-align: center;
+  color: #aeb0b6;
+}
+
+.empty-workspace h1 {
+  margin: 0 0 8px;
+  color: #d8d8d8;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.empty-workspace p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ---------- DROPDOWN MENUS ---------- */
+
+.menu-group {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+
+  min-width: 200px;
+  padding: 4px;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.35);
+
+  z-index: 100;
+}
+
+.dropdown-item {
+  appearance: none;
+  width: 100%;
+
+  background: transparent;
+  border: none;
+  color: #d8d8d8;
+
+  padding: 7px 10px;
+
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+
+  cursor: default;
+}
+
+.dropdown-item:hover {
+  background: #3a3c41;
+  color: white;
+  border-radius: 3px;
+}
+
+.module-menu-separator {
+  width: 1px;
+  height: 18px;
+  margin: 0 6px;
+
+  background: #45474e;
+}
+
+/* ---------- DIALOGS ---------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.dialog {
+  width: 440px;
+  padding: 20px;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 8px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dialog h2 {
+  margin: 0;
+}
+
+.dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dialog button,
+.module-list-item button {
+  padding: 6px 10px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.dialog button:hover,
+.module-list-item button:hover {
+  background: #414349;
+  color: white;
+}
+
+
+/* ---------- MODULE MANAGER ---------- */
+
+.module-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.module-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 12px;
+
+  background: #25262a;
+  border: 1px solid #3a3c41;
+  border-radius: 5px;
+}
+
+.module-information {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.module-information strong {
+  color: #f0f0f0;
+}
+
+.module-information span {
+  color: #b8bac0;
+  font-size: 13px;
+}
+
+.module-information small {
+  color: #8b8d93;
+  font-size: 11px;
+}
+
+.module-focus-button.active {
+  background: #3a3c41;
+  color: white;
+  border-radius: 4px;
+}
+
+.module-placeholder {
+  text-align: center;
+  color: #aeb0b6;
+}
+
+.module-placeholder h1 {
+  margin: 0 0 8px;
+  color: #d8d8d8;
+}
+
+.module-placeholder p {
+  margin: 0 0 6px;
+}
+
+.module-placeholder small {
+  color: #8b8d93;
+}
+
+.module-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #1e1f22;
+}

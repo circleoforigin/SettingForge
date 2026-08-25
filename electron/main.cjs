@@ -1,0 +1,281 @@
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+} = require('electron');
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+app.setName('SettingForge');
+
+const userDataPath = path.join(
+  app.getPath('appData'),
+  'SettingForge'
+);
+
+app.setPath('userData', userDataPath);
+
+let mainWindow;
+
+function getModuleStorageRoot(moduleId) {
+  const root = path.join(
+    app.getPath('userData'),
+    'modules',
+    moduleId
+  );
+
+  fs.mkdirSync(root, {
+    recursive: true,
+  });
+
+  return root;
+}
+
+function getCollectionRoot(
+  moduleId,
+  collection
+) {
+  const root = path.join(
+    getModuleStorageRoot(moduleId),
+    collection
+  );
+
+  fs.mkdirSync(root, {
+    recursive: true,
+  });
+
+  return root;
+}
+
+function getItemPath(
+  moduleId,
+  collection,
+  key
+) {
+  return path.join(
+    getCollectionRoot(
+      moduleId,
+      collection
+    ),
+    `${key}.json`
+  );
+}
+
+function readItem(
+  moduleId,
+  collection,
+  key
+) {
+  const filePath = getItemPath(
+    moduleId,
+    collection,
+    key
+  );
+
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  const raw = fs.readFileSync(
+    filePath,
+    'utf8'
+  );
+
+  if (!raw.trim()) {
+    return null;
+  }
+
+  return JSON.parse(raw);
+}
+
+function listCollection(
+  moduleId,
+  collection
+) {
+  const collectionRoot =
+    getCollectionRoot(
+      moduleId,
+      collection
+    );
+
+  const files = fs
+    .readdirSync(collectionRoot)
+    .filter((fileName) =>
+      fileName.endsWith('.json')
+    );
+
+  return files.map((fileName) => {
+    const filePath = path.join(
+      collectionRoot,
+      fileName
+    );
+
+    const raw = fs.readFileSync(
+      filePath,
+      'utf8'
+    );
+
+    return JSON.parse(raw);
+  });
+}
+
+function writeItem(
+  moduleId,
+  collection,
+  key,
+  value
+) {
+  const filePath = getItemPath(
+    moduleId,
+    collection,
+    key
+  );
+
+  fs.writeFileSync(
+    filePath,
+    JSON.stringify(
+      value,
+      null,
+      2
+    ),
+    'utf8'
+  );
+}
+
+function deleteItem(
+  moduleId,
+  collection,
+  key
+) {
+  const filePath = getItemPath(
+    moduleId,
+    collection,
+    key
+  );
+
+  if (!fs.existsSync(filePath)) {
+    return false;
+  }
+
+  fs.unlinkSync(filePath);
+
+  return true;
+}
+
+function registerStorageHandlers() {
+  ipcMain.handle(
+    'settingforge:storage:read',
+    (
+      _event,
+      moduleId,
+      collection,
+      key
+    ) => {
+      if (key) {
+        return readItem(
+          moduleId,
+          collection,
+          key
+        );
+      }
+
+      return listCollection(
+        moduleId,
+        collection
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'settingforge:storage:write',
+    (
+      _event,
+      moduleId,
+      collection,
+      key,
+      value
+    ) => {
+      writeItem(
+        moduleId,
+        collection,
+        key,
+        value
+      );
+
+      return true;
+    }
+  );
+
+  ipcMain.handle(
+    'settingforge:storage:delete',
+    (
+      _event,
+      moduleId,
+      collection,
+      key
+    ) => {
+      return deleteItem(
+        moduleId,
+        collection,
+        key
+      );
+    }
+  );
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    title: 'SettingForge',
+    width: 1440,
+    height: 900,
+    minWidth: 1000,
+    minHeight: 700,
+    backgroundColor: '#1e1f22',
+
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(
+        __dirname,
+        'preload.cjs'
+      ),
+    },
+  });
+
+  mainWindow.setMenuBarVisibility(false);
+
+  mainWindow.loadURL(
+    'http://localhost:5174'
+  );
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+}
+
+app.whenReady().then(() => {
+  console.log(
+    'SettingForge userData:',
+    app.getPath('userData')
+  );
+
+  registerStorageHandlers();
+  createWindow();
+
+  app.on('activate', () => {
+    if (
+      BrowserWindow
+        .getAllWindows()
+        .length === 0
+    ) {
+      createWindow();
+    }
+  });
+});
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});

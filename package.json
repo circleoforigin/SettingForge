@@ -1,0 +1,31 @@
+{
+  "name": "settingforge",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "electron": "electron electron/main.cjs",
+    "desktop": "concurrently -k \"npm:dev\" \"npm:electron:wait\"",
+    "electron:wait": "wait-on http://localhost:5174 && electron electron/main.cjs",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "concurrently": "^10.0.5",
+    "electron": "^43.4.1",
+    "oxlint": "^1.79.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2",
+    "wait-on": "^9.1.0"
+  }
+}
