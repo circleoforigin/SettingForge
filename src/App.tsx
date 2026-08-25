@@ -2,7 +2,7 @@ import './App.css';
 import { moduleRegistry } from './modules/registry';
 import { useEffect, useState } from 'react';
 import { hostEventBroker } from './events/HostEventBroker';
-import { hostServiceRegistry } from './services/HostServiceRegistry';
+import { hostServiceRegistry } from './services/registry';
 import {
   registerStorageHostServices,
 } from './services/StorageHostService';

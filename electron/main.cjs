@@ -132,14 +132,29 @@ function writeItem(
     key
   );
 
-  fs.writeFileSync(
-    filePath,
+  const temporaryPath =
+    `${filePath}.tmp`;
+
+  const contents =
     JSON.stringify(
       value,
       null,
       2
-    ),
+    );
+
+  fs.writeFileSync(
+    temporaryPath,
+    contents,
     'utf8'
+  );
+
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+
+  fs.renameSync(
+    temporaryPath,
+    filePath
   );
 }
 
@@ -242,6 +257,66 @@ function createWindow() {
       ),
     },
   });
+
+  function requireStorageName(
+    value,
+    label
+  ) {
+    if (
+      typeof value !== 'string' ||
+      !/^[A-Za-z0-9._-]+$/.test(value)
+    ) {
+      throw new Error(
+        `Invalid storage ${label}.`
+      );
+    }
+
+    return value;
+  }
+
+  function getCollectionRoot(
+  moduleId,
+  collection
+) {
+  const safeCollection =
+    requireStorageName(
+      collection,
+      'collection'
+    );
+
+  const root = path.join(
+    getModuleStorageRoot(moduleId),
+    safeCollection
+  );
+
+  fs.mkdirSync(root, {
+    recursive: true,
+  });
+
+  return root;
+}
+
+function getCollectionRoot(
+  moduleId,
+  collection
+) {
+  const safeCollection =
+    requireStorageName(
+      collection,
+      'collection'
+    );
+
+  const root = path.join(
+    getModuleStorageRoot(moduleId),
+    safeCollection
+  );
+
+  fs.mkdirSync(root, {
+    recursive: true,
+  });
+
+  return root;
+}
 
   mainWindow.setMenuBarVisibility(false);
 

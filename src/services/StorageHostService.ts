@@ -1,3 +1,5 @@
+import { hostServiceRegistry } from './registry';
+
 import type {
   HostRequestMessage,
 } from '../events/HostMessage';
@@ -8,6 +10,14 @@ import type {
   StorageSaveRequest,
 } from './StorageServiceTypes';
 
+function requireHostService(type: string): void {
+  if (!hostServiceRegistry.get(type)) {
+    throw new Error(
+      `Host service "${type}" is not registered.`
+    );
+  }
+}
+
 export function registerStorageHostServices(
   registerRequestHandler: (
     type: string,
@@ -16,6 +26,10 @@ export function registerStorageHostServices(
     ) => Promise<unknown>
   ) => () => void
 ): () => void {
+    requireHostService('storage.load');
+    requireHostService('storage.save');
+    requireHostService('storage.delete');
+
   const unregisterLoad =
   registerRequestHandler(
     'storage.load',
