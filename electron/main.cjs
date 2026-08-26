@@ -101,7 +101,7 @@ function getItemPath(
   moduleId,
   collection,
   key
-) {
+  ) {
   const safeKey =
     requireStorageName(
       key,
@@ -114,6 +114,64 @@ function getItemPath(
       collection
     ),
     `${safeKey}.json`
+  );
+}
+
+function getModuleFilesRoot(
+  moduleId
+) {
+  const root = path.join(
+    getModuleStorageRoot(
+      moduleId
+    ),
+    'files'
+  );
+
+  fs.mkdirSync(
+    root,
+    {
+      recursive: true,
+    }
+  );
+
+  return root;
+}
+
+function getModuleFilePath(
+  moduleId,
+  folder,
+  fileName
+) {
+  const safeFolder =
+    requireStorageName(
+      folder,
+      'file folder'
+    );
+
+  const safeFileName =
+    requireStorageName(
+      fileName,
+      'file name'
+    );
+
+  const folderRoot =
+    path.join(
+      getModuleFilesRoot(
+        moduleId
+      ),
+      safeFolder
+    );
+
+  fs.mkdirSync(
+    folderRoot,
+    {
+      recursive: true,
+    }
+  );
+
+  return path.join(
+    folderRoot,
+    safeFileName
   );
 }
 
@@ -273,6 +331,92 @@ function deleteItem(
   return true;
 }
 
+function writeModuleFile(
+  moduleId,
+  folder,
+  fileName,
+  bytes
+) {
+  const filePath =
+    getModuleFilePath(
+      moduleId,
+      folder,
+      fileName
+    );
+
+  const buffer =
+    Buffer.from(
+      bytes
+    );
+
+  fs.writeFileSync(
+    filePath,
+    buffer
+  );
+
+  return {
+    fileName,
+    folder,
+  };
+}
+
+function readModuleFile(
+  moduleId,
+  folder,
+  fileName
+) {
+  const filePath =
+    getModuleFilePath(
+      moduleId,
+      folder,
+      fileName
+    );
+
+  if (
+    !fs.existsSync(
+      filePath
+    )
+  ) {
+    return null;
+  }
+
+  const buffer =
+    fs.readFileSync(
+      filePath
+    );
+
+  return Array.from(
+    buffer
+  );
+}
+
+function deleteModuleFile(
+  moduleId,
+  folder,
+  fileName
+) {
+  const filePath =
+    getModuleFilePath(
+      moduleId,
+      folder,
+      fileName
+    );
+
+  if (
+    !fs.existsSync(
+      filePath
+    )
+  ) {
+    return false;
+  }
+
+  fs.unlinkSync(
+    filePath
+  );
+
+  return true;
+}
+
 /* =========================================================
    IPC STORAGE HANDLERS
    ========================================================= */
@@ -333,6 +477,58 @@ function registerStorageHandlers() {
         moduleId,
         collection,
         key
+      );
+    }
+  );
+}
+
+function registerFileHandlers() {
+  ipcMain.handle(
+    'settingforge:file:write',
+    (
+      _event,
+      moduleId,
+      folder,
+      fileName,
+      bytes
+    ) => {
+      return writeModuleFile(
+        moduleId,
+        folder,
+        fileName,
+        bytes
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'settingforge:file:read',
+    (
+      _event,
+      moduleId,
+      folder,
+      fileName
+    ) => {
+      return readModuleFile(
+        moduleId,
+        folder,
+        fileName
+      );
+    }
+  );
+
+  ipcMain.handle(
+    'settingforge:file:delete',
+    (
+      _event,
+      moduleId,
+      folder,
+      fileName
+    ) => {
+      return deleteModuleFile(
+        moduleId,
+        folder,
+        fileName
       );
     }
   );
@@ -408,7 +604,7 @@ app.whenReady().then(
     );
 
     registerStorageHandlers();
-
+    registerFileHandlers();
     createWindow();
 
     app.on(

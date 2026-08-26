@@ -3,9 +3,8 @@ import { moduleRegistry } from './modules/registry';
 import { useEffect, useState } from 'react';
 import { hostEventBroker } from './events/HostEventBroker';
 import { hostServiceRegistry } from './services/registry';
-import {
-  registerStorageHostServices,
-} from './services/StorageHostService';
+import { registerStorageHostServices} from './services/StorageHostService';
+import { registerFileHostServices } from './services/FileHostService';
 
 function App() {
   useEffect(() => {
@@ -19,8 +18,16 @@ function App() {
       )
     );
 
+    const unregisterFileServices =
+  registerFileHostServices(
+    hostEventBroker.registerRequestHandler.bind(
+      hostEventBroker
+    )
+  );
+
   return () => {
     unregisterStorageServices();
+    unregisterFileServices();
     stopBroker();
   };
 }, []);
@@ -140,7 +147,7 @@ function App() {
 ) : (
     <div className="empty-workspace">
       <h1>SettingForge</h1>
-      <p>No module selected.</p>
+      <p>Please add a module to begin.</p>
       
     </div>
   )}

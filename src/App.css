@@ -73,6 +73,8 @@ body,
   min-height: 0;
   display: flex;
   background: #1e1f22;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-workspace {

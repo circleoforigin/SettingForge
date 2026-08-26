@@ -7,44 +7,86 @@ contextBridge.exposeInMainWorld(
   'settingForge',
   {
     storage: {
-  read(
+        read(
+            moduleId,
+            collection,
+            key
+        ) {
+        return ipcRenderer.invoke(
+            'settingforge:storage:read',
+            moduleId,
+            collection,
+            key
+            );
+        },
+
+        write(
+            moduleId,
+            collection,
+            key,
+            value
+        ) {
+        return ipcRenderer.invoke(
+            'settingforge:storage:write',
+            moduleId,
+            collection,
+            key,
+            value
+            );
+        },
+
+        delete(
+            moduleId,
+            collection,
+            key
+        ) {
+        return ipcRenderer.invoke(
+            'settingforge:storage:delete',
+            moduleId,
+            collection,
+            key
+            );
+        },
+    },
+    file: {
+  write(
     moduleId,
-    collection,
-    key
+    folder,
+    fileName,
+    bytes
   ) {
     return ipcRenderer.invoke(
-      'settingforge:storage:read',
+      'settingforge:file:write',
       moduleId,
-      collection,
-      key
+      folder,
+      fileName,
+      bytes
     );
   },
 
-  write(
+  read(
     moduleId,
-    collection,
-    key,
-    value
+    folder,
+    fileName
   ) {
     return ipcRenderer.invoke(
-      'settingforge:storage:write',
+      'settingforge:file:read',
       moduleId,
-      collection,
-      key,
-      value
+      folder,
+      fileName
     );
   },
 
   delete(
     moduleId,
-    collection,
-    key
+    folder,
+    fileName
   ) {
     return ipcRenderer.invoke(
-      'settingforge:storage:delete',
+      'settingforge:file:delete',
       moduleId,
-      collection,
-      key
+      folder,
+      fileName
     );
   },
 },
