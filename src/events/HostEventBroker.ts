@@ -14,11 +14,11 @@ type RequestHandler =
   ) => Promise<unknown>;
 
 export class HostEventBroker {
-  private readonly eventHandlers =
-    new Map<string, Set<EventHandler>>();
+    private readonly moduleWindows = new Map<string, Window>();  
+  
+  private readonly eventHandlers = new Map<string, Set<EventHandler>>();
 
-  private readonly requestHandlers =
-    new Map<string, RequestHandler>();
+  private readonly requestHandlers = new Map<string, RequestHandler>();
 
   start(): () => void {
     const handleMessage = (
@@ -30,6 +30,22 @@ export class HostEventBroker {
       if (!this.isHostMessage(message)) {
         return;
       }
+
+      if (
+        message.sourceModuleId &&
+        message.sourceModuleId !==
+            'settingforge'
+        ) {
+        const sourceWindow =
+            event.source as Window | null;
+
+        if (sourceWindow) {
+            this.moduleWindows.set(
+                message.sourceModuleId,
+                sourceWindow
+                );
+            }
+        }
 
       if (message.kind === 'event') {
         this.dispatchEvent(message);
@@ -101,6 +117,65 @@ export class HostEventBroker {
       }
     };
   }
+
+  broadcast(
+  type: string,
+  payload?: unknown
+): void {
+  const message: HostEventMessage = {
+    kind: 'event',
+    id: crypto.randomUUID(),
+    sourceModuleId:
+      'settingforge',
+    type,
+    timestamp:
+      Date.now(),
+    payload,
+  };
+
+  for (
+    const moduleWindow
+    of this.moduleWindows.values()
+  ) {
+    moduleWindow.postMessage(
+      message,
+      '*'
+    );
+  }
+}
+
+sendToModule(
+  moduleId: string,
+  type: string,
+  payload?: unknown
+): boolean {
+  const moduleWindow =
+    this.moduleWindows.get(
+      moduleId
+    );
+
+  if (!moduleWindow) {
+    return false;
+  }
+
+  const message: HostEventMessage = {
+    kind: 'event',
+    id: crypto.randomUUID(),
+    sourceModuleId:
+      'settingforge',
+    type,
+    timestamp:
+      Date.now(),
+    payload,
+  };
+
+  moduleWindow.postMessage(
+    message,
+    '*'
+  );
+
+  return true;
+}
 
   private dispatchEvent(
     message: HostEventMessage
