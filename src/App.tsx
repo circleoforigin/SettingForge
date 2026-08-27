@@ -5,6 +5,7 @@ import { hostEventBroker } from './events/HostEventBroker';
 import { hostServiceRegistry } from './services/registry';
 import { registerStorageHostServices} from './services/StorageHostService';
 import { registerFileHostServices } from './services/FileHostService';
+import { modulePresenceService } from './modules/ModulePresenceService';
 
 function App() {
   useEffect(() => {
@@ -18,16 +19,42 @@ function App() {
       )
     );
 
-    const unregisterFileServices =
-  registerFileHostServices(
-    hostEventBroker.registerRequestHandler.bind(
-      hostEventBroker
-    )
+  const unregisterFileServices =
+    registerFileHostServices(
+      hostEventBroker.registerRequestHandler.bind(
+        hostEventBroker
+      )
+    );
+
+    const unregisterModuleReady =
+  hostEventBroker.subscribe(
+    'module.ready',
+    (message) => {
+      const payload =
+        message.payload as
+          | {
+              capabilities?: {
+                events?: string[];
+                actions?: string[];
+              };
+            }
+          | undefined;
+
+      modulePresenceService.markReady(
+        message.sourceModuleId,
+        payload?.capabilities
+      );
+
+      modulePresenceService.sendSnapshotTo(
+        message.sourceModuleId
+      );
+    }
   );
 
   return () => {
-    unregisterStorageServices();
+    unregisterModuleReady();
     unregisterFileServices();
+    unregisterStorageServices();
     stopBroker();
   };
 }, []);
@@ -56,21 +83,48 @@ function App() {
       ? moduleRegistry.get(activeModuleId)
       : undefined;
 
-  function toggleModule(moduleId: string) {
-    setEnabledModuleIds((current) => {
-      if (current.includes(moduleId)) {
-        if (activeModuleId === moduleId) {
-          setActiveModuleId(null);
+  function toggleModule(
+  moduleId: string
+) {
+  setEnabledModuleIds(
+    (current) => {
+      if (
+        current.includes(
+          moduleId
+        )
+      ) {
+        modulePresenceService
+          .removeModule(
+            moduleId
+          );
+
+        if (
+          activeModuleId ===
+          moduleId
+        ) {
+          setActiveModuleId(
+            null
+          );
         }
 
         return current.filter(
-          (id) => id !== moduleId
+          (id) =>
+            id !== moduleId
         );
       }
 
-      return [...current, moduleId];
-    });
-  }
+      modulePresenceService
+        .enableModule(
+          moduleId
+        );
+
+      return [
+        ...current,
+        moduleId,
+      ];
+    }
+  );
+}
 
   return (
     <div className="app">
