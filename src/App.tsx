@@ -184,25 +184,58 @@ function App() {
       </header>
 
       <main className="host-workspace">
-  {activeModule ? (
-  activeModule.devUrl ? (
-    <iframe
-      className="module-frame"
-      src={activeModule.devUrl}
-      title={activeModule.name}
-    />
-  ) : (
-    <div className="module-placeholder">
-      <h1>{activeModule.name}</h1>
-      <p>{activeModule.description}</p>
-      <small>Module version {activeModule.version}</small>
-    </div>
-  )
-) : (
+  {enabledModules.map((module) => {
+    const isActive =
+      activeModuleId === module.id;
+
+    if (module.devUrl) {
+      return (
+        <iframe
+          key={module.id}
+          className={
+            isActive
+              ? 'module-frame active'
+              : 'module-frame inactive'
+          }
+          src={module.devUrl}
+          title={module.name}
+        />
+      );
+    }
+
+    return (
+      <div
+        key={module.id}
+        className={
+          isActive
+            ? 'module-placeholder active'
+            : 'module-placeholder inactive'
+        }
+      >
+        <h1>
+          {module.name}
+        </h1>
+
+        <p>
+          {module.description}
+        </p>
+
+        <small>
+          Module version {module.version}
+        </small>
+      </div>
+    );
+  })}
+
+  {!activeModule && (
     <div className="empty-workspace">
-      <h1>SettingForge</h1>
-      <p>Please add a module to begin.</p>
-      
+      <h1>
+        SettingForge
+      </h1>
+
+      <p>
+        Please add a module to begin.
+      </p>
     </div>
   )}
 </main>

@@ -20,7 +20,7 @@ export type HostResponseMessage = {
   kind: 'response';
   id: string;
   requestId: string;
-  sourceModuleId: 'settingforge';
+  sourceModuleId: string;
   type: string;
   timestamp: number;
   ok: boolean;

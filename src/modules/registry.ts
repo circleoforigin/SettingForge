@@ -52,3 +52,45 @@ eventRegistry.registerModuleEvents(
   sacscapeModule.name,
   [...sacscapeModule.events]
 );
+
+const regionsModule: ModuleDefinition = {
+  id: 'regions',
+  name: 'Regions',
+  description:
+    'Interactive maps, locations, connections, and regional features.',
+  version: '1.0.0',
+  devUrl: 'http://localhost:5175',
+
+  events: [
+    {
+      type: 'regions.map.opened',
+      description:
+        'Fired when Regions opens a map.',
+      visibility: 'public',
+    },
+
+    {
+      type: 'regions.location.selected',
+      description:
+        'Fired when a location is selected.',
+      visibility: 'public',
+    },
+
+    {
+      type: 'regions.location.entered',
+      description:
+        'Fired when a location becomes the active location.',
+      visibility: 'public',
+    },
+  ],
+};
+
+moduleRegistry.register(
+  regionsModule
+);
+
+eventRegistry.registerModuleEvents(
+  regionsModule.id,
+  regionsModule.name,
+  [...regionsModule.events]
+);
