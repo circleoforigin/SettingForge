@@ -297,3 +297,62 @@ body,
   z-index: 0;
 }
 
+.dropdown-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: #45474e;
+}
+
+.world-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.world-list button {
+  text-align: left;
+}
+
+.dialog-error,
+.world-load-error {
+  color: #ffb4b4;
+  background: #482b2b;
+  border: 1px solid #704040;
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
+.world-load-error {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 10;
+  max-width: min(600px, calc(100% - 24px));
+  transform: translateX(-50%);
+}
+
+.world-save-notice {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 10;
+  max-width: min(600px, calc(100% - 24px));
+  padding: 8px 10px;
+  transform: translateX(-50%);
+  border: 1px solid #456047;
+  border-radius: 4px;
+  color: #cde8cf;
+  background: #293d2b;
+}
+
+.world-save-notice.warning {
+  color: #f4ddb0;
+  background: #493d25;
+  border-color: #75613a;
+}
+
+.world-save-notice.error {
+  color: #ffb4b4;
+  background: #482b2b;
+  border-color: #704040;
+}

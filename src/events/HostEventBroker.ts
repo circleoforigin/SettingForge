@@ -244,37 +244,6 @@ requestModule<T>(
   });
 }
 
-private relayModuleEvent(
-  message: HostEventMessage
-): void {
-  if (
-    message.sourceModuleId ===
-    'settingforge'
-  ) {
-    return;
-  }
-
-  for (
-    const [
-      moduleId,
-      moduleWindow,
-    ]
-    of this.moduleWindows.entries()
-  ) {
-    if (
-      moduleId ===
-      message.sourceModuleId
-    ) {
-      continue;
-    }
-
-    moduleWindow.postMessage(
-      message,
-      '*'
-    );
-  }
-}
-
 private handleModuleResponse(response: HostResponseMessage): void {
   const pending =
     this.pendingModuleRequests.get(response.requestId);

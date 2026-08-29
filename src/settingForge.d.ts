@@ -47,6 +47,10 @@ declare global {
         fileName: string
       ): Promise<boolean>;
     };
+
+    window: {
+      setTitle(title: string): Promise<boolean>;
+    };
   };
 }
 }
