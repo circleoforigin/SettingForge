@@ -15,20 +15,10 @@ type RequestHandler =
 
   interface PendingModuleRequest {
   moduleId: string;
-
-  resolve: (
-    value: unknown
-  ) => void;
-
-  reject: (
-    error: Error
-  ) => void;
-
-  timeoutId:
-    ReturnType<
-      typeof setTimeout
-    >;
-}
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
+  timeoutId: ReturnType<typeof setTimeout>;
+}  
 
 export class HostEventBroker {
     private readonly moduleWindows = new Map<string, Window>();  
@@ -38,10 +28,7 @@ export class HostEventBroker {
   private readonly requestHandlers = new Map<string, RequestHandler>();
 
   private readonly pendingModuleRequests =
-    new Map<
-      string,
-      PendingModuleRequest
-  >();
+  new Map<string, PendingModuleRequest>();
 
   start(): () => void {
     const handleMessage = (
@@ -92,20 +79,8 @@ if (
   return;
 }
 
-if (
-  message.kind ===
-  'request'
-) {
-
-  return;
-}
-
-      if (message.kind === 'request') {
-        void this.handleRequest(
-          event,
-          message
-        );
-      }
+void this.handleRequest(event, message
+);
     };
 
     window.addEventListener(
@@ -231,84 +206,43 @@ requestModule<T>(
   payload?: unknown,
   timeoutMs = 5000
 ): Promise<T> {
-  const moduleWindow =
-    this.moduleWindows.get(
-      moduleId
-    );
+  const moduleWindow = this.moduleWindows.get(moduleId);
 
   if (!moduleWindow) {
     return Promise.reject(
-      new Error(
-        `Module "${moduleId}" is not connected.`
-      )
+      new Error(`Module "${moduleId}" is not connected.`)
     );
   }
 
-  const id =
-    crypto.randomUUID();
+  const id = crypto.randomUUID();
 
-  return new Promise<T>(
-    (
-      resolve,
-      reject
-    ) => {
-      const timeoutId =
-        setTimeout(
-          () => {
-            this.pendingModuleRequests.delete(
-              id
-            );
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      this.pendingModuleRequests.delete(id);
 
-            reject(
-              new Error(
-                `Module "${moduleId}" did not respond to "${type}".`
-              )
-            );
-          },
-          timeoutMs
-        );
-
-      this.pendingModuleRequests.set(
-        id,
-        {
-          moduleId,
-
-          resolve:
-            (value) =>
-              resolve(
-                value as T
-              ),
-
-          reject,
-
-          timeoutId,
-        }
+      reject(
+        new Error(`Module "${moduleId}" did not respond to "${type}".`)
       );
+    }, timeoutMs);
 
-      const message:
-        HostRequestMessage = {
-          kind:
-            'request',
+    this.pendingModuleRequests.set(id, {
+      moduleId,
+      resolve: (value) => resolve(value as T),
+      reject,
+      timeoutId,
+    });
 
-          id,
+    const message: HostRequestMessage = {
+      kind: 'request',
+      id,
+      sourceModuleId: 'settingforge',
+      type,
+      timestamp: Date.now(),
+      payload,
+    };
 
-          sourceModuleId:
-            'settingforge',
-
-          type,
-
-          timestamp:
-            Date.now(),
-
-          payload,
-        };
-
-      moduleWindow.postMessage(
-        message,
-        '*'
-      );
-    }
-  );
+    moduleWindow.postMessage(message, '*');
+  });
 }
 
 private relayModuleEvent(
@@ -342,41 +276,23 @@ private relayModuleEvent(
   }
 }
 
-private handleModuleResponse(
-  response:
-    HostResponseMessage
-): void {
+private handleModuleResponse(response: HostResponseMessage): void {
   const pending =
-    this.pendingModuleRequests.get(
-      response.requestId
-    );
+    this.pendingModuleRequests.get(response.requestId);
 
   if (!pending) {
     return;
   }
 
-  if (
-    response.sourceModuleId !==
-    pending.moduleId
-  ) {
+  if (response.sourceModuleId !== pending.moduleId) {
     return;
   }
 
-  clearTimeout(
-    pending.timeoutId
-  );
+  clearTimeout(pending.timeoutId);
+  this.pendingModuleRequests.delete(response.requestId);
 
-  this.pendingModuleRequests.delete(
-    response.requestId
-  );
-
-  if (
-    response.ok
-  ) {
-    pending.resolve(
-      response.payload
-    );
-
+  if (response.ok) {
+    pending.resolve(response.payload);
     return;
   }
 
