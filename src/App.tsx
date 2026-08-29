@@ -6,6 +6,8 @@ import { hostServiceRegistry } from './services/registry';
 import { registerStorageHostServices} from './services/StorageHostService';
 import { registerFileHostServices } from './services/FileHostService';
 import { modulePresenceService } from './modules/ModulePresenceService';
+import type { World } from './models/World';
+import { worldRepository } from './worlds/WorldRepository';
 
 function App() {
   useEffect(() => {
@@ -68,6 +70,13 @@ modulePresenceService.sendSnapshotTo(message.sourceModuleId);
   const [fileMenuOpen, setFileMenuOpen] =
     useState(false);
 
+  const [activeWorld, setActiveWorld] = useState<World | null>(null);
+
+  const [showNewWorldDialog, setShowNewWorldDialog] =
+    useState(false);
+
+  const [newWorldName, setNewWorldName] = useState('');
+
   const [moduleManagerOpen, setModuleManagerOpen] =
     useState(false);
 
@@ -95,6 +104,39 @@ modulePresenceService.sendSnapshotTo(message.sourceModuleId);
     activeModuleId
       ? moduleRegistry.get(activeModuleId)
       : undefined;
+
+      function handleNewWorld() {
+  setNewWorldName('');
+  setShowNewWorldDialog(true);
+}
+
+async function handleCreateWorld() {
+  const name = newWorldName.trim();
+
+  if (!name) {
+    return;
+  }
+
+  const now = new Date();
+
+  const world: World = {
+    id: crypto.randomUUID(),
+    name,
+    modules: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  try {
+    await worldRepository.saveWorld(world);
+
+    setActiveWorld(world);
+    setNewWorldName('');
+    setShowNewWorldDialog(false);
+  } catch (error) {
+    console.error('Unable to create World:', error);
+  }
+}
 
   function toggleModule( moduleId: string) 
   {
@@ -144,6 +186,17 @@ modulePresenceService.sendSnapshotTo(message.sourceModuleId);
           {fileMenuOpen && (
             <div className="dropdown-menu">
               <button
+  className="dropdown-item"
+  onClick={() => {
+    setFileMenuOpen(false);
+    handleNewWorld();
+  }}
+>
+  New World...
+</button>
+
+<div className="dropdown-separator" />
+              <button
                 className="dropdown-item"
                 onClick={() => {
                   setFileMenuOpen(false);
@@ -159,6 +212,12 @@ modulePresenceService.sendSnapshotTo(message.sourceModuleId);
         <button className="menu-item">
           Settings
         </button>
+
+        {activeWorld && (
+  <div className="active-world-name">
+    {activeWorld.name}.world
+  </div>
+)}
 
         {readyModules.length > 0 && (  <>
           <div className="module-menu-separator" />
@@ -238,6 +297,44 @@ modulePresenceService.sendSnapshotTo(message.sourceModuleId);
     </div>
   )}
 </main>
+
+{showNewWorldDialog && (
+  <div className="dialog-backdrop">
+    <div className="dialog">
+      <h2>New World</h2>
+
+      <input
+        type="text"
+        placeholder="World name"
+        value={newWorldName}
+        onChange={(event) => setNewWorldName(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            void handleCreateWorld();
+          }
+        }}
+        autoFocus
+      />
+
+      <div className="dialog-buttons">
+        <button
+          type="button"
+          onClick={() => setShowNewWorldDialog(false)}
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          disabled={!newWorldName.trim()}
+          onClick={() => void handleCreateWorld()}
+        >
+          Create
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {moduleManagerOpen && (
   <div className="dialog-backdrop">
