@@ -93,6 +93,8 @@ contextBridge.exposeInMainWorld(
     window: {
       setTitle: (title) =>
         ipcRenderer.invoke('settingforge:window:setTitle', title),
+      closeApp: () =>
+        ipcRenderer.invoke('settingforge:window:closeApp'),
     },
   }
 );

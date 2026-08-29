@@ -50,6 +50,7 @@ declare global {
 
     window: {
       setTitle(title: string): Promise<boolean>;
+      closeApp(): Promise<boolean>;
     };
   };
 }

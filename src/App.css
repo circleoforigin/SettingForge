@@ -322,6 +322,14 @@ body,
   padding: 8px 10px;
 }
 
+.dialog-success {
+  color: #cde8cf;
+  background: #293d2b;
+  border: 1px solid #456047;
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+
 .world-load-error {
   position: absolute;
   top: 12px;
@@ -355,4 +363,10 @@ body,
   color: #ffb4b4;
   background: #482b2b;
   border-color: #704040;
+}
+
+.world-unsaved-list {
+  margin: 0;
+  padding-left: 24px;
+  color: #d8d8d8;
 }

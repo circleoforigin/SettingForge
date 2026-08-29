@@ -543,6 +543,11 @@ function registerWindowHandlers() {
     mainWindow.setTitle(title);
     return true;
   });
+
+  ipcMain.handle('settingforge:window:closeApp', () => {
+    setImmediate(() => app.quit());
+    return true;
+  });
 }
 
 /* =========================================================
