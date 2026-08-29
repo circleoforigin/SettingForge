@@ -211,13 +211,7 @@ async function handleCreateWorld() {
 
         <button className="menu-item">
           Settings
-        </button>
-
-        {activeWorld && (
-  <div className="active-world-name">
-    {activeWorld.name}.world
-  </div>
-)}
+        </button>        
 
         {readyModules.length > 0 && (  <>
           <div className="module-menu-separator" />

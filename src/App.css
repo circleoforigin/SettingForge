@@ -297,11 +297,3 @@ body,
   z-index: 0;
 }
 
-.active-world-name {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #b8b8b8;
-  font-size: 13px;
-  white-space: nowrap;
-}

@@ -534,6 +534,17 @@ function registerFileHandlers() {
   );
 }
 
+function registerWindowHandlers() {
+  ipcMain.handle('settingforge:window:setTitle', (_event, title) => {
+    if (!mainWindow) {
+      return false;
+    }
+
+    mainWindow.setTitle(title);
+    return true;
+  });
+}
+
 /* =========================================================
    WINDOW
    ========================================================= */
@@ -605,6 +616,7 @@ app.whenReady().then(
 
     registerStorageHandlers();
     registerFileHandlers();
+    registerWindowHandlers();
     createWindow();
 
     app.on(

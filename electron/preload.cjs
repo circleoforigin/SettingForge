@@ -49,46 +49,50 @@ contextBridge.exposeInMainWorld(
         },
     },
     file: {
-  write(
-    moduleId,
-    folder,
-    fileName,
-    bytes
-  ) {
-    return ipcRenderer.invoke(
-      'settingforge:file:write',
-      moduleId,
-      folder,
-      fileName,
-      bytes
-    );
-  },
+      write(
+        moduleId,
+        folder,
+        fileName,
+        bytes
+        ) {
+      return ipcRenderer.invoke(
+        'settingforge:file:write',
+        moduleId,
+        folder,
+        fileName,
+        bytes
+        );
+      },
 
-  read(
-    moduleId,
-    folder,
-    fileName
-  ) {
-    return ipcRenderer.invoke(
-      'settingforge:file:read',
-      moduleId,
-      folder,
-      fileName
-    );
-  },
+      read(
+        moduleId,
+        folder,
+        fileName
+      ) {
+        return ipcRenderer.invoke(
+          'settingforge:file:read',
+          moduleId,
+          folder,
+          ileName
+        );
+      },
 
-  delete(
-    moduleId,
-    folder,
-    fileName
-  ) {
-    return ipcRenderer.invoke(
-      'settingforge:file:delete',
-      moduleId,
-      folder,
-      fileName
-    );
-  },
-},
+      delete(
+        moduleId,
+        folder,
+        fileName
+      ) {
+        return ipcRenderer.invoke(
+          'settingforge:file:delete',
+          moduleId,
+          folder,
+          fileName
+        );
+      },
+    },
+    window: {
+      setTitle: (title) =>
+        ipcRenderer.invoke('settingforge:window:setTitle', title),
+    },
   }
 );
