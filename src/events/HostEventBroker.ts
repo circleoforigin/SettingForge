@@ -79,8 +79,7 @@ if (
   return;
 }
 
-void this.handleRequest(event, message
-);
+void this.handleRequest(event, message);
     };
 
     window.addEventListener(

@@ -41,13 +41,19 @@ function App() {
           | undefined;
 
       modulePresenceService.markReady(
-        message.sourceModuleId,
-        payload?.capabilities
-      );
+  message.sourceModuleId,
+  payload?.capabilities
+);
 
-      modulePresenceService.sendSnapshotTo(
-        message.sourceModuleId
-      );
+setReadyModuleIds((current) => {
+  if (current.includes(message.sourceModuleId)) {
+    return current;
+  }
+
+  return [...current, message.sourceModuleId];
+});
+
+modulePresenceService.sendSnapshotTo(message.sourceModuleId);
     }
   );
 
@@ -66,7 +72,14 @@ function App() {
     useState(false);
 
   const [enabledModuleIds, setEnabledModuleIds] =
-    useState<string[]>([]);
+    useState<string[]>([]);    
+
+    const [readyModuleIds, setReadyModuleIds] =
+  useState<string[]>([]);
+
+  const readyModules = readyModuleIds
+    .map((id) => moduleRegistry.get(id))
+    .filter((module) => module !== undefined);
 
   const [activeModuleId, setActiveModuleId] =
     useState<string | null>(null);
@@ -83,28 +96,21 @@ function App() {
       ? moduleRegistry.get(activeModuleId)
       : undefined;
 
-  function toggleModule(
-  moduleId: string
-) {
+  function toggleModule( moduleId: string) 
+  {
   setEnabledModuleIds(
     (current) => {
-      if (
-        current.includes(
-          moduleId
-        )
-      ) {
-        modulePresenceService
-          .removeModule(
-            moduleId
+      if (current.includes(moduleId)) 
+      {
+        modulePresenceService.removeModule(moduleId);
+
+        setReadyModuleIds((ready) =>
+          ready.filter((id) => id !== moduleId)
           );
 
-        if (
-          activeModuleId ===
-          moduleId
-        ) {
-          setActiveModuleId(
-            null
-          );
+        if (activeModuleId === moduleId) 
+        {
+          setActiveModuleId(null);
         }
 
         return current.filter(
@@ -113,15 +119,9 @@ function App() {
         );
       }
 
-      modulePresenceService
-        .enableModule(
-          moduleId
-        );
+      modulePresenceService.enableModule(moduleId);
 
-      return [
-        ...current,
-        moduleId,
-      ];
+      return [ ...current,moduleId ];
     }
   );
 }
@@ -160,11 +160,10 @@ function App() {
           Settings
         </button>
 
-        {enabledModules.length > 0 && (
-          <>
-            <div className="module-menu-separator" />
+        {readyModules.length > 0 && (  <>
+          <div className="module-menu-separator" />
 
-            {enabledModules.map((module) => (
+          {readyModules.map((module) => (
               <button
                 key={module.id}
                 className={
