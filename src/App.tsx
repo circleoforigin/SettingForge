@@ -7,6 +7,10 @@ import { registerFileHostServices } from './services/FileHostService';
 import { modulePresenceService } from './modules/ModulePresenceService';
 import type { World } from './models/World';
 import { worldRepository } from './worlds/WorldRepository';
+import {
+  registerActionHostService,
+  sendActionCatalogTo,
+} from './actions/ActionHostService';
 
 interface ModuleProjectStatus {
   projectId?: string;
@@ -44,6 +48,8 @@ interface SaveAllResult {
 
 type CloseTarget = 'world' | 'application';
 
+const TRANSIENT_NOTICE_DURATION_MS = 8000;
+
 function App() {
   useEffect(() => {
   const stopBroker =
@@ -62,6 +68,10 @@ function App() {
         hostEventBroker
       )
     );
+
+  const unregisterActionService = registerActionHostService(
+    hostEventBroker.registerRequestHandler.bind(hostEventBroker)
+  );
 
     const unregisterModuleReady =
   hostEventBroker.subscribe(
@@ -91,11 +101,13 @@ setReadyModuleIds((current) => {
 });
 
 modulePresenceService.sendSnapshotTo(message.sourceModuleId);
+sendActionCatalogTo(message.sourceModuleId);
     }
   );
 
   return () => {
     unregisterModuleReady();
+    unregisterActionService();
     unregisterFileServices();
     unregisterStorageServices();
     stopBroker();
@@ -138,10 +150,30 @@ useEffect(() => {
   const [worldSaveNotice, setWorldSaveNotice] =
     useState<WorldSaveNotice | null>(null);
 
+  useEffect(() => {
+    if (!worldLoadError || showLoadWorldDialog) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setWorldLoadError(null);
+    }, TRANSIENT_NOTICE_DURATION_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showLoadWorldDialog, worldLoadError]);
+
   const [worldDirty, setWorldDirty] = useState(false);
 
   const [showCloseWorldDialog, setShowCloseWorldDialog] =
     useState(false);
+
+  useEffect(() => {
+    if (!worldSaveNotice || showCloseWorldDialog) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setWorldSaveNotice(null);
+    }, TRANSIENT_NOTICE_DURATION_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [showCloseWorldDialog, worldSaveNotice]);
 
   const [closeWorldProjects, setCloseWorldProjects] =
     useState<OpenModuleProject[]>([]);

@@ -9,6 +9,7 @@ import {
 import {
   hostEventBroker,
 } from '../events/HostEventBroker';
+import { actionRegistry } from '../actions/ActionRegistry';
 
 export type ModulePresenceState =
   | 'enabled'
@@ -156,6 +157,8 @@ export class ModulePresenceService {
     this.modules.delete(
       moduleId
     );
+
+    actionRegistry.unregisterModule(moduleId);
 
     hostEventBroker.broadcast(
       'module.removed',

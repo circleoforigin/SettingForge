@@ -73,7 +73,7 @@ contextBridge.exposeInMainWorld(
           'settingforge:file:read',
           moduleId,
           folder,
-          ileName
+          fileName
         );
       },
 

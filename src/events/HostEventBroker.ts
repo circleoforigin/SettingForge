@@ -4,6 +4,7 @@ import type {
   HostRequestMessage,
   HostResponseMessage,
 } from './HostMessage';
+import { actionRegistry } from '../actions/ActionRegistry';
 
 type EventHandler =
   (message: HostEventMessage) => void;
@@ -65,6 +66,11 @@ export class HostEventBroker {
     message
   );
 
+  if (message.sourceModuleId !== 'settingforge' &&
+      actionRegistry.get(message.type)) {
+    this.relayAction(message);
+  }
+
   return;
 }
 
@@ -93,6 +99,13 @@ void this.handleRequest(event, message);
         handleMessage
       );
     };
+  }
+
+  private relayAction(message: HostEventMessage): void {
+    for (const [moduleId, moduleWindow] of this.moduleWindows) {
+      if (moduleId === message.sourceModuleId) continue;
+      moduleWindow.postMessage(message, '*');
+    }
   }
 
   subscribe(
