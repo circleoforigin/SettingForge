@@ -12,6 +12,12 @@ import {
   sendActionCatalogTo,
   sendRetainedActionStateTo,
 } from './actions/ActionHostService';
+import type {
+  ProjectLoadAcceptedPayload,
+  ProjectLoadFailedPayload,
+  ProjectLoadedPayload,
+  ProjectLoadRequest,
+} from '@settingforge/module-sdk';
 
 interface ModuleProjectStatus {
   projectId?: string;
@@ -50,6 +56,75 @@ interface SaveAllResult {
 type CloseTarget = 'world' | 'application';
 
 const TRANSIENT_NOTICE_DURATION_MS = 8000;
+const PROJECT_LOAD_COMPLETION_TIMEOUT_MS = 60000;
+
+interface ProjectLoadCompletionWaiter {
+  promise: Promise<void>;
+  cancel: () => void;
+}
+
+function waitForProjectLoadCompletion(
+  moduleId: string,
+  projectId: string,
+  loadId: string
+): ProjectLoadCompletionWaiter {
+  let cancel: () => void = () => undefined;
+
+  const promise = new Promise<void>((resolve, reject) => {
+    let settled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let unsubscribeLoaded: () => void = () => undefined;
+    let unsubscribeFailed: () => void = () => undefined;
+
+    function matches(payload: ProjectLoadedPayload): boolean {
+      return payload.projectId === projectId && payload.loadId === loadId;
+    }
+
+    function cleanup(): void {
+      if (timeoutId) clearTimeout(timeoutId);
+      unsubscribeLoaded();
+      unsubscribeFailed();
+    }
+
+    function finish(error?: Error): void {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (error) reject(error);
+      else resolve();
+    }
+
+    unsubscribeLoaded = hostEventBroker.subscribe(
+      'project.loaded',
+      (message) => {
+        if (message.sourceModuleId !== moduleId) return;
+        const payload = message.payload as ProjectLoadedPayload;
+        if (!payload || !matches(payload)) return;
+        finish();
+      }
+    );
+
+    unsubscribeFailed = hostEventBroker.subscribe(
+      'project.loadFailed',
+      (message) => {
+        if (message.sourceModuleId !== moduleId) return;
+        const payload = message.payload as ProjectLoadFailedPayload;
+        if (!payload || !matches(payload)) return;
+        finish(new Error(payload.error || 'Project restoration failed.'));
+      }
+    );
+
+    timeoutId = setTimeout(() => {
+      finish(new Error(
+        `Module "${moduleId}" did not finish loading its Project.`
+      ));
+    }, PROJECT_LOAD_COMPLETION_TIMEOUT_MS);
+
+    cancel = () => finish();
+  });
+
+  return { promise, cancel };
+}
 
 function App() {
   useEffect(() => {
@@ -152,6 +227,8 @@ useEffect(() => {
 
   const worldLoadGenerationRef = useRef(0);
   const worldRestoreFailuresRef = useRef(new Map<string, string>());
+  const worldRestoreCompletionCancelsRef =
+    useRef(new Set<() => void>());
 
   const [worldSaving, setWorldSaving] = useState(false);
 
@@ -391,17 +468,17 @@ function waitForModuleReady(
     }
 
     unsubscribe = hostEventBroker.subscribe(
-      'module.ready',
-      (message) => {
-        if (message.sourceModuleId !== moduleId) return;
-        const state = modulePresenceService.get(moduleId)?.state;
-        console.info(
-          `[ModuleReady] received ${moduleId}; presence=${state}`
-        );
-        if (state !== 'ready') return;
-        finishReady();
-      }
+  'module.ready',
+  (message) => {
+    if (message.sourceModuleId !== moduleId) return;
+
+    console.info(
+      `[ModuleReady] received ${moduleId}`
     );
+
+    finishReady();
+  }
+);
 
     if (modulePresenceService.get(moduleId)?.state === 'ready') {
       finishReady();
@@ -465,12 +542,50 @@ async function restoreWorldModule(
       enableRequiredModule(moduleId);
     });
     if (generation !== worldLoadGenerationRef.current) return;
-    console.info(`[WorldRestore] sending project.load ${moduleId}`);
-    await hostEventBroker.requestModule(moduleId, 'project.load', {
+    const loadId = crypto.randomUUID();
+    const completion = waitForProjectLoadCompletion(
+      moduleId,
       projectId,
-    });
-    if (generation !== worldLoadGenerationRef.current) return;
-    console.info(`[WorldRestore] project.load complete ${moduleId}`);
+      loadId
+    );
+    const completionResult = completion.promise.then(
+      () => ({ error: undefined }),
+      (error: unknown) => ({ error })
+    );
+    worldRestoreCompletionCancelsRef.current.add(completion.cancel);
+
+    try {
+      console.info(
+        `[WorldRestore] sending project.load ${moduleId} loadId=${loadId}`
+      );
+      const request: ProjectLoadRequest = { projectId, loadId };
+      const accepted =
+        await hostEventBroker.requestModule<ProjectLoadAcceptedPayload>(
+          moduleId,
+          'project.load',
+          request
+        );
+      if (generation !== worldLoadGenerationRef.current) return;
+      if (!accepted?.accepted || accepted.projectId !== projectId ||
+          accepted.loadId !== loadId) {
+        throw new Error(
+          `Module "${moduleId}" returned an invalid load acceptance.`
+        );
+      }
+      console.info(
+        `[WorldRestore] project.load accepted ${moduleId} loadId=${loadId}`
+      );
+
+      const result = await completionResult;
+      if (generation !== worldLoadGenerationRef.current) return;
+      if (result.error) throw result.error;
+      console.info(
+        `[WorldRestore] project.loaded ${moduleId} loadId=${loadId}`
+      );
+    } finally {
+      completion.cancel();
+      worldRestoreCompletionCancelsRef.current.delete(completion.cancel);
+    }
   } catch (error) {
     const message = error instanceof Error
       ? error.message
@@ -497,6 +612,10 @@ async function restoreWorldModulesSerially(
 }
 
 async function handleLoadWorld(worldId: string) {
+  for (const cancel of worldRestoreCompletionCancelsRef.current) {
+    cancel();
+  }
+  worldRestoreCompletionCancelsRef.current.clear();
   const generation = ++worldLoadGenerationRef.current;
   setLoadingWorldId(worldId);
   setWorldLoadError(null);
