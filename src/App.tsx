@@ -387,7 +387,7 @@ function handleCreateWorld() {
   };
 
   worldLoadGenerationRef.current += 1;
-  pendingWorldProjectsRef.current.clear();
+  loadQueueRef.current?.clear();
   setActiveWorld(world);
   setWorldDirty(true);
   setWorldSaveNotice(null);
@@ -458,7 +458,7 @@ async function handleDeleteWorld() {
 
     if (activeWorld?.id === world.id) {
       worldLoadGenerationRef.current += 1;
-      pendingWorldProjectsRef.current.clear();
+      loadQueueRef.current?.clear();
       setActiveWorld(null);
       setWorldDirty(false);
       setShowCloseWorldDialog(false);
@@ -497,7 +497,7 @@ function enableRequiredModule(moduleId: string): void {
   const presence = modulePresenceService.get(moduleId);
 
   if (!presence || presence.state === 'stopped') {
-    console.info(`[WorldRestore] enabling ${moduleId}`);
+    console.info(`[LoadQueue] enabling module ${moduleId}`);
     modulePresenceService.enableModule(moduleId);
   }
 
@@ -509,6 +509,7 @@ function enableRequiredModule(moduleId: string): void {
 
 async function handleLoadWorld(worldId: string) {
   const generation = ++worldLoadGenerationRef.current;
+  loadQueueRef.current?.clear();
   setLoadingWorldId(worldId);
   setWorldLoadError(null);
 
@@ -884,7 +885,7 @@ async function finishClose(target: CloseTarget): Promise<void> {
 
   setActiveWorld(null);
   worldLoadGenerationRef.current += 1;
-  pendingWorldProjectsRef.current.clear();
+  loadQueueRef.current?.clear();
   setWorldDirty(false);
   setWorldSaveNotice({
     kind: 'success',
