@@ -37,6 +37,12 @@ export class ModulePresenceService {
   enableModule(
     moduleId: string
   ): ModulePresence {
+    const existing = this.modules.get(moduleId);
+
+    if (existing && existing.state !== 'stopped') {
+      return existing;
+    }
+
     const definition =
       this.requireModule(
         moduleId

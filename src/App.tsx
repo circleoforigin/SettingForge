@@ -88,10 +88,13 @@ function App() {
             }
           | undefined;
 
-      modulePresenceService.markReady(
-  message.sourceModuleId,
-  payload?.capabilities
-);
+      const presence = modulePresenceService.markReady(
+        message.sourceModuleId,
+        payload?.capabilities
+      );
+      console.info(
+        `[ModuleReady] presence=${presence.id}:${presence.state}`
+      );
 
 setReadyModuleIds((current) => {
   if (current.includes(message.sourceModuleId)) {
@@ -360,9 +363,11 @@ function waitForModuleReady(
   startModule: () => void
 ): Promise<void> {
   if (modulePresenceService.get(moduleId)?.state === 'ready') {
-    startModule();
+    console.info(`[WorldRestore] ready ${moduleId}`);
     return Promise.resolve();
   }
+
+  console.info(`[WorldRestore] waiting for ${moduleId}`);
 
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -389,17 +394,17 @@ function waitForModuleReady(
       'module.ready',
       (message) => {
         if (message.sourceModuleId !== moduleId) return;
+        const state = modulePresenceService.get(moduleId)?.state;
+        console.info(
+          `[ModuleReady] received ${moduleId}; presence=${state}`
+        );
+        if (state !== 'ready') return;
         finishReady();
       }
     );
 
     if (modulePresenceService.get(moduleId)?.state === 'ready') {
-      try {
-        startModule();
-        finishReady();
-      } catch (error) {
-        fail(error);
-      }
+      finishReady();
       return;
     }
 
@@ -423,8 +428,10 @@ function waitForModuleReady(
 }
 
 function enableRequiredModule(moduleId: string): void {
-  if (modulePresenceService.get(moduleId)?.state === 'stopped' ||
-      !modulePresenceService.get(moduleId)) {
+  const presence = modulePresenceService.get(moduleId);
+
+  if (!presence || presence.state === 'stopped') {
+    console.info(`[WorldRestore] enabling ${moduleId}`);
     modulePresenceService.enableModule(moduleId);
   }
 
@@ -458,10 +465,12 @@ async function restoreWorldModule(
       enableRequiredModule(moduleId);
     });
     if (generation !== worldLoadGenerationRef.current) return;
+    console.info(`[WorldRestore] sending project.load ${moduleId}`);
     await hostEventBroker.requestModule(moduleId, 'project.load', {
       projectId,
     });
     if (generation !== worldLoadGenerationRef.current) return;
+    console.info(`[WorldRestore] project.load complete ${moduleId}`);
   } catch (error) {
     const message = error instanceof Error
       ? error.message
