@@ -1,5 +1,6 @@
 import type {
   ActionDefinition,
+  ActionDelivery,
   ActionFieldDefinition,
   ActionFieldType,
 } from '@settingforge/module-sdk';
@@ -7,6 +8,7 @@ import type { HostRequestMessage } from '../events/HostMessage';
 import { hostEventBroker } from '../events/HostEventBroker';
 import { moduleRegistry } from '../modules/registry';
 import { actionRegistry } from './ActionRegistry';
+import { actionStateStore } from './ActionStateStore';
 
 type RegisterRequestHandler = (
   type: string,
@@ -17,6 +19,11 @@ const ACTION_FIELD_TYPES = new Set<ActionFieldType>([
   'string',
   'number',
   'boolean',
+]);
+
+const ACTION_DELIVERIES = new Set<ActionDelivery>([
+  'transient',
+  'state',
 ]);
 
 function readActionFields(
@@ -90,12 +97,17 @@ function readActionDefinitions(payload: unknown): ActionDefinition[] {
         typeof action.description !== 'string') {
       throw new Error(`Action "${action.id}" has an invalid description.`);
     }
+    if (action.delivery !== undefined &&
+        !ACTION_DELIVERIES.has(action.delivery)) {
+      throw new Error(`Action "${action.id}" has an invalid delivery.`);
+    }
 
     return {
       id: action.id,
       label: action.label,
       description: action.description,
       fields: readActionFields(action.id, action.fields),
+      delivery: action.delivery,
     };
   });
 }
@@ -104,6 +116,12 @@ export function sendActionCatalogTo(moduleId: string): boolean {
   return hostEventBroker.sendToModule(moduleId, 'actions.updated', {
     actions: actionRegistry.getAll(),
   });
+}
+
+export function sendRetainedActionStateTo(moduleId: string): void {
+  for (const message of actionStateStore.getForModule(moduleId)) {
+    hostEventBroker.sendEventToModule(moduleId, message);
+  }
 }
 
 export function registerActionHostService(
@@ -128,6 +146,7 @@ export function registerActionHostService(
   );
 
   const unsubscribe = actionRegistry.subscribe((actions) => {
+    actionStateStore.synchronize(actions);
     hostEventBroker.broadcast('actions.updated', { actions });
   });
 

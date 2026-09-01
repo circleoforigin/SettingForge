@@ -10,6 +10,7 @@ import { worldRepository } from './worlds/WorldRepository';
 import {
   registerActionHostService,
   sendActionCatalogTo,
+  sendRetainedActionStateTo,
 } from './actions/ActionHostService';
 
 interface ModuleProjectStatus {
@@ -102,6 +103,7 @@ setReadyModuleIds((current) => {
 
 modulePresenceService.sendSnapshotTo(message.sourceModuleId);
 sendActionCatalogTo(message.sourceModuleId);
+sendRetainedActionStateTo(message.sourceModuleId);
     }
   );
 

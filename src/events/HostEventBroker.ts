@@ -5,6 +5,7 @@ import type {
   HostResponseMessage,
 } from './HostMessage';
 import { actionRegistry } from '../actions/ActionRegistry';
+import { actionStateStore } from '../actions/ActionStateStore';
 
 type EventHandler =
   (message: HostEventMessage) => void;
@@ -102,10 +103,24 @@ void this.handleRequest(event, message);
   }
 
   private relayAction(message: HostEventMessage): void {
+    const action = actionRegistry.get(message.type);
+    if (action?.delivery === 'state') actionStateStore.retain(message);
+
     for (const [moduleId, moduleWindow] of this.moduleWindows) {
       if (moduleId === message.sourceModuleId) continue;
       moduleWindow.postMessage(message, '*');
     }
+  }
+
+  sendEventToModule(
+    moduleId: string,
+    message: HostEventMessage
+  ): boolean {
+    const moduleWindow = this.moduleWindows.get(moduleId);
+    if (!moduleWindow) return false;
+
+    moduleWindow.postMessage(message, '*');
+    return true;
   }
 
   subscribe(
