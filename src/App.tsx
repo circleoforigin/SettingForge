@@ -53,80 +53,21 @@ interface SaveAllResult {
   manifestError?: string;
 }
 
+interface PendingWorldProjectAssignment {
+  projectId: string;
+  loadId: string;
+  generation: number;
+  sent: boolean;
+}
+
 type CloseTarget = 'world' | 'application';
 
 const TRANSIENT_NOTICE_DURATION_MS = 8000;
-const PROJECT_LOAD_COMPLETION_TIMEOUT_MS = 60000;
-
-interface ProjectLoadCompletionWaiter {
-  promise: Promise<void>;
-  cancel: () => void;
-}
-
-function waitForProjectLoadCompletion(
-  moduleId: string,
-  projectId: string,
-  loadId: string
-): ProjectLoadCompletionWaiter {
-  let cancel: () => void = () => undefined;
-
-  const promise = new Promise<void>((resolve, reject) => {
-    let settled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    let unsubscribeLoaded: () => void = () => undefined;
-    let unsubscribeFailed: () => void = () => undefined;
-
-    function matches(payload: ProjectLoadedPayload): boolean {
-      return payload.projectId === projectId && payload.loadId === loadId;
-    }
-
-    function cleanup(): void {
-      if (timeoutId) clearTimeout(timeoutId);
-      unsubscribeLoaded();
-      unsubscribeFailed();
-    }
-
-    function finish(error?: Error): void {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      if (error) reject(error);
-      else resolve();
-    }
-
-    unsubscribeLoaded = hostEventBroker.subscribe(
-      'project.loaded',
-      (message) => {
-        if (message.sourceModuleId !== moduleId) return;
-        const payload = message.payload as ProjectLoadedPayload;
-        if (!payload || !matches(payload)) return;
-        finish();
-      }
-    );
-
-    unsubscribeFailed = hostEventBroker.subscribe(
-      'project.loadFailed',
-      (message) => {
-        if (message.sourceModuleId !== moduleId) return;
-        const payload = message.payload as ProjectLoadFailedPayload;
-        if (!payload || !matches(payload)) return;
-        finish(new Error(payload.error || 'Project restoration failed.'));
-      }
-    );
-
-    timeoutId = setTimeout(() => {
-      finish(new Error(
-        `Module "${moduleId}" did not finish loading its Project.`
-      ));
-    }, PROJECT_LOAD_COMPLETION_TIMEOUT_MS);
-
-    cancel = () => finish();
-  });
-
-  return { promise, cancel };
-}
 
 function App() {
+  const pendingWorldProjectsRef =
+    useRef(new Map<string, PendingWorldProjectAssignment>());
+
   useEffect(() => {
   const stopBroker =
     hostEventBroker.start();
@@ -182,10 +123,50 @@ setReadyModuleIds((current) => {
 modulePresenceService.sendSnapshotTo(message.sourceModuleId);
 sendActionCatalogTo(message.sourceModuleId);
 sendRetainedActionStateTo(message.sourceModuleId);
+dispatchPendingWorldProject(message.sourceModuleId);
+    }
+  );
+
+  const unregisterProjectLoaded = hostEventBroker.subscribe(
+    'project.loaded',
+    (message) => {
+      const assignment = pendingWorldProjectsRef.current.get(
+        message.sourceModuleId
+      );
+      const payload = message.payload as ProjectLoadedPayload;
+      if (!assignment || !payload) return;
+      if (assignment.generation !== worldLoadGenerationRef.current) return;
+      if (payload.projectId !== assignment.projectId ||
+          payload.loadId !== assignment.loadId) return;
+      console.info(
+        `[WorldRestore] project.loaded ${message.sourceModuleId} ` +
+        `loadId=${payload.loadId}`
+      );
+    }
+  );
+
+  const unregisterProjectLoadFailed = hostEventBroker.subscribe(
+    'project.loadFailed',
+    (message) => {
+      const assignment = pendingWorldProjectsRef.current.get(
+        message.sourceModuleId
+      );
+      const payload = message.payload as ProjectLoadFailedPayload;
+      if (!assignment || !payload) return;
+      if (assignment.generation !== worldLoadGenerationRef.current) return;
+      if (payload.projectId !== assignment.projectId ||
+          payload.loadId !== assignment.loadId) return;
+      reportWorldRestoreFailure(
+        assignment.generation,
+        message.sourceModuleId,
+        payload.error || 'Project restoration failed.'
+      );
     }
   );
 
   return () => {
+    unregisterProjectLoadFailed();
+    unregisterProjectLoaded();
     unregisterModuleReady();
     unregisterActionService();
     unregisterFileServices();
@@ -227,8 +208,6 @@ useEffect(() => {
 
   const worldLoadGenerationRef = useRef(0);
   const worldRestoreFailuresRef = useRef(new Map<string, string>());
-  const worldRestoreCompletionCancelsRef =
-    useRef(new Set<() => void>());
 
   const [worldSaving, setWorldSaving] = useState(false);
 
@@ -332,6 +311,8 @@ function handleCreateWorld() {
     updatedAt: now,
   };
 
+  worldLoadGenerationRef.current += 1;
+  pendingWorldProjectsRef.current.clear();
   setActiveWorld(world);
   setWorldDirty(true);
   setWorldSaveNotice(null);
@@ -401,6 +382,8 @@ async function handleDeleteWorld() {
     }
 
     if (activeWorld?.id === world.id) {
+      worldLoadGenerationRef.current += 1;
+      pendingWorldProjectsRef.current.clear();
       setActiveWorld(null);
       setWorldDirty(false);
       setShowCloseWorldDialog(false);
@@ -435,75 +418,6 @@ async function handleDeleteWorld() {
   }
 }
 
-function waitForModuleReady(
-  moduleId: string,
-  startModule: () => void
-): Promise<void> {
-  if (modulePresenceService.get(moduleId)?.state === 'ready') {
-    console.info(`[WorldRestore] ready ${moduleId}`);
-    return Promise.resolve();
-  }
-
-  console.info(`[WorldRestore] waiting for ${moduleId}`);
-
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    let unsubscribe: () => void = () => undefined;
-
-    function finishReady() {
-      if (settled) return;
-      settled = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      unsubscribe();
-      resolve();
-    }
-
-    function fail(error: unknown) {
-      if (settled) return;
-      settled = true;
-      if (timeoutId) clearTimeout(timeoutId);
-      unsubscribe();
-      reject(error);
-    }
-
-    unsubscribe = hostEventBroker.subscribe(
-  'module.ready',
-  (message) => {
-    if (message.sourceModuleId !== moduleId) return;
-
-    console.info(
-      `[ModuleReady] received ${moduleId}`
-    );
-
-    finishReady();
-  }
-);
-
-    if (modulePresenceService.get(moduleId)?.state === 'ready') {
-      finishReady();
-      return;
-    }
-
-    timeoutId = setTimeout(() => {
-      fail(new Error(
-        `Module "${moduleId}" did not become ready.`
-      ));
-    }, 15000);
-
-    try {
-      startModule();
-    } catch (error) {
-      fail(error);
-      return;
-    }
-
-    if (modulePresenceService.get(moduleId)?.state === 'ready') {
-      finishReady();
-    }
-  });
-}
-
 function enableRequiredModule(moduleId: string): void {
   const presence = modulePresenceService.get(moduleId);
 
@@ -532,90 +446,56 @@ function reportWorldRestoreFailure(
   );
 }
 
-async function restoreWorldModule(
-  moduleId: string,
-  projectId: string,
-  generation: number
-): Promise<void> {
-  try {
-    await waitForModuleReady(moduleId, () => {
-      enableRequiredModule(moduleId);
-    });
-    if (generation !== worldLoadGenerationRef.current) return;
-    const loadId = crypto.randomUUID();
-    const completion = waitForProjectLoadCompletion(
-      moduleId,
-      projectId,
-      loadId
-    );
-    const completionResult = completion.promise.then(
-      () => ({ error: undefined }),
-      (error: unknown) => ({ error })
-    );
-    worldRestoreCompletionCancelsRef.current.add(completion.cancel);
+function dispatchPendingWorldProject(moduleId: string): void {
+  const assignment = pendingWorldProjectsRef.current.get(moduleId);
+  if (!assignment || assignment.sent) return;
+  if (assignment.generation !== worldLoadGenerationRef.current) return;
 
-    try {
-      console.info(
-        `[WorldRestore] sending project.load ${moduleId} loadId=${loadId}`
-      );
-      const request: ProjectLoadRequest = { projectId, loadId };
-      const accepted =
-        await hostEventBroker.requestModule<ProjectLoadAcceptedPayload>(
-          moduleId,
-          'project.load',
-          request
-        );
-      if (generation !== worldLoadGenerationRef.current) return;
-      if (!accepted?.accepted || accepted.projectId !== projectId ||
-          accepted.loadId !== loadId) {
+  assignment.sent = true;
+  const request: ProjectLoadRequest = {
+    projectId: assignment.projectId,
+    loadId: assignment.loadId,
+  };
+  console.info(
+    `[WorldRestore] dispatching project.load ${moduleId} ` +
+    `loadId=${assignment.loadId}`
+  );
+
+  void hostEventBroker
+    .requestModule<ProjectLoadAcceptedPayload>(
+      moduleId,
+      'project.load',
+      request
+    )
+    .then((accepted) => {
+      if (assignment.generation !== worldLoadGenerationRef.current) return;
+      if (!accepted?.accepted ||
+          accepted.projectId !== assignment.projectId ||
+          accepted.loadId !== assignment.loadId) {
         throw new Error(
           `Module "${moduleId}" returned an invalid load acceptance.`
         );
       }
       console.info(
-        `[WorldRestore] project.load accepted ${moduleId} loadId=${loadId}`
+        `[WorldRestore] project.load accepted ${moduleId} ` +
+        `loadId=${assignment.loadId}`
       );
-
-      const result = await completionResult;
-      if (generation !== worldLoadGenerationRef.current) return;
-      if (result.error) throw result.error;
-      console.info(
-        `[WorldRestore] project.loaded ${moduleId} loadId=${loadId}`
+    })
+    .catch((error: unknown) => {
+      if (assignment.generation !== worldLoadGenerationRef.current) return;
+      const message = error instanceof Error
+        ? error.message
+        : 'Project load failed.';
+      reportWorldRestoreFailure(
+        assignment.generation,
+        moduleId,
+        message
       );
-    } finally {
-      completion.cancel();
-      worldRestoreCompletionCancelsRef.current.delete(completion.cancel);
-    }
-  } catch (error) {
-    const message = error instanceof Error
-      ? error.message
-      : 'Project load failed.';
-    reportWorldRestoreFailure(generation, moduleId, message);
-  }
-}
-
-async function restoreWorldModulesSerially(
-  references: World['modules'],
-  generation: number
-): Promise<void> {
-  for (const reference of references) {
-    if (generation !== worldLoadGenerationRef.current) return;
-
-    await restoreWorldModule(
-      reference.moduleId,
-      reference.projectId,
-      generation
-    );
-
-    if (generation !== worldLoadGenerationRef.current) return;
-  }
+    });
 }
 
 async function handleLoadWorld(worldId: string) {
-  for (const cancel of worldRestoreCompletionCancelsRef.current) {
-    cancel();
-  }
-  worldRestoreCompletionCancelsRef.current.clear();
+  pendingWorldProjectsRef.current.clear();
   const generation = ++worldLoadGenerationRef.current;
   setLoadingWorldId(worldId);
   setWorldLoadError(null);
@@ -639,6 +519,20 @@ async function handleLoadWorld(worldId: string) {
     const knownModules = world.modules.filter(
       (reference) => moduleRegistry.get(reference.moduleId)
     );
+    pendingWorldProjectsRef.current = new Map(
+      knownModules.map((reference) => [
+        reference.moduleId,
+        {
+          projectId: reference.projectId,
+          loadId: crypto.randomUUID(),
+          generation,
+          sent: false,
+        },
+      ])
+    );
+    for (const reference of knownModules) {
+      enableRequiredModule(reference.moduleId);
+    }
     setActiveModuleId(knownModules[0]?.moduleId ?? null);
     setLoadingWorldId(null);
 
@@ -650,7 +544,12 @@ async function handleLoadWorld(worldId: string) {
       );
     }
 
-    void restoreWorldModulesSerially(knownModules, generation);
+    for (const reference of knownModules) {
+      if (modulePresenceService.get(reference.moduleId)?.state !== 'ready') {
+        continue;
+      }
+      dispatchPendingWorldProject(reference.moduleId);
+    }
   } catch (error) {
     if (generation !== worldLoadGenerationRef.current) return;
     const message = error instanceof Error
@@ -954,6 +853,8 @@ async function finishClose(target: CloseTarget): Promise<void> {
   }
 
   setActiveWorld(null);
+  worldLoadGenerationRef.current += 1;
+  pendingWorldProjectsRef.current.clear();
   setWorldDirty(false);
   setWorldSaveNotice({
     kind: 'success',
