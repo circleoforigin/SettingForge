@@ -1,6 +1,6 @@
 import './App.css';
 import { moduleRegistry } from './modules/registry';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { hostEventBroker } from './events/HostEventBroker';
 import { registerStorageHostServices} from './services/StorageHostService';
 import { registerFileHostServices } from './services/FileHostService';
@@ -146,6 +146,9 @@ useEffect(() => {
 
   const [worldLoadError, setWorldLoadError] =
     useState<string | null>(null);
+
+  const worldLoadGenerationRef = useRef(0);
+  const worldRestoreFailuresRef = useRef(new Map<string, string>());
 
   const [worldSaving, setWorldSaving] = useState(false);
 
@@ -352,28 +355,70 @@ async function handleDeleteWorld() {
   }
 }
 
-function waitForModuleReady(moduleId: string): Promise<void> {
+function waitForModuleReady(
+  moduleId: string,
+  startModule: () => void
+): Promise<void> {
   if (modulePresenceService.get(moduleId)?.state === 'ready') {
+    startModule();
     return Promise.resolve();
   }
 
   return new Promise((resolve, reject) => {
-    const unsubscribe = hostEventBroker.subscribe(
+    let settled = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let unsubscribe: () => void = () => undefined;
+
+    function finishReady() {
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      unsubscribe();
+      resolve();
+    }
+
+    function fail(error: unknown) {
+      if (settled) return;
+      settled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      unsubscribe();
+      reject(error);
+    }
+
+    unsubscribe = hostEventBroker.subscribe(
       'module.ready',
       (message) => {
         if (message.sourceModuleId !== moduleId) return;
-
-        clearTimeout(timeoutId);
-        unsubscribe();
-        resolve();
+        finishReady();
       }
     );
-    const timeoutId = setTimeout(() => {
-      unsubscribe();
-      reject(new Error(
+
+    if (modulePresenceService.get(moduleId)?.state === 'ready') {
+      try {
+        startModule();
+        finishReady();
+      } catch (error) {
+        fail(error);
+      }
+      return;
+    }
+
+    timeoutId = setTimeout(() => {
+      fail(new Error(
         `Module "${moduleId}" did not become ready.`
       ));
     }, 15000);
+
+    try {
+      startModule();
+    } catch (error) {
+      fail(error);
+      return;
+    }
+
+    if (modulePresenceService.get(moduleId)?.state === 'ready') {
+      finishReady();
+    }
   });
 }
 
@@ -389,20 +434,46 @@ function enableRequiredModule(moduleId: string): void {
   });
 }
 
-async function loadWorldModule(
-  moduleId: string, projectId: string
+function reportWorldRestoreFailure(
+  generation: number,
+  moduleId: string,
+  message: string
+): void {
+  if (generation !== worldLoadGenerationRef.current) return;
+  const failure = `${moduleId}: ${message}`;
+  console.error('World module restore failed:', failure);
+  worldRestoreFailuresRef.current.set(moduleId, failure);
+  setWorldLoadError(
+    Array.from(worldRestoreFailuresRef.current.values()).join(' ')
+  );
+}
+
+async function restoreWorldModule(
+  moduleId: string,
+  projectId: string,
+  generation: number
 ): Promise<void> {
-  const ready = waitForModuleReady(moduleId);
-  enableRequiredModule(moduleId);
-  await ready;
-  await hostEventBroker.requestModule(moduleId, 'project.load', {
-    projectId,
-  });
+  try {
+    await waitForModuleReady(moduleId, () => {
+      enableRequiredModule(moduleId);
+    });
+    if (generation !== worldLoadGenerationRef.current) return;
+    await hostEventBroker.requestModule(moduleId, 'project.load', {
+      projectId,
+    });
+  } catch (error) {
+    const message = error instanceof Error
+      ? error.message
+      : 'Project load failed.';
+    reportWorldRestoreFailure(generation, moduleId, message);
+  }
 }
 
 async function handleLoadWorld(worldId: string) {
+  const generation = ++worldLoadGenerationRef.current;
   setLoadingWorldId(worldId);
   setWorldLoadError(null);
+  worldRestoreFailuresRef.current = new Map();
 
   try {
     const world = await worldRepository.loadWorld(worldId);
@@ -413,6 +484,7 @@ async function handleLoadWorld(worldId: string) {
 
     setActiveWorld(world);
     setWorldDirty(false);
+    setShowLoadWorldDialog(false);
 
     const missingModules = world.modules.filter(
       (reference) => !moduleRegistry.get(reference.moduleId)
@@ -420,37 +492,29 @@ async function handleLoadWorld(worldId: string) {
     const knownModules = world.modules.filter(
       (reference) => moduleRegistry.get(reference.moduleId)
     );
-    const results = await Promise.allSettled(
-      knownModules.map((reference) => loadWorldModule(
-        reference.moduleId,
-        reference.projectId
-      ))
-    );
-    const failures = results.flatMap((result, index) => {
-      if (result.status === 'fulfilled') return [];
-
-      const moduleId = knownModules[index].moduleId;
-      const message = result.reason instanceof Error
-        ? result.reason.message
-        : 'Project load failed.';
-
-      return [`${moduleId}: ${message}`];
-    });
+    for (const reference of knownModules) {
+      enableRequiredModule(reference.moduleId);
+    }
+    setActiveModuleId(knownModules[0]?.moduleId ?? null);
+    setLoadingWorldId(null);
 
     for (const reference of missingModules) {
-      failures.push(
-        `${reference.moduleId}: Module is not registered.`
+      reportWorldRestoreFailure(
+        generation,
+        reference.moduleId,
+        'Module is not registered.'
       );
     }
 
-    if (failures.length > 0) {
-      const message = failures.join(' ');
-      console.error('World loaded with module errors:', message);
-      setWorldLoadError(message);
+    for (const reference of knownModules) {
+      void restoreWorldModule(
+        reference.moduleId,
+        reference.projectId,
+        generation
+      );
     }
-
-    setShowLoadWorldDialog(false);
   } catch (error) {
+    if (generation !== worldLoadGenerationRef.current) return;
     const message = error instanceof Error
       ? error.message
       : 'Unable to load the selected World.';
@@ -458,7 +522,9 @@ async function handleLoadWorld(worldId: string) {
     console.error('Unable to load World:', error);
     setWorldLoadError(message);
   } finally {
-    setLoadingWorldId(null);
+    if (generation === worldLoadGenerationRef.current) {
+      setLoadingWorldId(null);
+    }
   }
 }
 
