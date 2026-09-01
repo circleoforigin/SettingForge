@@ -562,8 +562,6 @@ setActiveModuleId(
   knownModules[0]?.moduleId ?? null
 );
 
-setLoadingWorldId(null);
-
 for (const reference of missingModules) {
   const message =
     `${reference.moduleId}: Module is not registered.`;
