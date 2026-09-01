@@ -227,6 +227,35 @@ sendToModule(
   return true;
 }
 
+sendRequestToModule(
+  moduleId: string,
+  type: string,
+  payload?: unknown
+): boolean {
+  const moduleWindow =
+    this.moduleWindows.get(moduleId);
+
+  if (!moduleWindow) {
+    return false;
+  }
+
+  const message: HostRequestMessage = {
+    kind: 'request',
+    id: crypto.randomUUID(),
+    sourceModuleId: 'settingforge',
+    type,
+    timestamp: Date.now(),
+    payload,
+  };
+
+  moduleWindow.postMessage(
+    message,
+    '*'
+  );
+
+  return true;
+}
+
 requestModule<T>(
   moduleId: string,
   type: string,

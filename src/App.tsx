@@ -13,11 +13,13 @@ import {
   sendRetainedActionStateTo,
 } from './actions/ActionHostService';
 import type {
-  ProjectLoadAcceptedPayload,
   ProjectLoadFailedPayload,
   ProjectLoadedPayload,
-  ProjectLoadRequest,
 } from '@settingforge/module-sdk';
+import {
+  LoadQueueService,
+  type LoadQueueItem,
+} from './loading/LoadQueueService';
 
 interface ModuleProjectStatus {
   projectId?: string;
@@ -53,20 +55,14 @@ interface SaveAllResult {
   manifestError?: string;
 }
 
-interface PendingWorldProjectAssignment {
-  projectId: string;
-  loadId: string;
-  generation: number;
-  sent: boolean;
-}
-
 type CloseTarget = 'world' | 'application';
 
 const TRANSIENT_NOTICE_DURATION_MS = 8000;
 
-function App() {
-  const pendingWorldProjectsRef =
-    useRef(new Map<string, PendingWorldProjectAssignment>());
+function App() 
+{
+  const loadQueueRef =
+    useRef<LoadQueueService | null>(null);
 
   useEffect(() => {
   const stopBroker =
@@ -123,43 +119,54 @@ setReadyModuleIds((current) => {
 modulePresenceService.sendSnapshotTo(message.sourceModuleId);
 sendActionCatalogTo(message.sourceModuleId);
 sendRetainedActionStateTo(message.sourceModuleId);
-dispatchPendingWorldProject(message.sourceModuleId);
+loadQueueRef.current?.completeModule(
+  message.sourceModuleId
+);
     }
   );
 
-  const unregisterProjectLoaded = hostEventBroker.subscribe(
+  const unregisterProjectLoaded =
+  hostEventBroker.subscribe(
     'project.loaded',
     (message) => {
-      const assignment = pendingWorldProjectsRef.current.get(
-        message.sourceModuleId
-      );
-      const payload = message.payload as ProjectLoadedPayload;
-      if (!assignment || !payload) return;
-      if (assignment.generation !== worldLoadGenerationRef.current) return;
-      if (payload.projectId !== assignment.projectId ||
-          payload.loadId !== assignment.loadId) return;
+      const payload =
+        message.payload as ProjectLoadedPayload;
+
+      if (!payload) return;
+
       console.info(
-        `[WorldRestore] project.loaded ${message.sourceModuleId} ` +
+        `[LoadQueue] project.loaded ${message.sourceModuleId} ` +
         `loadId=${payload.loadId}`
+      );
+
+      loadQueueRef.current?.completeProject(
+        message.sourceModuleId,
+        payload.projectId,
+        payload.loadId
       );
     }
   );
 
-  const unregisterProjectLoadFailed = hostEventBroker.subscribe(
+  const unregisterProjectLoadFailed =
+  hostEventBroker.subscribe(
     'project.loadFailed',
     (message) => {
-      const assignment = pendingWorldProjectsRef.current.get(
-        message.sourceModuleId
+      const payload =
+        message.payload as ProjectLoadFailedPayload;
+
+      if (!payload) return;
+
+      console.error(
+        `[LoadQueue] project.loadFailed ${message.sourceModuleId} ` +
+        `loadId=${payload.loadId}: ${payload.error}`
       );
-      const payload = message.payload as ProjectLoadFailedPayload;
-      if (!assignment || !payload) return;
-      if (assignment.generation !== worldLoadGenerationRef.current) return;
-      if (payload.projectId !== assignment.projectId ||
-          payload.loadId !== assignment.loadId) return;
-      reportWorldRestoreFailure(
-        assignment.generation,
+
+      loadQueueRef.current?.failProject(
         message.sourceModuleId,
-        payload.error || 'Project restoration failed.'
+        payload.projectId,
+        payload.loadId,
+        payload.error ||
+          'Project restoration failed.'
       );
     }
   );
@@ -207,15 +214,83 @@ useEffect(() => {
     useState<string | null>(null);
 
   const worldLoadGenerationRef = useRef(0);
-  const worldRestoreFailuresRef = useRef(new Map<string, string>());
 
-  const [worldSaving, setWorldSaving] = useState(false);
+const [worldSaving, setWorldSaving] = useState(false);
 
-  const [worldSaveNotice, setWorldSaveNotice] =
-    useState<WorldSaveNotice | null>(null);
+const [worldSaveNotice, setWorldSaveNotice] =
+  useState<WorldSaveNotice | null>(null);
 
-  useEffect(() => {
-    if (!worldLoadError || showLoadWorldDialog) return;
+
+// ============================================================
+// WORLD LOAD QUEUE
+// ============================================================
+
+if (!loadQueueRef.current) {
+  loadQueueRef.current =
+    new LoadQueueService({
+      loadModule: (moduleId) => {
+        const presence =
+          modulePresenceService.get(moduleId);
+
+        // If this module is already running, there will not
+        // necessarily be another module.ready event.
+        // Treat its existing ready state as completion.
+        if (presence?.state === 'ready') {
+          queueMicrotask(() => {
+            loadQueueRef.current?.completeModule(
+              moduleId
+            );
+          });
+
+          return;
+        }
+
+        enableRequiredModule(moduleId);
+      },
+
+      loadProject: (
+        moduleId,
+        projectId,
+        loadId
+      ) => {
+        console.info(
+          `[LoadQueue] dispatching project.load ${moduleId}`
+        );
+
+        return hostEventBroker.sendRequestToModule(
+          moduleId,
+          'project.load',
+          {
+            projectId,
+            loadId,
+          }
+        );
+      },
+
+      failed: (item, message) => {
+        console.error(
+          `[LoadQueue] ${item.type} failed:`,
+          message
+        );
+
+        setWorldLoadError((current) =>
+          current
+            ? `${current} ${message}`
+            : message
+        );
+      },
+
+      completed: () => {
+        console.info(
+          '[LoadQueue] World restoration complete'
+        );
+      },
+    });
+}
+
+
+useEffect(() => {
+  if (!worldLoadError || showLoadWorldDialog) return;
 
     const timeoutId = window.setTimeout(() => {
       setWorldLoadError(null);
@@ -432,74 +507,10 @@ function enableRequiredModule(moduleId: string): void {
   });
 }
 
-function reportWorldRestoreFailure(
-  generation: number,
-  moduleId: string,
-  message: string
-): void {
-  if (generation !== worldLoadGenerationRef.current) return;
-  const failure = `${moduleId}: ${message}`;
-  console.error('World module restore failed:', failure);
-  worldRestoreFailuresRef.current.set(moduleId, failure);
-  setWorldLoadError(
-    Array.from(worldRestoreFailuresRef.current.values()).join(' ')
-  );
-}
-
-function dispatchPendingWorldProject(moduleId: string): void {
-  const assignment = pendingWorldProjectsRef.current.get(moduleId);
-  if (!assignment || assignment.sent) return;
-  if (assignment.generation !== worldLoadGenerationRef.current) return;
-
-  assignment.sent = true;
-  const request: ProjectLoadRequest = {
-    projectId: assignment.projectId,
-    loadId: assignment.loadId,
-  };
-  console.info(
-    `[WorldRestore] dispatching project.load ${moduleId} ` +
-    `loadId=${assignment.loadId}`
-  );
-
-  void hostEventBroker
-    .requestModule<ProjectLoadAcceptedPayload>(
-      moduleId,
-      'project.load',
-      request
-    )
-    .then((accepted) => {
-      if (assignment.generation !== worldLoadGenerationRef.current) return;
-      if (!accepted?.accepted ||
-          accepted.projectId !== assignment.projectId ||
-          accepted.loadId !== assignment.loadId) {
-        throw new Error(
-          `Module "${moduleId}" returned an invalid load acceptance.`
-        );
-      }
-      console.info(
-        `[WorldRestore] project.load accepted ${moduleId} ` +
-        `loadId=${assignment.loadId}`
-      );
-    })
-    .catch((error: unknown) => {
-      if (assignment.generation !== worldLoadGenerationRef.current) return;
-      const message = error instanceof Error
-        ? error.message
-        : 'Project load failed.';
-      reportWorldRestoreFailure(
-        assignment.generation,
-        moduleId,
-        message
-      );
-    });
-}
-
 async function handleLoadWorld(worldId: string) {
-  pendingWorldProjectsRef.current.clear();
   const generation = ++worldLoadGenerationRef.current;
   setLoadingWorldId(worldId);
   setWorldLoadError(null);
-  worldRestoreFailuresRef.current = new Map();
 
   try {
     const world = await worldRepository.loadWorld(worldId);
@@ -513,43 +524,62 @@ async function handleLoadWorld(worldId: string) {
     setWorldDirty(false);
     setShowLoadWorldDialog(false);
 
-    const missingModules = world.modules.filter(
-      (reference) => !moduleRegistry.get(reference.moduleId)
-    );
-    const knownModules = world.modules.filter(
-      (reference) => moduleRegistry.get(reference.moduleId)
-    );
-    pendingWorldProjectsRef.current = new Map(
-      knownModules.map((reference) => [
-        reference.moduleId,
-        {
-          projectId: reference.projectId,
-          loadId: crypto.randomUUID(),
-          generation,
-          sent: false,
-        },
-      ])
-    );
-    for (const reference of knownModules) {
-      enableRequiredModule(reference.moduleId);
-    }
-    setActiveModuleId(knownModules[0]?.moduleId ?? null);
-    setLoadingWorldId(null);
+   const missingModules = world.modules.filter(
+  (reference) =>
+    !moduleRegistry.get(reference.moduleId)
+);
 
-    for (const reference of missingModules) {
-      reportWorldRestoreFailure(
-        generation,
-        reference.moduleId,
-        'Module is not registered.'
-      );
-    }
+const knownModules = world.modules.filter(
+  (reference) =>
+    moduleRegistry.get(reference.moduleId)
+);
 
-    for (const reference of knownModules) {
-      if (modulePresenceService.get(reference.moduleId)?.state !== 'ready') {
-        continue;
-      }
-      dispatchPendingWorldProject(reference.moduleId);
-    }
+const loadItems: LoadQueueItem[] = [];
+
+// First load/enable every module, one at a time.
+for (const reference of knownModules) {
+  loadItems.push({
+    id: crypto.randomUUID(),
+    type: 'module.load',
+    moduleId: reference.moduleId,
+  });
+}
+
+// Then load each module's assigned Project,
+// again one at a time.
+for (const reference of knownModules) {
+  loadItems.push({
+    id: crypto.randomUUID(),
+    type: 'project.load',
+    moduleId: reference.moduleId,
+    projectId: reference.projectId,
+    loadId: crypto.randomUUID(),
+  });
+}
+
+setActiveModuleId(
+  knownModules[0]?.moduleId ?? null
+);
+
+setLoadingWorldId(null);
+
+for (const reference of missingModules) {
+  const message =
+    `${reference.moduleId}: Module is not registered.`;
+
+  console.error(
+    '[LoadQueue]',
+    message
+  );
+
+  setWorldLoadError((current) =>
+    current
+      ? `${current} ${message}`
+      : message
+  );
+}
+
+loadQueueRef.current?.replace(loadItems);
   } catch (error) {
     if (generation !== worldLoadGenerationRef.current) return;
     const message = error instanceof Error
