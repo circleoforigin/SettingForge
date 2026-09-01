@@ -6,6 +6,7 @@ import type {
 
 import type {
   StorageDeleteRequest,
+  StorageLoadManyRequest,
   StorageLoadRequest,
   StorageSaveRequest,
 } from './StorageServiceTypes';
@@ -27,6 +28,7 @@ export function registerStorageHostServices(
   ) => () => void
 ): () => void {
     requireHostService('storage.load');
+    requireHostService('storage.loadMany');
     requireHostService('storage.save');
     requireHostService('storage.delete');
 
@@ -50,6 +52,37 @@ export function registerStorageHostServices(
       );
     }
   );
+
+  const unregisterLoadMany =
+    registerRequestHandler(
+      'storage.loadMany',
+      async (request) => {
+        const payload =
+          request.payload as StorageLoadManyRequest;
+
+        const keysAreValid =
+          Array.isArray(payload?.keys) &&
+          payload.keys.every((key) => {
+            return typeof key === 'string' && key.length > 0;
+          });
+
+        if (!payload?.collection || !keysAreValid) {
+          throw new Error(
+            'storage.loadMany requires collection and keys.'
+          );
+        }
+
+        return Promise.all(
+          payload.keys.map((key) => {
+            return window.settingForge.storage.read(
+              request.sourceModuleId,
+              payload.collection,
+              key
+            );
+          })
+        );
+      }
+    );
 
   const unregisterSave =
     registerRequestHandler(
@@ -115,6 +148,7 @@ export function registerStorageHostServices(
 
   return () => {
     unregisterLoad();
+    unregisterLoadMany();
     unregisterSave();
     unregisterDelete();
   };

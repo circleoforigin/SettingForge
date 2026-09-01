@@ -3,6 +3,11 @@ export interface StorageLoadRequest {
   key?: string;
 }
 
+export interface StorageLoadManyRequest {
+  collection: string;
+  keys: string[];
+}
+
 export interface StorageSaveRequest {
   collection: string;
   key: string;

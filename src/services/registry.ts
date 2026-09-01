@@ -9,6 +9,12 @@ hostServiceRegistry.register({
 });
 
 hostServiceRegistry.register({
+  type: 'storage.loadMany',
+  description:
+    'Loads module-owned records from SettingForge storage.',
+});
+
+hostServiceRegistry.register({
   type: 'storage.save',
   description:
     'Saves a module-owned data collection to SettingForge storage.',
