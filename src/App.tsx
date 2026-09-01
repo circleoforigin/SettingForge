@@ -461,11 +461,29 @@ async function restoreWorldModule(
     await hostEventBroker.requestModule(moduleId, 'project.load', {
       projectId,
     });
+    if (generation !== worldLoadGenerationRef.current) return;
   } catch (error) {
     const message = error instanceof Error
       ? error.message
       : 'Project load failed.';
     reportWorldRestoreFailure(generation, moduleId, message);
+  }
+}
+
+async function restoreWorldModulesSerially(
+  references: World['modules'],
+  generation: number
+): Promise<void> {
+  for (const reference of references) {
+    if (generation !== worldLoadGenerationRef.current) return;
+
+    await restoreWorldModule(
+      reference.moduleId,
+      reference.projectId,
+      generation
+    );
+
+    if (generation !== worldLoadGenerationRef.current) return;
   }
 }
 
@@ -477,6 +495,7 @@ async function handleLoadWorld(worldId: string) {
 
   try {
     const world = await worldRepository.loadWorld(worldId);
+    if (generation !== worldLoadGenerationRef.current) return;
 
     if (!world) {
       throw new Error('The selected World could not be found.');
@@ -492,9 +511,6 @@ async function handleLoadWorld(worldId: string) {
     const knownModules = world.modules.filter(
       (reference) => moduleRegistry.get(reference.moduleId)
     );
-    for (const reference of knownModules) {
-      enableRequiredModule(reference.moduleId);
-    }
     setActiveModuleId(knownModules[0]?.moduleId ?? null);
     setLoadingWorldId(null);
 
@@ -506,13 +522,7 @@ async function handleLoadWorld(worldId: string) {
       );
     }
 
-    for (const reference of knownModules) {
-      void restoreWorldModule(
-        reference.moduleId,
-        reference.projectId,
-        generation
-      );
-    }
+    void restoreWorldModulesSerially(knownModules, generation);
   } catch (error) {
     if (generation !== worldLoadGenerationRef.current) return;
     const message = error instanceof Error
