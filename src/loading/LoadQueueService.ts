@@ -29,10 +29,11 @@ interface LoadQueueCallbacks {
 export class LoadQueueService {
   private queue: LoadQueueItem[] = [];
   private active: LoadQueueItem | null = null;
+  private readonly callbacks: LoadQueueCallbacks;
 
-  constructor(
-    private readonly callbacks: LoadQueueCallbacks
-  ) {}
+  constructor(callbacks: LoadQueueCallbacks) {
+    this.callbacks = callbacks;
+  }  
 
   replace(items: LoadQueueItem[]): void {
     this.queue = [...items];

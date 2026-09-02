@@ -1058,34 +1058,38 @@ async function handleDiscardAllAndClose() {
   }
 }
 
-  function toggleModule( moduleId: string) 
-  {
-  setEnabledModuleIds(
-    (current) => {
-      if (current.includes(moduleId)) 
-      {
-        modulePresenceService.removeModule(moduleId);
+  function toggleModule(moduleId: string) {
+  const isEnabled =
+    enabledModuleIds.includes(moduleId);
 
-        setReadyModuleIds((ready) =>
-          ready.filter((id) => id !== moduleId)
-          );
+  if (isEnabled) {
+    modulePresenceService.removeModule(moduleId);
 
-        if (activeModuleId === moduleId) 
-        {
-          setActiveModuleId(null);
-        }
+    setReadyModuleIds((ready) =>
+      ready.filter((id) => id !== moduleId)
+    );
 
-        return current.filter(
-          (id) =>
-            id !== moduleId
-        );
-      }
-
-      modulePresenceService.enableModule(moduleId);
-
-      return [ ...current,moduleId ];
+    if (activeModuleId === moduleId) {
+      setActiveModuleId(null);
     }
+
+    setEnabledModuleIds((current) =>
+      current.filter((id) => id !== moduleId)
+    );
+
+    return;
+  }
+
+  console.warn(
+    `[ModuleMount] requested ${moduleId} ${Date.now()}`
   );
+
+  modulePresenceService.enableModule(moduleId);
+
+  setEnabledModuleIds((current) => [
+    ...current,
+    moduleId,
+  ]);
 }
 
   return (
@@ -1232,15 +1236,20 @@ async function handleDiscardAllAndClose() {
     if (module.devUrl) {
       return (
         <iframe
-          key={module.id}
-          className={
-            isActive
-              ? 'module-frame active'
-              : 'module-frame inactive'
-          }
-          src={module.devUrl}
-          title={module.name}
-        />
+  key={module.id}
+  className={
+    isActive
+      ? 'module-frame active'
+      : 'module-frame inactive'
+  }
+  src={module.devUrl}
+  title={module.name}
+  onLoad={() => {
+  console.warn(
+    `[ModuleMount] iframe loaded ${module.id} ${Date.now()}`
+  );
+}}
+/>
       );
     }
 
