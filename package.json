@@ -1,7 +1,10 @@
 {
   "name": "settingforge",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "A modular desktop workspace for worldbuilding tools.",
+  "author": "Circle of Origin",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,24 +14,79 @@
     "build": "tsc -b && vite build",
     "build:production": "node scripts/build-production.mjs",
     "electron:production": "electron electron/main.cjs --production",
+    "package": "npm run build:production && electron-builder",
+    "package:dir": "npm run build:production && electron-builder --dir",
+    "package:win": "npm run build:production && electron-builder --win nsis",
     "lint": "oxlint .",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "@settingforge/module-sdk": "file:../SettingForge-SDK",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
-  },
   "devDependencies": {
+    "@settingforge/module-sdk": "file:../SettingForge-SDK",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
     "concurrently": "^10.0.5",
     "electron": "^43.4.1",
+    "electron-builder": "^26.15.3",
     "oxlint": "^1.79.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.circleoforigin.settingforge",
+    "productName": "SettingForge",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "!dist/modules/**/*",
+      "electron/main.cjs",
+      "electron/preload.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/modules",
+        "to": "modules",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "category": "Office",
+      "target": [
+        "AppImage"
+      ]
+    }
   }
 }
