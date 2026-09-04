@@ -9,6 +9,7 @@ const {
 const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const { startApplicationUpdater } = require('./updater.cjs');
 
 const moduleScheme = 'settingforge-module';
 
@@ -720,6 +721,8 @@ app.whenReady().then(
     registerWindowHandlers();
     registerModuleResourceProtocol();
     createWindow();
+    console.log('SettingForge version:', app.getVersion());
+    startApplicationUpdater(mainWindow);
 
     app.on(
       'activate',
