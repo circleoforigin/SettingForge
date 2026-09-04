@@ -9,6 +9,8 @@
     "desktop": "concurrently -k \"npm:dev\" \"npm:electron:wait\"",
     "electron:wait": "wait-on http://localhost:5174 && electron electron/main.cjs",
     "build": "tsc -b && vite build",
+    "build:production": "node scripts/build-production.mjs",
+    "electron:production": "electron electron/main.cjs --production",
     "lint": "oxlint .",
     "preview": "vite preview"
   },

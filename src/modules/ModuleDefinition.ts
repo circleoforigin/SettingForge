@@ -8,6 +8,7 @@ export interface ModuleDefinition {
   description: string;
   version: string;
   devUrl?: string;
+  productionEntry?: string;
 
   events: EventDefinition[];
 }

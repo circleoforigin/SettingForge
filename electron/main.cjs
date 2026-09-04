@@ -2,10 +2,27 @@ const {
   app,
   BrowserWindow,
   ipcMain,
+  net,
+  protocol,
 } = require('electron');
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
+
+const moduleScheme = 'settingforge-module';
+
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: moduleScheme,
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+]);
 
 app.setName('SettingForge');
 
@@ -20,6 +37,83 @@ app.setPath(
 );
 
 let mainWindow;
+
+/* =========================================================
+   APPLICATION RESOURCE RESOLUTION
+   ========================================================= */
+
+function isProductionRuntime() {
+  return app.isPackaged || process.argv.includes('--production');
+}
+
+function getApplicationRoot() {
+  if (app.isPackaged) return app.getAppPath();
+  return path.resolve(__dirname, '..');
+}
+
+function getHostEntryPath() {
+  return path.join(getApplicationRoot(), 'dist', 'index.html');
+}
+
+function getModuleResourcesRoot() {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'modules');
+  }
+
+  return path.join(getApplicationRoot(), 'dist', 'modules');
+}
+
+function isWithinRoot(root, candidate) {
+  const relative = path.relative(root, candidate);
+  return relative === '' || (
+    !relative.startsWith(`..${path.sep}`) &&
+    relative !== '..' &&
+    !path.isAbsolute(relative)
+  );
+}
+
+function resolveModuleResource(requestUrl) {
+  const url = new URL(requestUrl);
+  const moduleId = url.hostname;
+
+  if (!/^[a-z0-9-]+$/.test(moduleId)) return null;
+
+  let resourcePath;
+
+  try {
+    resourcePath = decodeURIComponent(url.pathname).replace(/^\/+/, '');
+  } catch {
+    return null;
+  }
+
+  if (!resourcePath) resourcePath = 'index.html';
+
+  const modulesRoot = getModuleResourcesRoot();
+  const moduleRoot = path.resolve(modulesRoot, moduleId);
+  const candidate = path.resolve(moduleRoot, resourcePath);
+
+  if (!isWithinRoot(moduleRoot, candidate)) return null;
+  if (!fs.existsSync(candidate)) return null;
+  if (!fs.statSync(candidate).isFile()) return null;
+
+  const realModuleRoot = fs.realpathSync(moduleRoot);
+  const realCandidate = fs.realpathSync(candidate);
+  if (!isWithinRoot(realModuleRoot, realCandidate)) return null;
+
+  return realCandidate;
+}
+
+function registerModuleResourceProtocol() {
+  protocol.handle(moduleScheme, (request) => {
+    const resourcePath = resolveModuleResource(request.url);
+
+    if (!resourcePath) {
+      return new Response('Module resource not found.', { status: 404 });
+    }
+
+    return net.fetch(pathToFileURL(resourcePath).toString());
+  });
+}
 
 /* =========================================================
    STORAGE PATH VALIDATION
@@ -594,9 +688,11 @@ function createWindow() {
     false
   );
 
-  mainWindow.loadURL(
-    'http://localhost:5174'
-  );
+  if (isProductionRuntime()) {
+    mainWindow.loadFile(getHostEntryPath());
+  } else {
+    mainWindow.loadURL('http://localhost:5174');
+  }
 
   mainWindow.on(
     'closed',
@@ -622,6 +718,7 @@ app.whenReady().then(
     registerStorageHandlers();
     registerFileHandlers();
     registerWindowHandlers();
+    registerModuleResourceProtocol();
     createWindow();
 
     app.on(

@@ -18,6 +18,7 @@ const sacscapeModule : ModuleDefinition = {
     'Spatial audio and soundscape control.',
   version: '1.0.0',
   devUrl: 'http://localhost:5173',
+  productionEntry: 'index.html',
 
   events: [
     {
@@ -60,6 +61,7 @@ const regionsModule: ModuleDefinition = {
     'Interactive maps, locations, connections, and regional features.',
   version: '1.0.0',
   devUrl: 'http://localhost:5175',
+  productionEntry: 'index.html',
 
   events: [
     {

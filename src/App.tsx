@@ -5,6 +5,7 @@ import { hostEventBroker } from './events/HostEventBroker';
 import { registerStorageHostServices} from './services/StorageHostService';
 import { registerFileHostServices } from './services/FileHostService';
 import { modulePresenceService } from './modules/ModulePresenceService';
+import { resolveModuleEntry } from './modules/ModuleEntryResolver';
 import type { World } from './models/World';
 import { worldRepository } from './worlds/WorldRepository';
 import {
@@ -1232,8 +1233,9 @@ async function handleDiscardAllAndClose() {
   {enabledModules.map((module) => {
     const isActive =
       activeModuleId === module.id;
+    const moduleEntry = resolveModuleEntry(module, import.meta.env.DEV);
 
-    if (module.devUrl) {
+    if (moduleEntry) {
       return (
         <iframe
   key={module.id}
@@ -1242,7 +1244,7 @@ async function handleDiscardAllAndClose() {
       ? 'module-frame active'
       : 'module-frame inactive'
   }
-  src={module.devUrl}
+  src={moduleEntry}
   title={module.name}
   onLoad={() => {
   console.warn(
