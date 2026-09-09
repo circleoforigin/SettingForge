@@ -7,6 +7,12 @@ export interface FileSaveRequest {
 export interface FileReadRequest {
   folder: string;
   fileName: string;
+
+  /**
+   * Optional module that owns the requested file.
+   * Defaults to the requesting module.
+   */
+  ownerModuleId?: string;
 }
 
 export interface FileDeleteRequest {

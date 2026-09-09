@@ -87,9 +87,10 @@ export function registerFileHostServices(
         }
 
         return window.settingForge.file.read(
-          request.sourceModuleId,
+          payload.ownerModuleId
+            ?? request.sourceModuleId,
           payload.folder,
-          payload.fileName
+            payload.fileName
         );
       }
     );
