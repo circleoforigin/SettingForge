@@ -96,3 +96,26 @@ eventRegistry.registerModuleEvents(
   regionsModule.name,
   [...regionsModule.events]
 );
+
+
+const equipmentModule: ModuleDefinition = {
+  id: 'equipment',
+  name: 'Equipment',
+  description:
+    'Physical device connectivity, environments, roles, and reactions.',
+  version: '1.0.0',
+  devUrl: 'http://localhost:5176',
+  productionEntry: 'index.html',
+
+  events: [],
+};
+
+moduleRegistry.register(
+  equipmentModule
+);
+
+eventRegistry.registerModuleEvents(
+  equipmentModule.id,
+  equipmentModule.name,
+  [...equipmentModule.events]
+);

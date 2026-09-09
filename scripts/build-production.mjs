@@ -24,6 +24,11 @@ const modules = [
     sourceRoot: process.env.SETTINGFORGE_REGIONS_DIR ||
       path.join(projectsRoot, 'Regions'),
   },
+  {
+    id: 'equipment',
+    sourceRoot: process.env.SETTINGFORGE_EQUIPMENT_DIR ||
+      path.join(projectsRoot, 'Equipment'),
+  },
 ];
 
 function runBuild(projectRoot) {
