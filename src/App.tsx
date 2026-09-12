@@ -1246,6 +1246,7 @@ async function handleDiscardAllAndClose() {
   }
   src={moduleEntry}
   title={module.name}
+  allow="display-capture"
   onLoad={() => {
   console.warn(
     `[ModuleMount] iframe loaded ${module.id} ${Date.now()}`

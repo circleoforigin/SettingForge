@@ -1,9 +1,12 @@
 const {
   app,
   BrowserWindow,
+  desktopCapturer,
   ipcMain,
   net,
   protocol,
+  screen,
+  session,
 } = require('electron');
 
 const fs = require('node:fs');
@@ -703,6 +706,48 @@ function createWindow() {
   );
 }
 
+function isSacscapeCaptureRequest(request) {
+  if (!request.userGesture || !request.audioRequested) return false;
+  if (!request.videoRequested || !request.frame) return false;
+
+  const frameUrl = request.frame.url;
+  const productionModule =
+    request.securityOrigin === 'settingforge-module://sacscape';
+  const developmentModule =
+    request.securityOrigin === 'http://localhost:5173' ||
+    request.securityOrigin === 'http://127.0.0.1:5173';
+
+  return productionModule
+    ? frameUrl.startsWith('settingforge-module://sacscape/')
+    : developmentModule && frameUrl.startsWith(request.securityOrigin);
+}
+
+function registerSacscapeDesktopAudioCapture() {
+  session.defaultSession.setDisplayMediaRequestHandler(
+    async (request, callback) => {
+      if (!isSacscapeCaptureRequest(request)) {
+        callback({});
+        return;
+      }
+
+      try {
+        const primaryDisplayId = String(screen.getPrimaryDisplay().id);
+        const sources = await desktopCapturer.getSources({
+          types: ['screen'],
+          thumbnailSize: { width: 0, height: 0 },
+        });
+        const source = sources.find((item) => {
+          return item.display_id === primaryDisplayId;
+        }) ?? sources[0];
+
+        callback(source ? { video: source, audio: 'loopback' } : {});
+      } catch {
+        callback({});
+      }
+    }
+  );
+}
+
 /* =========================================================
    APP LIFECYCLE
    ========================================================= */
@@ -720,6 +765,7 @@ app.whenReady().then(
     registerFileHandlers();
     registerWindowHandlers();
     registerModuleResourceProtocol();
+    registerSacscapeDesktopAudioCapture();
     createWindow();
     console.log('SettingForge version:', app.getVersion());
     startApplicationUpdater(mainWindow);

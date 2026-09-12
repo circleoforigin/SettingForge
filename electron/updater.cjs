@@ -7,12 +7,17 @@ const path = require('node:path');
 function getUpdateBaseUrl() {
   const prefix = '--update-base-url=';
   const argument = process.argv.find((value) => value.startsWith(prefix));
-  const configured = argument?.slice(prefix.length) ||
-    process.env.SETTINGFORGE_UPDATE_BASE_URL;
 
-  if (!configured) return null;
+  const productionUpdateBaseUrl =
+    'https://sacscape-server.tail7d5063.ts.net/settingforge/updates/';
+
+  const configured =
+    argument?.slice(prefix.length) ||
+    process.env.SETTINGFORGE_UPDATE_BASE_URL ||
+    productionUpdateBaseUrl;
 
   const url = new URL(configured);
+
   if (url.username || url.password) {
     throw new Error('Update source must not contain credentials.');
   }
