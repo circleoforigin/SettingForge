@@ -1,7 +1,7 @@
 {
   "name": "settingforge",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "A modular desktop workspace for worldbuilding tools.",
   "author": "Circle of Origin",
   "main": "electron/main.cjs",
@@ -62,8 +62,8 @@
       }
     ],
     "publish": {
-       "provider": "generic",
-    "url": "https://sacscape-server.tail7d5063.ts.net/settingforge/updates/"
+      "provider": "generic",
+      "url": "https://sacscape-server.tail7d5063.ts.net/settingforge/updates/"
     },
     "win": {
       "target": [

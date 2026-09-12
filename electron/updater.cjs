@@ -56,6 +56,7 @@ function startApplicationUpdater(parentWindow) {
   let downloadStarted = false;
   let updatePromptHandled = false;
   let updateInstallRequested = false;
+  let updateAvailablePromptHandled = false;
 
   if (!app.isPackaged) {
     log('Updater disabled outside a packaged application.');
@@ -87,9 +88,28 @@ function startApplicationUpdater(parentWindow) {
     log(`Checking ${updateBaseUrl} from version ${app.getVersion()}.`);
   });
 
-  autoUpdater.on('update-available', (info) => {
-    log(`Update ${info.version} is available.`);
+  autoUpdater.on('update-available', async (info) => {
+  log(`Update ${info.version} is available.`);
+
+  if (updateAvailablePromptHandled) {
+    return;
+  }
+
+  updateAvailablePromptHandled = true;
+
+  log(`Beginning download of SettingForge ${info.version}.`);
+
+  await dialog.showMessageBox(parentWindow, {
+    type: 'info',
+    title: 'SettingForge Update Found',
+    message: `SettingForge ${info.version} is available.`,
+    detail:
+      'The update is downloading now. You can continue using SettingForge while it downloads. We’ll let you know when it’s ready to install.',
+    buttons: ['OK'],
+    defaultId: 0,
+    noLink: true,
   });
+});
 
   autoUpdater.on('update-not-available', (info) => {
     log(`No update is available. Latest version: ${info.version}.`);
