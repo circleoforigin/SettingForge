@@ -13,6 +13,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { startApplicationUpdater } = require('./updater.cjs');
+const {
+  ApplicationAuthorizationService,
+  getAuthorizationBaseUrl,
+} = require('./authorization.cjs');
 
 const moduleScheme = 'settingforge-module';
 
@@ -41,6 +45,7 @@ app.setPath(
 );
 
 let mainWindow;
+let authorizationService;
 
 /* =========================================================
    APPLICATION RESOURCE RESOLUTION
@@ -648,6 +653,18 @@ function registerWindowHandlers() {
   });
 }
 
+function registerAuthorizationHandlers() {
+  ipcMain.handle('settingforge:activation:getStatus', () => {
+    return authorizationService.getStatus();
+  });
+  ipcMain.handle('settingforge:activation:register', (_event, input) => {
+    return authorizationService.register(input);
+  });
+  ipcMain.handle('settingforge:activation:validate', () => {
+    return authorizationService.validate();
+  });
+}
+
 /* =========================================================
    WINDOW
    ========================================================= */
@@ -764,11 +781,18 @@ app.whenReady().then(
     registerStorageHandlers();
     registerFileHandlers();
     registerWindowHandlers();
+    authorizationService = new ApplicationAuthorizationService({
+      userDataPath: app.getPath('userData'),
+      fetch: net.fetch,
+      baseUrl: getAuthorizationBaseUrl(),
+    });
+    registerAuthorizationHandlers();
     registerModuleResourceProtocol();
     registerSacscapeDesktopAudioCapture();
     createWindow();
     console.log('SettingForge version:', app.getVersion());
     startApplicationUpdater(mainWindow);
+    if (app.isPackaged) void authorizationService.validate();
 
     app.on(
       'activate',

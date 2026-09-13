@@ -96,5 +96,13 @@ contextBridge.exposeInMainWorld(
       closeApp: () =>
         ipcRenderer.invoke('settingforge:window:closeApp'),
     },
+    activation: {
+      getStatus: () =>
+        ipcRenderer.invoke('settingforge:activation:getStatus'),
+      register: (input) =>
+        ipcRenderer.invoke('settingforge:activation:register', input),
+      validate: () =>
+        ipcRenderer.invoke('settingforge:activation:validate'),
+    },
   }
 );

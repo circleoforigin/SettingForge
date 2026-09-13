@@ -16,6 +16,83 @@ body,
   color: white;
 }
 
+.activation-screen {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: #d8d8d8;
+  background: #1e1f22;
+}
+
+.activation-card {
+  display: flex;
+  width: min(420px, calc(100% - 40px));
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid #45474e;
+  border-radius: 8px;
+  background: #2b2d31;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.activation-card h1,
+.activation-card h2,
+.activation-card p {
+  margin: 0;
+}
+
+.activation-card form,
+.activation-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.activation-card form {
+  gap: 14px;
+}
+
+.activation-card input,
+.activation-card button {
+  padding: 8px 10px;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+  color: #d8d8d8;
+  background: #34363c;
+  font: inherit;
+}
+
+.activation-card button {
+  cursor: pointer;
+}
+
+.activation-card button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.activation-error {
+  padding: 8px 10px;
+  border: 1px solid #704040;
+  border-radius: 4px;
+  color: #ffb4b4;
+  background: #482b2b;
+}
+
+.activation-offline-notice {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1100;
+  padding: 8px 10px;
+  border: 1px solid #75613a;
+  border-radius: 4px;
+  color: #f4ddb0;
+  background: #493d25;
+}
+
 /* ---------- GLOBAL MENU BAR ---------- */
 
 .menu-bar {

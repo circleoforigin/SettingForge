@@ -52,6 +52,34 @@ declare global {
       setTitle(title: string): Promise<boolean>;
       closeApp(): Promise<boolean>;
     };
+
+    activation: {
+      getStatus(): Promise<ActivationStatus>;
+      register(input: {
+        email: string;
+        deviceName: string;
+      }): Promise<ActivationStatus>;
+      validate(): Promise<ActivationStatus>;
+    };
   };
+}
+
+type ActivationState =
+  | 'unchecked'
+  | 'unregistered'
+  | 'authorized'
+  | 'denied'
+  | 'offline'
+  | 'invalid-request'
+  | 'error';
+
+interface ActivationStatus {
+  state: ActivationState;
+  deviceId: string;
+  deviceName: string;
+  email?: string;
+  previouslyAuthorized: boolean;
+  lastValidatedAt?: string;
+  message?: string;
 }
 }

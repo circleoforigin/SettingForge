@@ -19,6 +19,7 @@
     "package:win": "npm run build:production && electron-builder --win nsis",
     "update:serve": "node scripts/serve-update-feed.mjs",
     "lint": "oxlint .",
+    "test:authorization": "node --test electron/authorization.test.cjs",
     "preview": "vite preview"
   },
   "devDependencies": {
@@ -49,6 +50,7 @@
       "!dist/modules/**/*",
       "electron/main.cjs",
       "electron/preload.cjs",
+      "electron/authorization.cjs",
       "electron/updater.cjs",
       "package.json"
     ],
