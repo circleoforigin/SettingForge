@@ -1,0 +1,274 @@
+SETTINGFORGE RELEASE AND AUTO-UPDATE RUNBOOK
+============================================
+
+Purpose
+-------
+Build a new SettingForge release on the development computer, publish it as a
+GitHub Release, allow the home-server watcher to deploy it, and let installed
+copies of SettingForge update themselves.
+
+Do not manually run the newly built installer during a normal update release.
+Do not copy release files to the home server manually.
+
+
+PROVEN UPDATE PATH
+------------------
+
+Development computer
+  -> GitHub source commit
+  -> GitHub Release assets
+  -> home-server client-release watcher
+  -> C:\Projects\SettingForge-Server\data\updates
+  -> public SettingForge update feed
+  -> installed SettingForge updater
+
+
+FILES PUBLISHED FOR EACH RELEASE
+--------------------------------
+
+latest.yml
+SettingForge Setup <VERSION>.exe
+SettingForge Setup <VERSION>.exe.blockmap
+
+These are GitHub Release assets. They are not ordinary files committed to the
+Git repository.
+
+
+STEP 1 - CHOOSE AND SET THE NEXT VERSION
+----------------------------------------
+
+Open PowerShell on the development computer:
+
+    Set-Location 'C:\Projects\SettingForge'
+
+Check the current version:
+
+    node -p "require('./package.json').version"
+
+Set the next version. For example, to move from 0.1.7 to 0.1.8:
+
+    npm version 0.1.8 --no-git-tag-version
+
+This updates package.json and package-lock.json without creating a Git tag.
+
+Verify:
+
+    node -p "require('./package.json').version"
+
+
+STEP 2 - BUILD THE WINDOWS RELEASE
+----------------------------------
+
+    npm run package:win
+
+When the build finishes, inspect the output:
+
+    Get-ChildItem '.\release' |
+        Select-Object Name, Length, LastWriteTime
+
+Confirm that the release directory contains all three current-version files:
+
+    latest.yml
+    SettingForge Setup <VERSION>.exe
+    SettingForge Setup <VERSION>.exe.blockmap
+
+Confirm the version and generated checksums:
+
+    Get-Content '.\release\latest.yml'
+
+The first line must contain the intended version, for example:
+
+    version: 0.1.8
+
+Do not continue if latest.yml names another version or one of the three files
+is missing.
+
+
+STEP 3 - COMMIT AND PUSH THE SOURCE
+-----------------------------------
+
+Review the source changes:
+
+    git status
+    git diff --check
+
+Stage the reviewed source and version files:
+
+    git add --all
+
+Commit them:
+
+    git commit -m "Release SettingForge <VERSION>"
+
+Example:
+
+    git commit -m "Release SettingForge 0.1.8"
+
+Synchronize before pushing if necessary:
+
+    git pull --rebase origin main
+
+Push:
+
+    git push origin main
+
+Verify:
+
+    git status -sb
+
+Expected:
+
+    ## main...origin/main
+
+
+STEP 4 - CREATE THE GITHUB RELEASE
+----------------------------------
+
+Run this from C:\Projects\SettingForge. Replace <VERSION> everywhere with the
+new version number.
+
+    gh release create v<VERSION> `
+      ".\release\latest.yml" `
+      ".\release\SettingForge Setup <VERSION>.exe" `
+      ".\release\SettingForge Setup <VERSION>.exe.blockmap" `
+      --repo circleoforigin/SettingForge `
+      --title "SettingForge <VERSION>" `
+      --notes "SettingForge <VERSION>"
+
+Example for 0.1.8:
+
+    gh release create v0.1.8 `
+      ".\release\latest.yml" `
+      ".\release\SettingForge Setup 0.1.8.exe" `
+      ".\release\SettingForge Setup 0.1.8.exe.blockmap" `
+      --repo circleoforigin/SettingForge `
+      --title "SettingForge 0.1.8" `
+      --notes "SettingForge 0.1.8"
+
+The installer is too large for an ordinary Git commit. GitHub Release assets
+are the correct publication mechanism.
+
+
+STEP 5 - VERIFY THE GITHUB RELEASE ASSETS
+-----------------------------------------
+
+    gh release view v<VERSION> `
+      --repo circleoforigin/SettingForge `
+      --json assets `
+      --jq '.assets[].name'
+
+Verify that all three assets appear.
+
+GitHub may display installer asset names with periods in place of spaces. The
+home-server watcher already compensates for that behavior.
+
+
+STEP 6 - LET THE HOME-SERVER WATCHER DEPLOY THE RELEASE
+-------------------------------------------------------
+
+No manual copying or server login is required for normal operation. The
+existing home-server client-release watcher detects the new GitHub Release,
+downloads its assets, and deploys the update feed.
+
+If verification is needed on the server, inspect the watcher log:
+
+    Get-Content `
+      'C:\SettingForge\Deployment\client-deployment.log' `
+      -Tail 30
+
+Look for the new v<VERSION> release and a successful deployment result.
+
+Verify the deployed update directory:
+
+    Get-ChildItem 'C:\Projects\SettingForge-Server\data\updates' |
+      Select-Object Name, Length, LastWriteTime
+
+It must contain the new installer, new blockmap, and latest.yml.
+
+
+STEP 7 - VERIFY THE PUBLIC UPDATE FEED
+--------------------------------------
+
+    $server = 'https://' + 'sacscape-server.tail7d5063.ts.net'
+    $feed = $server + '/settingforge/updates/latest.yml'
+    (Invoke-WebRequest $feed -UseBasicParsing).Content
+
+The response must begin with the new version, for example:
+
+    version: 0.1.8
+
+Do not launch the installed application until the public feed advertises the
+correct version and all three release files are deployed.
+
+
+STEP 8 - RUN THE INSTALLED APPLICATION AND UPDATE
+-------------------------------------------------
+
+Launch the already-installed older version normally. Do not run the new
+installer manually.
+
+    & "$env:LOCALAPPDATA\Programs\SettingForge\SettingForge.exe"
+
+Expected behavior:
+
+1. The installed older version checks the public update feed.
+2. It discovers the new version.
+3. It downloads the update in the background.
+4. Differential downloading uses the old and new blockmaps when possible.
+5. SettingForge reports that the update is ready.
+6. The user chooses Restart & Update.
+7. SettingForge calls quitAndInstall once, updates, and relaunches.
+
+Do not launch the installer separately. Do not repeat the release cycle after
+the updater has completed.
+
+
+STEP 9 - VERIFY THE INSTALLED VERSION
+-------------------------------------
+
+After SettingForge relaunches, it should report the new version and should
+consider itself current against the feed.
+
+If updater diagnostics are needed:
+
+    Get-Content `
+      "$env:APPDATA\SettingForge\logs\updater.log" `
+      -Tail 60
+
+The successful sequence should be:
+
+    older version detects newer version
+    -> update downloads
+    -> user approves Restart & Update
+    -> installer runs once
+    -> application relaunches as the new version
+    -> new version sees no newer release
+
+
+QUICK RELEASE CHECKLIST
+-----------------------
+
+[ ] Set the new version in package.json and package-lock.json
+[ ] Run npm run package:win
+[ ] Verify installer, blockmap, and latest.yml
+[ ] Verify latest.yml contains the intended version
+[ ] Commit and push the reviewed source
+[ ] Create GitHub Release v<VERSION> with all three assets
+[ ] Verify GitHub Release assets
+[ ] Let the home-server watcher deploy the release
+[ ] Verify the public latest.yml
+[ ] Launch the installed older SettingForge application
+[ ] Choose Restart & Update after download
+[ ] Verify the relaunched application is the new version
+[ ] Verify the new version considers itself current
+
+
+CURRENT ACTIVATION TEST NOTE
+----------------------------
+
+If installed SettingForge is already version 0.1.7, newly committed activation
+changes cannot be tested by publishing another 0.1.7 build. Electron-updater
+will consider 0.1.7 current.
+
+The activation test build must use the next version, such as 0.1.8, and follow
+the complete release procedure above.
