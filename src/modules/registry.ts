@@ -119,3 +119,25 @@ eventRegistry.registerModuleEvents(
   equipmentModule.name,
   [...equipmentModule.events]
 );
+
+const journalModule: ModuleDefinition = {
+  id: 'journal',
+  name: 'Journal',
+  description:
+    'Structured notes, lore, records, and cross-module knowledge.',
+  version: '1.0.0',
+  devUrl: 'http://localhost:5177',
+  productionEntry: 'index.html',
+
+  events: [],
+};
+
+moduleRegistry.register(
+  journalModule
+);
+
+eventRegistry.registerModuleEvents(
+  journalModule.id,
+  journalModule.name,
+  [...journalModule.events]
+);
