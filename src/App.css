@@ -287,9 +287,18 @@ body,
 
 /* ---------- MODULE MANAGER ---------- */
 
+.module-manager-dialog {
+  width: min(
+    1320px,
+    calc(100vw - 80px)
+  );
+}
+
 .module-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
   gap: 8px;
 }
 
