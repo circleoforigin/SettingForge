@@ -8,6 +8,7 @@ import { modulePresenceService } from './modules/ModulePresenceService';
 import { resolveModuleEntry } from './modules/ModuleEntryResolver';
 import type { World } from './models/World';
 import { worldRepository } from './worlds/WorldRepository';
+import { overlayRegistry } from './overlays/registry';
 import {
   registerActionHostService,
   sendActionCatalogTo,
@@ -59,10 +60,50 @@ interface SaveAllResult {
 type CloseTarget = 'world' | 'application';
 
 const TRANSIENT_NOTICE_DURATION_MS = 8000;
+const DROPDOWN_DISMISS_DISTANCE_PX = 36;
+
+function isPointerWithinGraceArea(
+  element: HTMLElement,
+  clientX: number,
+  clientY: number
+): boolean {
+  const rect = element.getBoundingClientRect();
+
+  return (
+    clientX >= rect.left - DROPDOWN_DISMISS_DISTANCE_PX &&
+    clientX <= rect.right + DROPDOWN_DISMISS_DISTANCE_PX &&
+    clientY >= rect.top - DROPDOWN_DISMISS_DISTANCE_PX &&
+    clientY <= rect.bottom + DROPDOWN_DISMISS_DISTANCE_PX
+  );
+}
+
 
 function App() 
 {
-  const loadQueueRef =
+  const registeredOverlays = overlayRegistry.getAll();
+  const [enabledOverlayIds, setEnabledOverlayIds] =
+    useState<Set<string>>(() => new Set());
+  const isOverlayEnabled = (overlayId: string) =>
+  enabledOverlayIds.has(overlayId);
+
+const setOverlayEnabled = (
+  overlayId: string,
+  enabled: boolean
+) => {
+  setEnabledOverlayIds((current) => {
+    const next = new Set(current);
+
+    if (enabled) {
+      next.add(overlayId);
+    } else {
+      next.delete(overlayId);
+    }
+
+    return next;
+  });
+};
+  
+    const loadQueueRef =
     useRef<LoadQueueService | null>(null);
 
   useEffect(() => {
@@ -185,6 +226,70 @@ loadQueueRef.current?.completeModule(
   
   const [fileMenuOpen, setFileMenuOpen] =
     useState(false);
+
+  const [overlayMenuOpen, setOverlayMenuOpen] =
+    useState(false);
+
+    useEffect(() => {
+  if (!fileMenuOpen && !overlayMenuOpen) return;
+
+  const handlePointerMove = (event: PointerEvent) => {
+    const openMenu = fileMenuOpen
+      ? {
+          selector: '[data-menu-group="file"]',
+          close: () => setFileMenuOpen(false),
+        }
+      : {
+          selector: '[data-menu-group="overlays"]',
+          close: () => setOverlayMenuOpen(false),
+        };
+
+    const menuGroup = document.querySelector(
+      openMenu.selector
+    );
+
+    const dropdown = menuGroup?.querySelector(
+      '.dropdown-menu'
+    );
+
+    if (
+      !(menuGroup instanceof HTMLElement) ||
+      !(dropdown instanceof HTMLElement)
+    ) {
+      return;
+    }
+
+    const pointerIsNearButton =
+      isPointerWithinGraceArea(
+        menuGroup,
+        event.clientX,
+        event.clientY
+      );
+
+    const pointerIsNearDropdown =
+      isPointerWithinGraceArea(
+        dropdown,
+        event.clientX,
+        event.clientY
+      );
+
+    if (!pointerIsNearButton && !pointerIsNearDropdown) {
+      openMenu.close();
+    }
+  };
+
+  window.addEventListener(
+    'pointermove',
+    handlePointerMove
+  );
+
+  return () => {
+    window.removeEventListener(
+      'pointermove',
+      handlePointerMove
+    );
+  };
+}, [fileMenuOpen, overlayMenuOpen]);
 
   const [activeWorld, setActiveWorld] = useState<World | null>(null);
 
@@ -1096,14 +1201,18 @@ async function handleDiscardAllAndClose() {
   return (
     <div className="app">
       <header className="menu-bar">
-        <div className="menu-group">
+        <div
+          className="menu-group"
+          data-menu-group="file"
+        >
           <button
             className="menu-item"
-            onClick={() =>
+            onClick={() => {
+              setOverlayMenuOpen(false);
               setFileMenuOpen(
                 (current) => !current
-              )
-            }
+              );
+            }}
           >
             File
           </button>
@@ -1190,7 +1299,44 @@ async function handleDiscardAllAndClose() {
 
         <button className="menu-item">
           Settings
-        </button>        
+        </button>
+
+        <div
+  className="menu-group"
+  data-menu-group="overlays"
+>
+  <button
+    className="menu-item"
+    onClick={() => {
+      setFileMenuOpen(false);
+      setOverlayMenuOpen(
+        (current) => !current
+      );
+    }}
+  >
+    Overlays
+  </button>
+
+  {overlayMenuOpen && (
+    <div className="dropdown-menu">
+      {registeredOverlays.map((overlay) => (
+        <button
+          key={overlay.id}
+          className="dropdown-item"
+          onClick={() =>
+            setOverlayEnabled(
+              overlay.id,
+              !isOverlayEnabled(overlay.id)
+            )
+          }
+        >
+          {isOverlayEnabled(overlay.id) ? '✓ ' : ''}
+          {overlay.name}
+        </button>
+      ))}
+    </div>
+  )}
+</div>    
 
         {readyModules.length > 0 && (  <>
           <div className="module-menu-separator" />
@@ -1291,6 +1437,20 @@ async function handleDiscardAllAndClose() {
       </p>
     </div>
   )}
+
+    <div className="overlay-layer">
+    {registeredOverlays
+      .filter((overlay) =>
+        isOverlayEnabled(overlay.id)
+      )
+      .map((overlay) => {
+        const Surface = overlay.Surface;
+
+        return (
+          <Surface key={overlay.id} />
+        );
+      })}
+  </div>
 </main>
 
 {showNewWorldDialog && (

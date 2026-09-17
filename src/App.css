@@ -156,6 +156,33 @@ body,
   overflow: hidden;
 }
 
+.overlay-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+
+  pointer-events: none;
+}
+
+.overlay-layer > * {
+  pointer-events: auto;
+}
+
+.test-overlay-surface {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+
+  padding: 10px 14px;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 6px;
+
+  color: #d8d8d8;
+  font-size: 14px;
+}
+
 .empty-workspace {
   text-align: center;
   color: #aeb0b6;
