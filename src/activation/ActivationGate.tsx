@@ -18,6 +18,7 @@ export function ActivationGate({ children }: ActivationGateProps) {
   const [email, setEmail] = useState('');
   const [deviceName, setDeviceName] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showOfflineNotice, setShowOfflineNotice] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -31,6 +32,23 @@ export function ActivationGate({ children }: ActivationGateProps) {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+  if (!status || !mayEnterOffline(status)) {
+    setShowOfflineNotice(false);
+    return;
+  }
+
+  setShowOfflineNotice(true);
+
+  const timeoutId = window.setTimeout(() => {
+    setShowOfflineNotice(false);
+  }, 8000);
+
+  return () => {
+    window.clearTimeout(timeoutId);
+  };
+}, [status]);
 
   async function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,7 +79,7 @@ export function ActivationGate({ children }: ActivationGateProps) {
     return (
       <>
         {children}
-        {mayEnterOffline(status) && (
+        {mayEnterOffline(status) && showOfflineNotice && (
           <div className="activation-offline-notice" role="status">
             Authorization server unavailable. Working offline.
           </div>
