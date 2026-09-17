@@ -183,6 +183,174 @@ body,
   font-size: 14px;
 }
 
+.messenger-surface {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+
+  width: min(360px, calc(100% - 24px));
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.messenger-panel {
+  width: 100%;
+  height: 190px;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+
+  box-shadow:
+    0 -4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.messenger-chat-log {
+  flex: 1;
+  min-height: 0;
+
+  padding: 6px;
+
+  overflow-y: auto;
+
+  color: #aeb0b6;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.messenger-input-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  padding: 3px;
+
+  border-top: 1px solid #45474e;
+}
+
+.messenger-message-input {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+
+  padding: 2px 5px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+}
+
+.messenger-attach-button,
+.messenger-send-button {
+  height: 22px;
+
+  padding: 0 6px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+
+  cursor: pointer;
+}
+
+.messenger-attach-button {
+  width: 22px;
+  padding: 0;
+}
+
+.messenger-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+
+  max-width: 100%;
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+
+.messenger-tabs::-webkit-scrollbar {
+  height: 5px;
+}
+
+.messenger-tabs::-webkit-scrollbar-track {
+  background: #242529;
+}
+
+.messenger-tabs::-webkit-scrollbar-thumb {
+  background: #4b4e55;
+  border-radius: 3px;
+}
+
+.messenger-tabs::-webkit-scrollbar-thumb:hover {
+  background: #5a5e66;
+}
+
+.messenger-tab {
+  flex: 0 0 96px;
+
+  padding: 3px 6px;
+
+  background: #2b2d31;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.1;
+
+  cursor: pointer;
+}
+
+.messenger-tab:hover {
+  background: #3a3c41;
+  color: white;
+}
+
+.messenger-tab.active {
+  position: relative;
+  z-index: 2;
+
+  margin-top: -3px;
+  padding-top: 6px;
+
+  background: #50535b;
+  color: #ffffff;
+
+  border-color: #666a73;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+
+  font-weight: 600;
+}
+
+.messenger-panel {
+  margin-bottom: -1px;
+}
+
 .empty-workspace {
   text-align: center;
   color: #aeb0b6;
