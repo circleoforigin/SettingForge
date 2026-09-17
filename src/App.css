@@ -281,12 +281,34 @@ body,
   gap: 2px;
 
   max-width: 100%;
-  overflow-x: scroll;
+  overflow-x: auto;
   overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.messenger-tabs-container {
+  max-width: 100%;
+}
+
+.messenger-scrollbar {
+  height: 4px;
+  margin-top: 1px;
+
+  background: #242529;
+  border-radius: 2px;
+}
+
+.messenger-scrollbar-thumb {
+  width: 40%;
+  height: 100%;
+
+  background: #4b4e55;
+  border-radius: 2px;
 }
 
 .messenger-tabs::-webkit-scrollbar {
   height: 5px;
+  display: none;
 }
 
 .messenger-tabs::-webkit-scrollbar-track {

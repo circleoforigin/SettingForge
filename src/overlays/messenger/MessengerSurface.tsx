@@ -60,6 +60,7 @@ export function MessengerSurface() {
         </div>
       )}
 
+      <div className="messenger-tabs-container">
       <div className="messenger-tabs">
         {testConversations.map((conversation) => {
           const isOpen =
@@ -87,6 +88,10 @@ export function MessengerSurface() {
           );
         })}
       </div>
+      </div>
+        <div className="messenger-scrollbar">
+            <div className="messenger-scrollbar-thumb" />
+        </div>
     </div>
   );
 }
