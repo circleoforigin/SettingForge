@@ -60,6 +60,12 @@ interface SaveAllResult {
 
 type CloseTarget = 'world' | 'application';
 
+interface MessengerTabConfig {
+  id: string;
+  name: string;
+  phoneNumber: string;
+}
+
 const TRANSIENT_NOTICE_DURATION_MS = 8000;
 const DROPDOWN_DISMISS_DISTANCE_PX = 36;
 
@@ -86,10 +92,23 @@ function App()
     useState<Set<string>>(() => new Set());
   const isOverlayEnabled = (overlayId: string) =>
     enabledOverlayIds.has(overlayId);
-  const defaultOverlayPlacement: OverlayPlacement = {
-    edge: 'top',
+  const [messengerPlacement, setMessengerPlacement] =
+  useState<OverlayPlacement>({
+    edge: 'bottom',
     alignment: 'center',
-  };
+  });
+
+const [messengerSettingsOpen, setMessengerSettingsOpen] =
+  useState(false);
+
+const [messengerTabs, setMessengerTabs] =
+  useState<MessengerTabConfig[]>([
+    {
+      id: crypto.randomUUID(),
+      name: 'PLAYER ONE',
+      phoneNumber: '',
+    },
+  ]);
 
 const setOverlayEnabled = (
   overlayId: string,
@@ -253,34 +272,38 @@ loadQueueRef.current?.completeModule(
       openMenu.selector
     );
 
-    const dropdown = menuGroup?.querySelector(
-      '.dropdown-menu'
-    );
+    const dropdowns = menuGroup?.querySelectorAll(
+  '.dropdown-menu'
+);
 
-    if (
-      !(menuGroup instanceof HTMLElement) ||
-      !(dropdown instanceof HTMLElement)
-    ) {
-      return;
-    }
+if (
+  !(menuGroup instanceof HTMLElement) ||
+  !dropdowns
+) {
+  return;
+}
 
-    const pointerIsNearButton =
-      isPointerWithinGraceArea(
-        menuGroup,
-        event.clientX,
-        event.clientY
-      );
+const pointerIsNearButton =
+  isPointerWithinGraceArea(
+    menuGroup,
+    event.clientX,
+    event.clientY
+  );
 
-    const pointerIsNearDropdown =
+const pointerIsNearDropdown =
+  Array.from(dropdowns).some(
+    (dropdown) =>
+      dropdown instanceof HTMLElement &&
       isPointerWithinGraceArea(
         dropdown,
         event.clientX,
         event.clientY
-      );
+      )
+  );
 
-    if (!pointerIsNearButton && !pointerIsNearDropdown) {
-      openMenu.close();
-    }
+if (!pointerIsNearButton && !pointerIsNearDropdown) {
+  openMenu.close();
+}
   };
 
   window.addEventListener(
@@ -1323,24 +1346,44 @@ async function handleDiscardAllAndClose() {
   </button>
 
   {overlayMenuOpen && (
-    <div className="dropdown-menu">
-      {registeredOverlays.map((overlay) => (
+  <div className="dropdown-menu">
+    <div className="overlay-menu-entry">
+      <div className="dropdown-item overlay-menu-label">
+        Messenger
+        <span>›</span>
+      </div>
+
+      <div className="dropdown-menu overlay-submenu">
         <button
-          key={overlay.id}
+          type="button"
           className="dropdown-item"
           onClick={() =>
             setOverlayEnabled(
-              overlay.id,
-              !isOverlayEnabled(overlay.id)
+              'messenger',
+              !isOverlayEnabled('messenger')
             )
           }
         >
-          {isOverlayEnabled(overlay.id) ? '✓ ' : ''}
-          {overlay.name}
+          {isOverlayEnabled('messenger') ? '✓ ' : ''}
+          Enabled
         </button>
-      ))}
+
+        <div className="dropdown-separator" />
+
+        <button
+          type="button"
+          className="dropdown-item"
+          onClick={() => {
+            setOverlayMenuOpen(false);
+            setMessengerSettingsOpen(true);
+          }}
+        >
+          Settings...
+        </button>
+      </div>
     </div>
-  )}
+  </div>
+)}
 </div>    
 
         {readyModules.length > 0 && (  <>
@@ -1454,12 +1497,134 @@ async function handleDiscardAllAndClose() {
         return (
           <Surface
             key={overlay.id}
-            placement={defaultOverlayPlacement}
+            placement={messengerPlacement}
           />
         );
       })}
   </div>
 </main>
+
+{messengerSettingsOpen && (
+  <div className="dialog-backdrop">
+    <div className="dialog messenger-settings-dialog">
+      <h2>Messenger Settings</h2>
+
+      <label className="messenger-settings-field">
+        <span>Docking Position</span>
+
+        <select
+          value={
+            `${messengerPlacement.edge}-${messengerPlacement.alignment}`
+          }
+          onChange={(event) => {
+            const [edge, alignment] =
+              event.target.value.split('-') as [
+                OverlayPlacement['edge'],
+                OverlayPlacement['alignment'],
+              ];
+
+            setMessengerPlacement({
+              edge,
+              alignment,
+            });
+          }}
+        >
+          <option value="top-left">Top Left</option>
+          <option value="top-center">Top Center</option>
+          <option value="top-right">Top Right</option>
+          <option value="bottom-left">Bottom Left</option>
+          <option value="bottom-center">Bottom Center</option>
+          <option value="bottom-right">Bottom Right</option>
+        </select>
+      </label>
+
+      <div className="messenger-settings-section">
+        <strong>Tabs</strong>
+
+        {messengerTabs.map((tab) => (
+          <div
+            key={tab.id}
+            className="messenger-settings-tab-row"
+          >
+            <input
+              type="text"
+              placeholder="Name"
+              value={tab.name}
+              onChange={(event) => {
+                const name = event.target.value;
+
+                setMessengerTabs((current) =>
+                  current.map((item) =>
+                    item.id === tab.id
+                      ? { ...item, name }
+                      : item
+                  )
+                );
+              }}
+            />
+
+            <input
+              type="tel"
+              placeholder="Phone number"
+              value={tab.phoneNumber}
+              onChange={(event) => {
+                const phoneNumber = event.target.value;
+
+                setMessengerTabs((current) =>
+                  current.map((item) =>
+                    item.id === tab.id
+                      ? { ...item, phoneNumber }
+                      : item
+                  )
+                );
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                setMessengerTabs((current) =>
+                  current.filter(
+                    (item) => item.id !== tab.id
+                  )
+                )
+              }
+            >
+              ×
+            </button>
+          </div>
+        ))}
+
+        <button
+          type="button"
+          onClick={() =>
+            setMessengerTabs((current) => [
+              ...current,
+              {
+                id: crypto.randomUUID(),
+                name: '',
+                phoneNumber: '',
+              },
+            ])
+          }
+        >
+          + Add Tab
+        </button>
+      </div>
+
+      <div className="dialog-buttons">
+        <button
+          type="button"
+          onClick={() =>
+            setMessengerSettingsOpen(false)
+          }
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
 {showNewWorldDialog && (
   <div className="dialog-backdrop">

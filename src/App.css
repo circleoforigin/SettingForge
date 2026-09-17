@@ -156,6 +156,36 @@ body,
   overflow: hidden;
 }
 
+.overlay-menu-entry {
+  position: relative;
+  width: 100%;
+}
+
+.overlay-menu-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.overlay-submenu {
+  display: none;
+  position: absolute;
+
+  top: 0;
+  left: 100%;
+
+  margin: 0;
+  margin-left: 2px;
+
+  min-width: 160px;
+
+  transform: none;
+}
+
+.overlay-menu-entry:hover > .overlay-submenu {
+  display: block;
+}
+
 .overlay-layer {
   position: absolute;
   inset: 0;
@@ -166,6 +196,51 @@ body,
 
 .overlay-layer > * {
   pointer-events: auto;
+}
+
+.messenger-settings-dialog {
+  width: 480px;
+}
+
+.messenger-settings-field,
+.messenger-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.messenger-settings-field span,
+.messenger-settings-section strong {
+  font-size: 12px;
+  color: #b8bac0;
+}
+
+.messenger-settings-field select,
+.messenger-settings-tab-row input {
+  padding: 6px 8px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  font: inherit;
+  font-size: 12px;
+}
+
+.messenger-settings-tab-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    28px;
+
+  gap: 5px;
+}
+
+.messenger-settings-tab-row button {
+  padding: 0;
 }
 
 .messenger-surface {
