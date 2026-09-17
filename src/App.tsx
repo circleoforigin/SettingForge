@@ -9,6 +9,7 @@ import { resolveModuleEntry } from './modules/ModuleEntryResolver';
 import type { World } from './models/World';
 import { worldRepository } from './worlds/WorldRepository';
 import { overlayRegistry } from './overlays/registry';
+import type { OverlayPlacement } from './overlays/OverlayPlacement';
 import {
   registerActionHostService,
   sendActionCatalogTo,
@@ -84,7 +85,11 @@ function App()
   const [enabledOverlayIds, setEnabledOverlayIds] =
     useState<Set<string>>(() => new Set());
   const isOverlayEnabled = (overlayId: string) =>
-  enabledOverlayIds.has(overlayId);
+    enabledOverlayIds.has(overlayId);
+  const defaultOverlayPlacement: OverlayPlacement = {
+    edge: 'top',
+    alignment: 'center',
+  };
 
 const setOverlayEnabled = (
   overlayId: string,
@@ -1447,7 +1452,10 @@ async function handleDiscardAllAndClose() {
         const Surface = overlay.Surface;
 
         return (
-          <Surface key={overlay.id} />
+          <Surface
+            key={overlay.id}
+            placement={defaultOverlayPlacement}
+          />
         );
       })}
   </div>

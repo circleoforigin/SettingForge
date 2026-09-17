@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { OverlaySurfaceProps } from '../OverlayDefinition';
 
 interface MessengerConversation {
   id: string;
@@ -7,8 +8,8 @@ interface MessengerConversation {
 
 const testConversations: MessengerConversation[] = [
   {
-    id: 'all',
-    name: 'ALL',
+    id: 'group',
+    name: 'GROUP',
   },
   {
     id: 'player-1',
@@ -16,7 +17,9 @@ const testConversations: MessengerConversation[] = [
   },
 ];
 
-export function MessengerSurface() {
+export function MessengerSurface({
+  placement,
+}: OverlaySurfaceProps) {
   const [
     openConversationId,
     setOpenConversationId,
@@ -29,12 +32,22 @@ export function MessengerSurface() {
     ) ?? null;
 
   return (
-    <div className="messenger-surface">
+    <div
+        className="messenger-surface"
+        data-edge={placement.edge}
+        data-alignment={placement.alignment}
+    >
       {openConversation && (
         <div className="messenger-panel">
-          <div className="messenger-chat-log">
-            Conversation will appear here.
-          </div>
+            {openConversation.id === 'group' && (
+                <button
+                    type="button"
+                    className="messenger-recipients-tab"
+                >
+                    RECIPIENTS
+                </button>
+            )}
+          <div className="messenger-chat-log" />
 
           <div className="messenger-input-row">
             <button
@@ -60,7 +73,6 @@ export function MessengerSurface() {
         </div>
       )}
 
-      <div className="messenger-tabs-container">
       <div className="messenger-tabs">
         {testConversations.map((conversation) => {
           const isOpen =
@@ -87,11 +99,7 @@ export function MessengerSurface() {
             </button>
           );
         })}
-      </div>
-      </div>
-        <div className="messenger-scrollbar">
-            <div className="messenger-scrollbar-thumb" />
-        </div>
+      </div>        
     </div>
   );
 }

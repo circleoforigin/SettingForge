@@ -1,4 +1,11 @@
 import type { ComponentType } from 'react';
+import type {
+  OverlayPlacement,
+} from './OverlayPlacement';
+
+export interface OverlaySurfaceProps {
+  placement: OverlayPlacement;
+}
 
 export interface OverlayDefinition {
   id: string;
@@ -6,5 +13,5 @@ export interface OverlayDefinition {
   description: string;
   version: string;
 
-  Surface: ComponentType;
+  Surface: ComponentType<OverlaySurfaceProps>;
 }
