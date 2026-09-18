@@ -167,15 +167,14 @@ body,
   justify-content: space-between;
 }
 
-.overlay-submenu {
+.dropdown-menu.overlay-submenu {
   display: none;
   position: absolute;
 
   top: 0;
-  left: 100%;
+  left: calc(100% + 2px);
 
   margin: 0;
-  margin-left: 2px;
 
   min-width: 160px;
 
@@ -246,7 +245,7 @@ body,
 .messenger-surface {
   position: absolute;
 
-  width: min(360px, calc(100% - 24px));
+  width: min(430px, calc(100% - 24px));
 
   display: flex;
   flex-direction: column;
@@ -290,6 +289,34 @@ body,
   border-bottom: 1px solid #666a73;
 
   border-radius: 0 0 5px 5px;
+}
+
+.messenger-tab.unread {
+  animation:
+    messenger-unread-pulse 2.8s
+    ease-in-out infinite;
+}
+
+@keyframes messenger-unread-pulse {
+  0%,
+  100% {
+    background: #2b2d31;
+    border-color: #45474e;
+    box-shadow: none;
+  }
+
+  50% {
+    background: #7a3035;
+    border-color: #d45a62;
+
+    box-shadow:
+      0 0 4px rgba(212, 90, 98, 0.7),
+      0 0 9px rgba(212, 90, 98, 0.35);
+  }
+}
+
+.messenger-tab.active.unread {
+  animation: none;
 }
 
 .messenger-surface[data-edge='top']
@@ -459,14 +486,58 @@ body,
   padding: 0;
 }
 
-.messenger-tabs {
+.messenger-tab-navigation {
   display: flex;
+  align-items: stretch;
   justify-content: center;
-  gap: 2px;
+
   position: relative;
   z-index: 2;
+
   max-width: 100%;
+}
+
+.messenger-tabs {
+  display: flex;
+  gap: 2px;
+
+  width: 390px;
+  max-width: 390px;
+
   overflow: hidden;
+}
+
+.messenger-tab-arrow {
+  flex: 0 0 20px;
+
+  width: 20px;
+  padding: 0;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: 1px solid #45474e;
+
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.messenger-tab-arrow:hover {
+  background: #3a3c41;
+  color: white;
+}
+
+.messenger-tab-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.messenger-tab-arrow:disabled:hover {
+  background: #2b2d31;
+  color: #aeb0b6;
 }
 
 .messenger-tab {
@@ -486,7 +557,9 @@ body,
   text-overflow: ellipsis;
 
   font: inherit;
+  font-family: "Bahnschrift Condensed", "Roboto Condensed," Arial, sans-serif;
   font-size: 11px;
+  font-stretch: condensed;
   line-height: 1.1;
 
   cursor: pointer;

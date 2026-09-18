@@ -1498,6 +1498,11 @@ async function handleDiscardAllAndClose() {
           <Surface
             key={overlay.id}
             placement={messengerPlacement}
+            tabs={
+              overlay.id === 'messenger'
+                ? messengerTabs
+                : undefined
+            }
           />
         );
       })}

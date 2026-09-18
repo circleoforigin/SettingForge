@@ -5,6 +5,11 @@ import type {
 
 export interface OverlaySurfaceProps {
   placement: OverlayPlacement;
+  tabs?: {
+    id: string;
+    name: string;
+    phoneNumber: string;
+  }[];
 }
 
 export interface OverlayDefinition {
