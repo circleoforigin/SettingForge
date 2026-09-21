@@ -15,12 +15,21 @@ type RequestHandler =
     message: HostRequestMessage
   ) => Promise<unknown>;
 
-  interface PendingModuleRequest {
+interface PendingModuleRequest {
   moduleId: string;
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
+  timeoutId: ReturnType<typeof setTimeout>;  
+}
+
+interface PendingRelayedRequest {
+  sourceWindow: Window;
+  sourceModuleId: string;
+  targetModuleId: string;
+  originalRequestId: string;
+  type: string;
   timeoutId: ReturnType<typeof setTimeout>;
-}  
+}
 
 export class HostEventBroker {
     private readonly moduleWindows = new Map<string, Window>();  
@@ -31,6 +40,9 @@ export class HostEventBroker {
 
   private readonly pendingModuleRequests =
   new Map<string, PendingModuleRequest>();
+
+  private readonly pendingRelayedRequests =
+  new Map<string, PendingRelayedRequest>();
 
   start(): () => void {
     const handleMessage = (
@@ -79,14 +91,36 @@ if (
   message.kind ===
   'response'
 ) {
-  this.handleModuleResponse(
+  if (
+    this.pendingRelayedRequests.has(
+      message.requestId
+    )
+  ) {
+    this.handleRelayedResponse(
+      message
+    );
+  } else {
+    this.handleModuleResponse(
+      message
+    );
+  }
+
+  return;
+}
+
+if (message.targetModuleId) {
+  this.relayRequest(
+    event,
     message
   );
 
   return;
 }
 
-void this.handleRequest(event, message);
+void this.handleRequest(
+  event,
+  message
+);
     };
 
     window.addEventListener(
@@ -299,6 +333,172 @@ requestModule<T>(
 
     moduleWindow.postMessage(message, '*');
   });
+}
+
+private relayRequest(
+  event: MessageEvent,
+  request: HostRequestMessage
+): void {
+  const targetModuleId =
+    request.targetModuleId;
+
+  const sourceWindow =
+    event.source as Window | null;
+
+  if (
+    !targetModuleId ||
+    !sourceWindow
+  ) {
+    return;
+  }
+
+  const targetWindow =
+    this.moduleWindows.get(
+      targetModuleId
+    );
+
+  if (!targetWindow) {
+    const response: HostResponseMessage = {
+      kind: 'response',
+      id: crypto.randomUUID(),
+      requestId: request.id,
+      sourceModuleId: 'settingforge',
+      type: `${request.type}.response`,
+      timestamp: Date.now(),
+      ok: false,
+      error:
+        `Module "${targetModuleId}" is not connected.`,
+    };
+
+    sourceWindow.postMessage(
+      response,
+      '*'
+    );
+
+    return;
+  }
+
+  const relayRequestId =
+    crypto.randomUUID();
+
+  const timeoutId =
+    setTimeout(
+      () => {
+        const pending =
+          this.pendingRelayedRequests.get(
+            relayRequestId
+          );
+
+        if (!pending) {
+          return;
+        }
+
+        this.pendingRelayedRequests.delete(
+          relayRequestId
+        );
+
+        const response: HostResponseMessage = {
+          kind: 'response',
+          id: crypto.randomUUID(),
+          requestId:
+            pending.originalRequestId,
+          sourceModuleId:
+            'settingforge',
+          type:
+            `${pending.type}.response`,
+          timestamp:
+            Date.now(),
+          ok:
+            false,
+          error:
+            `Module "${pending.targetModuleId}" did not respond to "${pending.type}".`,
+        };
+
+        pending.sourceWindow.postMessage(
+          response,
+          '*'
+        );
+      },
+      5000
+    );
+
+  this.pendingRelayedRequests.set(
+    relayRequestId,
+    {
+      sourceWindow,
+      sourceModuleId:
+        request.sourceModuleId,
+      targetModuleId,
+      originalRequestId:
+        request.id,
+      type:
+        request.type,
+      timeoutId,
+    }
+  );
+
+  const forwardedRequest:
+    HostRequestMessage = {
+      ...request,
+
+      id:
+        relayRequestId,
+
+      sourceModuleId:
+        request.sourceModuleId,
+
+      targetModuleId:
+        undefined,
+  };
+
+  targetWindow.postMessage(
+    forwardedRequest,
+    '*'
+  );
+}
+
+private handleRelayedResponse(
+  response: HostResponseMessage
+): void {
+  const pending =
+    this.pendingRelayedRequests.get(
+      response.requestId
+    );
+
+  if (!pending) {
+    return;
+  }
+
+  if (
+    response.sourceModuleId !==
+    pending.targetModuleId
+  ) {
+    return;
+  }
+
+  clearTimeout(
+    pending.timeoutId
+  );
+
+  this.pendingRelayedRequests.delete(
+    response.requestId
+  );
+
+  const relayedResponse:
+    HostResponseMessage = {
+      ...response,
+
+      id:
+        crypto.randomUUID(),
+
+      requestId:
+        pending.originalRequestId,
+  };
+
+  pending.sourceWindow.postMessage(
+    relayedResponse,
+    '*'
+  );
 }
 
 private handleModuleResponse(response: HostResponseMessage): void {
