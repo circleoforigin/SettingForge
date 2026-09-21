@@ -32,7 +32,18 @@ interface PendingRelayedRequest {
 }
 
 export class HostEventBroker {
-    private readonly moduleWindows = new Map<string, Window>();  
+  private focusModule:
+    ((moduleId: string) => void) | null =
+      null;
+
+  setModuleFocusHandler(
+    handler:
+      ((moduleId: string) => void) | null
+  ): void {
+    this.focusModule =
+      handler;
+  }
+  private readonly moduleWindows = new Map<string, Window>();  
   
   private readonly eventHandlers = new Map<string, Set<EventHandler>>();
 
@@ -376,6 +387,13 @@ private relayRequest(
     );
 
     return;
+  }
+    if (
+    request.focusTarget === true
+  ) {
+    this.focusModule?.(
+      targetModuleId
+    );
   }
 
   const relayRequestId =

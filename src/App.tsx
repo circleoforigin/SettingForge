@@ -486,6 +486,22 @@ useEffect(() => {
   const [activeModuleId, setActiveModuleId] =
     useState<string | null>(null);
 
+  useEffect(() => {
+  hostEventBroker.setModuleFocusHandler(
+    (moduleId) => {
+      setActiveModuleId(
+        moduleId
+      );
+    }
+  );
+
+  return () => {
+    hostEventBroker.setModuleFocusHandler(
+      null
+    );
+  };
+}, []);
+
   const enabledModules =
     enabledModuleIds
       .map((id) => moduleRegistry.get(id))

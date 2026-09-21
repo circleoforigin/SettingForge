@@ -12,6 +12,7 @@ export type HostRequestMessage = {
   id: string;
   sourceModuleId: string;
   targetModuleId?: string;
+  focusTarget?: boolean;
   type: string;
   timestamp: number;
   payload?: unknown;
