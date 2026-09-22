@@ -34,6 +34,16 @@ interface NewWorldModuleSelection {
   source: NewWorldProjectSource;
 }
 
+interface WorldCreationOperation {
+  runId: string;
+  worldId: string;
+  worldName: string;
+  createdAt: Date;
+  projectReferences: World['modules'];
+  failed: boolean;
+  errors: string[];
+}
+
 interface ModuleProjectStatus {
   projectId?: string;
   projectName?: string;
@@ -355,6 +365,11 @@ const [worldCreating, setWorldCreating] =
 const [worldCreateError, setWorldCreateError] =
   useState<string | null>(null);
 
+const worldCreationOperationRef =
+  useRef<WorldCreationOperation | null>(
+    null
+  );
+
   const [showLoadWorldDialog, setShowLoadWorldDialog] =
     useState(false);
 
@@ -461,11 +476,32 @@ if (!loadQueueRef.current) {
               );
           });
       },
-      projectCreated: (run, result) => {
+            projectCreated: (
+        run,
+        result
+      ) => {
         console.info(
           `[LoadQueue] ${run.id} project.create completed ` +
           `${result.moduleId} → ${result.projectId}`
         );
+
+        const operation =
+          worldCreationOperationRef.current;
+
+        if (
+          !operation ||
+          operation.runId !== run.id
+        ) {
+          return;
+        }
+
+        operation.projectReferences.push({
+          moduleId:
+            result.moduleId,
+
+          projectId:
+            result.projectId,
+        });
       },
 
       failed: (run, item, message) => {
@@ -474,6 +510,23 @@ if (!loadQueueRef.current) {
           message
         );
 
+        const creationOperation =
+          worldCreationOperationRef.current;
+
+        if (
+          creationOperation?.runId ===
+          run.id
+        ) {
+          creationOperation.failed =
+            true;
+
+          creationOperation.errors.push(
+            `${item.moduleId}: ${message}`
+          );
+
+          return;
+        }
+
         setWorldLoadError((current) =>
           current
             ? `${current} ${message}`
@@ -481,10 +534,102 @@ if (!loadQueueRef.current) {
         );
       },
 
-      completed: (run) => {
+            completed: (run) => {
         console.info(
           `[LoadQueue] ${run.id} complete`
         );
+
+        const operation =
+          worldCreationOperationRef.current;
+
+        if (
+          !operation ||
+          operation.runId !== run.id
+        ) {
+          return;
+        }
+
+        worldCreationOperationRef.current =
+          null;
+
+        if (operation.failed) {
+          setWorldCreating(false);
+
+          setWorldCreateError(
+            operation.errors.join(' ')
+          );
+
+          return;
+        }
+
+        const world: World = {
+          id:
+            operation.worldId,
+
+          name:
+            operation.worldName,
+
+          modules:
+            operation.projectReferences,
+
+          createdAt:
+            operation.createdAt,
+
+          updatedAt:
+            operation.createdAt,
+        };
+
+        void worldRepository
+          .saveWorld(world)
+          .then(() => {
+            setActiveWorld(
+              world
+            );
+
+            setWorldDirty(false);
+
+            setActiveModuleId(
+              world.modules[0]
+                ?.moduleId ??
+                null
+            );
+
+            setWorldSaveNotice({
+              kind: 'success',
+              message:
+                `Created ${world.name}.world.`,
+            });
+
+            setNewWorldName('');
+
+            setNewWorldModuleSelections(
+              []
+            );
+
+            setShowNewWorldDialog(
+              false
+            );
+          })
+          .catch((error) => {
+            const message =
+              error instanceof Error
+                ? error.message
+                : 'Unable to save the new World.';
+
+            console.error(
+              'Unable to save new World:',
+              error
+            );
+
+            setWorldCreateError(
+              message
+            );
+          })
+          .finally(() => {
+            setWorldCreating(
+              false
+            );
+          });
       },
     });
 }
@@ -656,8 +801,129 @@ function handleCreateWorld() {
     return;
   }
 
+  if (worldCreating) {
+    return;
+  }
+
+  const importSelections =
+    newWorldModuleSelections.filter(
+      (selection) =>
+        selection.source ===
+        'import'
+    );
+
+  if (
+    importSelections.length > 0
+  ) {
+    setWorldCreateError(
+      'Import Existing Project is not connected yet.'
+    );
+
+    return;
+  }
+
+  const unknownModule =
+    newWorldModuleSelections.find(
+      (selection) =>
+        !moduleRegistry.get(
+          selection.moduleId
+        )
+    );
+
+  if (unknownModule) {
+    setWorldCreateError(
+      `Module "${unknownModule.moduleId}" is not registered.`
+    );
+
+    return;
+  }
+
+  const runId =
+    `world.create:${crypto.randomUUID()}`;
+
+  const worldId =
+    crypto.randomUUID();
+
+  const createdAt =
+    new Date();
+
+  const operation:
+    WorldCreationOperation = {
+      runId,
+      worldId,
+      worldName:
+        name,
+      createdAt,
+      projectReferences:
+        [],
+      failed:
+        false,
+      errors:
+        [],
+    };
+
+  const queueItems:
+    LoadQueueItem[] = [];
+
+  // First make every selected module ready.
+  for (
+    const selection of
+    newWorldModuleSelections
+  ) {
+    queueItems.push({
+      id:
+        crypto.randomUUID(),
+
+      type:
+        'module.load',
+
+      moduleId:
+        selection.moduleId,
+    });
+  }
+
+  // Only after every module is ready do we
+  // create its World-owned Project.
+  for (
+    const selection of
+    newWorldModuleSelections
+  ) {
+    queueItems.push({
+      id:
+        crypto.randomUUID(),
+
+      type:
+        'project.create',
+
+      moduleId:
+        selection.moduleId,
+
+      projectName:
+        name,
+    });
+  }
+
+  setWorldCreating(
+    true
+  );
+
   setWorldCreateError(
-    'World creation is not connected yet.'
+    null
+  );
+
+  setWorldSaveNotice(
+    null
+  );
+
+  worldCreationOperationRef.current =
+    operation;
+
+  loadQueueRef.current?.replace(
+    {
+      id:
+        runId,
+    },
+    queueItems
   );
 }
 
