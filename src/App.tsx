@@ -8,6 +8,7 @@ import { modulePresenceService } from './modules/ModulePresenceService';
 import { resolveModuleEntry } from './modules/ModuleEntryResolver';
 import type { World } from './models/World';
 import { worldRepository } from './worlds/WorldRepository';
+import { projectLifecycleService } from './projects/ProjectLifecycleService';
 import { overlayRegistry } from './overlays/registry';
 import type { OverlayPlacement } from './overlays/OverlayPlacement';
 import {
@@ -19,6 +20,7 @@ import type {
   ProjectCreateResponse,
   ProjectLoadFailedPayload,
   ProjectLoadedPayload,
+  ProjectSummary,
 } from '@settingforge/module-sdk';
 import {
   LoadQueueService,
@@ -32,6 +34,7 @@ type NewWorldProjectSource =
 interface NewWorldModuleSelection {
   moduleId: string;
   source: NewWorldProjectSource;
+  importedProjectId?: string;
 }
 
 interface WorldCreationFailure {
@@ -365,6 +368,25 @@ useEffect(() => {
 
 const [worldCreating, setWorldCreating] =
   useState(false);
+
+const [
+  newWorldImportProjects,
+  setNewWorldImportProjects,
+] = useState<Record<string, ProjectSummary[]>>(
+  {}
+);
+
+const [
+  newWorldImportLoadingModuleIds,
+  setNewWorldImportLoadingModuleIds,
+] = useState<string[]>([]);
+
+const [
+  newWorldImportErrors,
+  setNewWorldImportErrors,
+] = useState<Record<string, string>>(
+  {}
+);
 
 const [worldCreateError, setWorldCreateError] =
   useState<string | null>(null);
@@ -766,6 +788,9 @@ useEffect(() => {
 function handleNewWorld() {
   setNewWorldName('');
   setNewWorldModuleSelections([]);
+  setNewWorldImportProjects({});
+  setNewWorldImportLoadingModuleIds([]);
+  setNewWorldImportErrors({});
   setWorldCreateError(null);
   setShowNewWorldDialog(true);
 }
@@ -810,10 +835,86 @@ function setNewWorldModuleSource(
           ? {
               ...selection,
               source,
+              importedProjectId:
+                source === 'import'
+                  ? selection.importedProjectId
+                  : undefined,
             }
           : selection
       )
   );
+
+  if (
+    source === 'import' &&
+    !newWorldImportProjects[moduleId]
+  ) {
+    void loadNewWorldImportProjects(
+      moduleId
+    );
+  }
+}
+
+async function loadNewWorldImportProjects(
+  moduleId: string
+) {
+  setNewWorldImportErrors(
+    (current) => {
+      const next = {
+        ...current,
+      };
+
+      delete next[moduleId];
+
+      return next;
+    }
+  );
+
+  setNewWorldImportLoadingModuleIds(
+    (current) =>
+      current.includes(moduleId)
+        ? current
+        : [...current, moduleId]
+  );
+
+  try {
+    const response =
+      await projectLifecycleService
+        .listProjects(moduleId);
+
+    setNewWorldImportProjects(
+      (current) => ({
+        ...current,
+        [moduleId]:
+          response.projects,
+      })
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Unable to load Projects.';
+
+    console.error(
+      `Unable to list Projects for ${moduleId}:`,
+      error
+    );
+
+    setNewWorldImportErrors(
+      (current) => ({
+        ...current,
+        [moduleId]:
+          message,
+      })
+    );
+  } finally {
+    setNewWorldImportLoadingModuleIds(
+      (current) =>
+        current.filter(
+          (candidate) =>
+            candidate !== moduleId
+        )
+    );
+  }
 }
 
 function handleCreateWorld() {
