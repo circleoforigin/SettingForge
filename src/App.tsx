@@ -16,6 +16,7 @@ import {
   sendRetainedActionStateTo,
 } from './actions/ActionHostService';
 import type {
+  ProjectCreateResponse,
   ProjectLoadFailedPayload,
   ProjectLoadedPayload,
 } from '@settingforge/module-sdk';
@@ -430,18 +431,22 @@ if (!loadQueueRef.current) {
         );
 
         void hostEventBroker
-          .requestModule(
+          .requestModule<ProjectCreateResponse>(
             moduleId,
             'project.create',
             {
               name: projectName,
             }
           )
-          .then(() => {
+          .then((response) => {
             loadQueueRef.current
-              ?.completeProjectCreate(
-                moduleId
-              );
+              ?.completeProjectCreate({
+                moduleId,
+                projectId:
+                  response.projectId,
+                projectName:
+                  response.projectName,
+              });
           })
           .catch((error) => {
             const message =
@@ -456,10 +461,16 @@ if (!loadQueueRef.current) {
               );
           });
       },
+      projectCreated: (run, result) => {
+        console.info(
+          `[LoadQueue] ${run.id} project.create completed ` +
+          `${result.moduleId} → ${result.projectId}`
+        );
+      },
 
-      failed: (item, message) => {
+      failed: (run, item, message) => {
         console.error(
-          `[LoadQueue] ${item.type} failed:`,
+          `[LoadQueue] ${run.id} ${item.type} failed:`,
           message
         );
 
@@ -470,9 +481,9 @@ if (!loadQueueRef.current) {
         );
       },
 
-      completed: () => {
+      completed: (run) => {
         console.info(
-          '[LoadQueue] World restoration complete'
+          `[LoadQueue] ${run.id} complete`
         );
       },
     });
@@ -833,7 +844,12 @@ for (const reference of missingModules) {
   );
 }
 
-loadQueueRef.current?.replace(loadItems);
+loadQueueRef.current?.replace(
+  {
+    id: `world.load:${world.id}:${generation}`,
+  },
+  loadItems
+);
   } catch (error) {
     if (generation !== worldLoadGenerationRef.current) return;
     const message = error instanceof Error

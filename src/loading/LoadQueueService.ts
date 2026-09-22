@@ -18,6 +18,16 @@ export type LoadQueueItem =
       projectName: string;
     };
 
+export interface ProjectCreateQueueResult {
+  moduleId: string;
+  projectId: string;
+  projectName: string;
+}
+
+export interface LoadQueueRun {
+  id: string;
+}
+
 interface LoadQueueCallbacks {
   loadModule: (moduleId: string) => void;
   loadProject: (
@@ -29,31 +39,44 @@ interface LoadQueueCallbacks {
     moduleId: string,
     projectName: string
   ) => void;
+  projectCreated?: (
+    run: LoadQueueRun,
+    result: ProjectCreateQueueResult
+  ) => void;
   failed?: (
+    run: LoadQueueRun,
     item: LoadQueueItem,
     message: string
   ) => void;
-  completed?: () => void;
+  completed?: (
+    run: LoadQueueRun
+  ) => void;
 }
 
 export class LoadQueueService {
   private queue: LoadQueueItem[] = [];
   private active: LoadQueueItem | null = null;
+  private run: LoadQueueRun | null = null;
   private readonly callbacks: LoadQueueCallbacks;
 
   constructor(callbacks: LoadQueueCallbacks) {
     this.callbacks = callbacks;
   }  
 
-  replace(items: LoadQueueItem[]): void {
+  replace(
+    run: LoadQueueRun,
+    items: LoadQueueItem[]
+  ): void {
     this.queue = [...items];
     this.active = null;
+    this.run = run;
     this.pump();
   }
 
   clear(): void {
     this.queue = [];
     this.active = null;
+    this.run = null;
   }
 
   completeModule(moduleId: string): void {
@@ -84,16 +107,23 @@ export class LoadQueueService {
     this.advance();
   }
 
-    completeProjectCreate(
-    moduleId: string
+  completeProjectCreate(
+    result: ProjectCreateQueueResult
   ): void {
     if (
       this.active?.type !==
         'project.create' ||
-      this.active.moduleId !== moduleId
+      this.active.moduleId !==
+        result.moduleId ||
+      !this.run
     ) {
       return;
     }
+
+    this.callbacks.projectCreated?.(
+      this.run,
+      result
+    );
 
     this.advance();
   }
@@ -110,10 +140,13 @@ export class LoadQueueService {
       return;
     }
 
-    this.callbacks.failed?.(
-      this.active,
-      message
-    );
+    if (this.run) {
+      this.callbacks.failed?.(
+        this.run,
+        this.active,
+        message
+      );
+    }
 
     this.advance();
   }
@@ -133,10 +166,13 @@ export class LoadQueueService {
       return;
     }
 
-    this.callbacks.failed?.(
-      this.active,
-      message
-    );
+    if (this.run) {
+      this.callbacks.failed?.(
+        this.run,
+        this.active,
+        message
+      );
+    }
 
     this.advance();
   }
@@ -153,7 +189,17 @@ export class LoadQueueService {
       this.queue.shift();
 
     if (!next) {
-      this.callbacks.completed?.();
+      const completedRun =
+        this.run;
+
+      this.run = null;
+
+      if (completedRun) {
+        this.callbacks.completed?.(
+          completedRun
+        );
+      }
+
       return;
     }
 
@@ -190,10 +236,13 @@ export class LoadQueueService {
       );
 
     if (!sent) {
-      this.callbacks.failed?.(
-        next,
-        `Module "${next.moduleId}" is not connected.`
-      );
+      if (this.run) {
+        this.callbacks.failed?.(
+          this.run,
+          next,
+          `Module "${next.moduleId}" is not connected.`
+        );
+      }
 
       this.active = null;
       this.pump();
