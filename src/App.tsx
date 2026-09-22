@@ -396,6 +396,9 @@ const worldCreationOperationRef =
     null
   );
 
+const pendingImportListModuleRef =
+  useRef<string | null>(null);
+
   const [showLoadWorldDialog, setShowLoadWorldDialog] =
     useState(false);
 
@@ -444,7 +447,7 @@ if (!loadQueueRef.current) {
         enableRequiredModule(moduleId);
       },
 
-           loadProject: (
+      loadProject: (
         moduleId,
         projectId,
         loadId
@@ -502,7 +505,46 @@ if (!loadQueueRef.current) {
               );
           });
       },
-            projectCreated: (
+            renameProject: (
+        moduleId,
+        projectId,
+        projectName
+      ) => {
+        console.info(
+          `[LoadQueue] dispatching project.rename ${moduleId}`
+        );
+
+        void projectLifecycleService
+          .renameProject(
+            moduleId,
+            projectId,
+            projectName
+          )
+          .then((response) => {
+            loadQueueRef.current
+              ?.completeProjectRename({
+                moduleId,
+                projectId:
+                  response.projectId,
+                projectName:
+                  response.projectName,
+              });
+          })
+          .catch((error) => {
+            const message =
+              error instanceof Error
+                ? error.message
+                : 'Project rename failed.';
+
+            loadQueueRef.current
+              ?.failProjectRename(
+                moduleId,
+                projectId,
+                message
+              );
+          });
+      },
+      projectCreated: (
         run,
         result
       ) => {
@@ -529,7 +571,44 @@ if (!loadQueueRef.current) {
             result.projectId,
         });
       },
+      projectRenamed: (
+        run,
+        result
+      ) => {
+        console.info(
+          `[LoadQueue] ${run.id} project.rename completed ` +
+          `${result.moduleId} → ${result.projectId}`
+        );
 
+        const operation =
+          worldCreationOperationRef.current;
+
+        if (
+          !operation ||
+          operation.runId !== run.id
+        ) {
+          return;
+        }
+
+        const alreadyRecorded =
+          operation.projectReferences.some(
+            (reference) =>
+              reference.moduleId ===
+                result.moduleId &&
+              reference.projectId ===
+                result.projectId
+          );
+
+        if (!alreadyRecorded) {
+          operation.projectReferences.push({
+            moduleId:
+              result.moduleId,
+
+            projectId:
+              result.projectId,
+          });
+        }
+      },
       failed: (run, item, message) => {
         console.error(
           `[LoadQueue] ${run.id} ${item.type} failed:`,
@@ -560,10 +639,30 @@ if (!loadQueueRef.current) {
         );
       },
 
-            completed: (run) => {
+      completed: (run) => {
         console.info(
           `[LoadQueue] ${run.id} complete`
         );
+
+                if (
+          run.id.startsWith(
+            'world.import-list:'
+          )
+        ) {
+          const moduleId =
+            pendingImportListModuleRef.current;
+
+          pendingImportListModuleRef.current =
+            null;
+
+          if (moduleId) {
+            void requestNewWorldImportProjects(
+              moduleId
+            );
+          }
+
+          return;
+        }
 
         const operation =
           worldCreationOperationRef.current;
@@ -876,6 +975,46 @@ async function loadNewWorldImportProjects(
         : [...current, moduleId]
   );
 
+  const presence =
+    modulePresenceService.get(
+      moduleId
+    );
+
+  if (
+    presence?.state !== 'ready'
+  ) {
+    pendingImportListModuleRef.current =
+      moduleId;
+
+    loadQueueRef.current?.replace(
+      {
+        id:
+          `world.import-list:${moduleId}:${crypto.randomUUID()}`,
+      },
+      [
+        {
+          id:
+            crypto.randomUUID(),
+
+          type:
+            'module.load',
+
+          moduleId,
+        },
+      ]
+    );
+
+    return;
+  }
+
+  await requestNewWorldImportProjects(
+    moduleId
+  );
+}
+
+async function requestNewWorldImportProjects(
+  moduleId: string
+) {
   try {
     const response =
       await projectLifecycleService
@@ -917,7 +1056,7 @@ async function loadNewWorldImportProjects(
   }
 }
 
-function handleCreateWorld() {
+async function handleCreateWorld() {
   const name =
     newWorldName.trim();
 
@@ -943,23 +1082,6 @@ function handleCreateWorld() {
     return;
   }
 
-  const importSelections =
-    newWorldModuleSelections.filter(
-      (selection) =>
-        selection.source ===
-        'import'
-    );
-
-  if (
-    importSelections.length > 0
-  ) {
-    setWorldCreateError(
-      'Import Existing Project is not connected yet.'
-    );
-
-    return;
-  }
-
   const unknownModule =
     newWorldModuleSelections.find(
       (selection) =>
@@ -971,6 +1093,105 @@ function handleCreateWorld() {
   if (unknownModule) {
     setWorldCreateError(
       `Module "${unknownModule.moduleId}" is not registered.`
+    );
+
+    return;
+  }
+
+  const incompleteImport =
+    newWorldModuleSelections.find(
+      (selection) =>
+        selection.source ===
+          'import' &&
+        !selection.importedProjectId
+    );
+
+  if (incompleteImport) {
+    const moduleName =
+      moduleRegistry.get(
+        incompleteImport.moduleId
+      )?.name ??
+      incompleteImport.moduleId;
+
+    setWorldCreateError(
+      `Select an existing Project for ${moduleName}.`
+    );
+
+    return;
+  }
+
+  setWorldCreating(
+    true
+  );
+
+  setWorldCreateError(
+    null
+  );
+
+  setWorldSaveNotice(
+    null
+  );
+
+  /*
+   * Validate ownership before changing
+   * any imported Project.
+   */
+  try {
+    for (
+      const selection of
+      newWorldModuleSelections
+    ) {
+      if (
+        selection.source !==
+          'import' ||
+        !selection.importedProjectId
+      ) {
+        continue;
+      }
+
+      const owner =
+        await worldRepository
+          .findProjectOwner(
+            selection.moduleId,
+            selection.importedProjectId
+          );
+
+      if (owner) {
+        const moduleName =
+          moduleRegistry.get(
+            selection.moduleId
+          )?.name ??
+          selection.moduleId;
+
+        setWorldCreateError(
+          `${moduleName} Project is already owned by ` +
+          `${owner.worldName}.world.`
+        );
+
+        setWorldCreating(
+          false
+        );
+
+        return;
+      }
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Unable to verify Project ownership.';
+
+    console.error(
+      'Unable to verify Project ownership:',
+      error
+    );
+
+    setWorldCreateError(
+      message
+    );
+
+    setWorldCreating(
+      false
     );
 
     return;
@@ -1001,7 +1222,10 @@ function handleCreateWorld() {
   const queueItems:
     LoadQueueItem[] = [];
 
-  // First make every selected module ready.
+  /*
+   * Phase 1:
+   * Make every selected module ready.
+   */
   for (
     const selection of
     newWorldModuleSelections
@@ -1018,38 +1242,95 @@ function handleCreateWorld() {
     });
   }
 
-  // Only after every module is ready do we
-  // create its World-owned Project.
+  /*
+   * Phase 2:
+   * Create new Projects or rename
+   * adopted Projects to the World name.
+   */
   for (
     const selection of
     newWorldModuleSelections
   ) {
+    if (
+      selection.source ===
+        'create'
+    ) {
+      queueItems.push({
+        id:
+          crypto.randomUUID(),
+
+        type:
+          'project.create',
+
+        moduleId:
+          selection.moduleId,
+
+        projectName:
+          name,
+      });
+
+      continue;
+    }
+
+    if (
+      selection.importedProjectId
+    ) {
+      queueItems.push({
+        id:
+          crypto.randomUUID(),
+
+        type:
+          'project.rename',
+
+        moduleId:
+          selection.moduleId,
+
+        projectId:
+          selection.importedProjectId,
+
+        projectName:
+          name,
+      });
+    }
+  }
+
+  /*
+   * Phase 3:
+   * Imported Projects already existed,
+   * so explicitly load them after adoption.
+   *
+   * Newly created Projects are already
+   * active after project.create.
+   */
+  for (
+    const selection of
+    newWorldModuleSelections
+  ) {
+    if (
+      selection.source !==
+        'import' ||
+      !selection.importedProjectId
+    ) {
+      continue;
+    }
+
     queueItems.push({
       id:
         crypto.randomUUID(),
 
       type:
-        'project.create',
+        'project.load',
 
       moduleId:
         selection.moduleId,
 
-      projectName:
-        name,
+      projectId:
+        selection.importedProjectId,
+
+      loadId:
+        crypto.randomUUID(),
     });
   }
-
-  setWorldCreating(
-    true
-  );
-
-  setWorldCreateError(
-    null
-  );
-
-  setWorldSaveNotice(
-    null
-  );
 
   worldCreationOperationRef.current =
     operation;
@@ -2283,6 +2564,120 @@ async function handleDiscardAllAndClose() {
 
                     Import Existing Project
                   </label>
+                  {selection.source ===
+                    'import' && (
+                    <div className="world-import-project">
+                      {newWorldImportLoadingModuleIds.includes(
+                        module.id
+                      ) ? (
+                        <p>
+                          Loading Projects...
+                        </p>
+                      ) : newWorldImportErrors[
+                          module.id
+                        ] ? (
+                        <>
+                          <p className="dialog-error">
+                            {
+                              newWorldImportErrors[
+                                module.id
+                              ]
+                            }
+                          </p>
+
+                          <button
+                            type="button"
+                            disabled={
+                              worldCreating
+                            }
+                            onClick={() =>
+                              void loadNewWorldImportProjects(
+                                module.id
+                              )
+                            }
+                          >
+                            Retry
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <select
+                            value={
+                              selection.importedProjectId ??
+                              ''
+                            }
+                            disabled={
+                              worldCreating
+                            }
+                            onChange={(
+                              event
+                            ) => {
+                              const projectId =
+                                event.target.value ||
+                                undefined;
+
+                              setNewWorldModuleSelections(
+                                (current) =>
+                                  current.map(
+                                    (
+                                      candidate
+                                    ) =>
+                                      candidate.moduleId ===
+                                      module.id
+                                        ? {
+                                            ...candidate,
+                                            importedProjectId:
+                                              projectId,
+                                          }
+                                        : candidate
+                                  )
+                              );
+
+                              setWorldCreateError(
+                                null
+                              );
+                            }}
+                          >
+                            <option value="">
+                              Select a Project...
+                            </option>
+
+                            {(
+                              newWorldImportProjects[
+                                module.id
+                              ] ?? []
+                            ).map(
+                              (project) => (
+                                <option
+                                  key={
+                                    project.projectId
+                                  }
+                                  value={
+                                    project.projectId
+                                  }
+                                >
+                                  {
+                                    project.projectName
+                                  }
+                                </option>
+                              )
+                            )}
+                          </select>
+
+                          {(
+                            newWorldImportProjects[
+                              module.id
+                            ] ?? []
+                          ).length === 0 && (
+                            <p>
+                              No existing Projects
+                              found.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -16,9 +16,22 @@ export type LoadQueueItem =
       type: 'project.create';
       moduleId: string;
       projectName: string;
+    }
+  | {
+      id: string;
+      type: 'project.rename';
+      moduleId: string;
+      projectId: string;
+      projectName: string;
     };
 
 export interface ProjectCreateQueueResult {
+  moduleId: string;
+  projectId: string;
+  projectName: string;
+}
+
+export interface ProjectRenameQueueResult {
   moduleId: string;
   projectId: string;
   projectName: string;
@@ -29,25 +42,43 @@ export interface LoadQueueRun {
 }
 
 interface LoadQueueCallbacks {
-  loadModule: (moduleId: string) => void;
+  loadModule: (
+    moduleId: string
+  ) => void;
+
   loadProject: (
     moduleId: string,
     projectId: string,
     loadId: string
   ) => boolean;
+
   createProject: (
     moduleId: string,
     projectName: string
   ) => void;
+
+  renameProject: (
+    moduleId: string,
+    projectId: string,
+    projectName: string
+  ) => void;
+
   projectCreated?: (
     run: LoadQueueRun,
     result: ProjectCreateQueueResult
   ) => void;
+
+  projectRenamed?: (
+    run: LoadQueueRun,
+    result: ProjectRenameQueueResult
+  ) => void;
+
   failed?: (
     run: LoadQueueRun,
     item: LoadQueueItem,
     message: string
   ) => void;
+
   completed?: (
     run: LoadQueueRun
   ) => void;
@@ -57,11 +88,15 @@ export class LoadQueueService {
   private queue: LoadQueueItem[] = [];
   private active: LoadQueueItem | null = null;
   private run: LoadQueueRun | null = null;
-  private readonly callbacks: LoadQueueCallbacks;
 
-  constructor(callbacks: LoadQueueCallbacks) {
+  private readonly callbacks:
+    LoadQueueCallbacks;
+
+  constructor(
+    callbacks: LoadQueueCallbacks
+  ) {
     this.callbacks = callbacks;
-  }  
+  }
 
   replace(
     run: LoadQueueRun,
@@ -79,10 +114,14 @@ export class LoadQueueService {
     this.run = null;
   }
 
-  completeModule(moduleId: string): void {
+  completeModule(
+    moduleId: string
+  ): void {
     if (
-      this.active?.type !== 'module.load' ||
-      this.active.moduleId !== moduleId
+      this.active?.type !==
+        'module.load' ||
+      this.active.moduleId !==
+        moduleId
     ) {
       return;
     }
@@ -96,10 +135,14 @@ export class LoadQueueService {
     loadId: string
   ): void {
     if (
-      this.active?.type !== 'project.load' ||
-      this.active.moduleId !== moduleId ||
-      this.active.projectId !== projectId ||
-      this.active.loadId !== loadId
+      this.active?.type !==
+        'project.load' ||
+      this.active.moduleId !==
+        moduleId ||
+      this.active.projectId !==
+        projectId ||
+      this.active.loadId !==
+        loadId
     ) {
       return;
     }
@@ -128,6 +171,29 @@ export class LoadQueueService {
     this.advance();
   }
 
+  completeProjectRename(
+    result: ProjectRenameQueueResult
+  ): void {
+    if (
+      this.active?.type !==
+        'project.rename' ||
+      this.active.moduleId !==
+        result.moduleId ||
+      this.active.projectId !==
+        result.projectId ||
+      !this.run
+    ) {
+      return;
+    }
+
+    this.callbacks.projectRenamed?.(
+      this.run,
+      result
+    );
+
+    this.advance();
+  }
+
   failProjectCreate(
     moduleId: string,
     message: string
@@ -135,20 +201,32 @@ export class LoadQueueService {
     if (
       this.active?.type !==
         'project.create' ||
-      this.active.moduleId !== moduleId
+      this.active.moduleId !==
+        moduleId
     ) {
       return;
     }
 
-    if (this.run) {
-      this.callbacks.failed?.(
-        this.run,
-        this.active,
-        message
-      );
+    this.failActive(message);
+  }
+
+  failProjectRename(
+    moduleId: string,
+    projectId: string,
+    message: string
+  ): void {
+    if (
+      this.active?.type !==
+        'project.rename' ||
+      this.active.moduleId !==
+        moduleId ||
+      this.active.projectId !==
+        projectId
+    ) {
+      return;
     }
 
-    this.advance();
+    this.failActive(message);
   }
 
   failProject(
@@ -158,15 +236,28 @@ export class LoadQueueService {
     message: string
   ): void {
     if (
-      this.active?.type !== 'project.load' ||
-      this.active.moduleId !== moduleId ||
-      this.active.projectId !== projectId ||
-      this.active.loadId !== loadId
+      this.active?.type !==
+        'project.load' ||
+      this.active.moduleId !==
+        moduleId ||
+      this.active.projectId !==
+        projectId ||
+      this.active.loadId !==
+        loadId
     ) {
       return;
     }
 
-    if (this.run) {
+    this.failActive(message);
+  }
+
+  private failActive(
+    message: string
+  ): void {
+    if (
+      this.run &&
+      this.active
+    ) {
       this.callbacks.failed?.(
         this.run,
         this.active,
@@ -182,8 +273,10 @@ export class LoadQueueService {
     this.pump();
   }
 
-    private pump(): void {
-    if (this.active) return;
+  private pump(): void {
+    if (this.active) {
+      return;
+    }
 
     const next =
       this.queue.shift();
@@ -222,6 +315,19 @@ export class LoadQueueService {
     ) {
       this.callbacks.createProject(
         next.moduleId,
+        next.projectName
+      );
+
+      return;
+    }
+
+    if (
+      next.type ===
+      'project.rename'
+    ) {
+      this.callbacks.renameProject(
+        next.moduleId,
+        next.projectId,
         next.projectName
       );
 
