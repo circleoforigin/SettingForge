@@ -24,6 +24,15 @@ import {
   type LoadQueueItem,
 } from './loading/LoadQueueService';
 
+type NewWorldProjectSource =
+  | 'create'
+  | 'import';
+
+interface NewWorldModuleSelection {
+  moduleId: string;
+  source: NewWorldProjectSource;
+}
+
 interface ModuleProjectStatus {
   projectId?: string;
   projectName?: string;
@@ -334,6 +343,17 @@ useEffect(() => {
 
   const [newWorldName, setNewWorldName] = useState('');
 
+  const [
+  newWorldModuleSelections,
+  setNewWorldModuleSelections,
+] = useState<NewWorldModuleSelection[]>([]);
+
+const [worldCreating, setWorldCreating] =
+  useState(false);
+
+const [worldCreateError, setWorldCreateError] =
+  useState<string | null>(null);
+
   const [showLoadWorldDialog, setShowLoadWorldDialog] =
     useState(false);
 
@@ -514,35 +534,84 @@ useEffect(() => {
       ? moduleRegistry.get(activeModuleId)
       : undefined;
 
-      function handleNewWorld() {
+function handleNewWorld() {
   setNewWorldName('');
+  setNewWorldModuleSelections([]);
+  setWorldCreateError(null);
   setShowNewWorldDialog(true);
 }
 
+function toggleNewWorldModule(
+  moduleId: string
+) {
+  setNewWorldModuleSelections(
+    (current) => {
+      const existing =
+        current.find(
+          (selection) =>
+            selection.moduleId === moduleId
+        );
+
+      if (existing) {
+        return current.filter(
+          (selection) =>
+            selection.moduleId !== moduleId
+        );
+      }
+
+      return [
+        ...current,
+        {
+          moduleId,
+          source: 'create',
+        },
+      ];
+    }
+  );
+}
+
+function setNewWorldModuleSource(
+  moduleId: string,
+  source: NewWorldProjectSource
+) {
+  setNewWorldModuleSelections(
+    (current) =>
+      current.map((selection) =>
+        selection.moduleId === moduleId
+          ? {
+              ...selection,
+              source,
+            }
+          : selection
+      )
+  );
+}
+
 function handleCreateWorld() {
-  const name = newWorldName.trim();
+  const name =
+    newWorldName.trim();
 
   if (!name) {
+    setWorldCreateError(
+      'Enter a World name.'
+    );
+
     return;
   }
 
-  const now = new Date();
+  if (
+    newWorldModuleSelections.length === 0
+  ) {
+    setWorldCreateError(
+      'Select at least one module.'
+    );
 
-  const world: World = {
-    id: crypto.randomUUID(),
-    name,
-    modules: [],
-    createdAt: now,
-    updatedAt: now,
-  };
+    return;
+  }
 
-  worldLoadGenerationRef.current += 1;
-  loadQueueRef.current?.clear();
-  setActiveWorld(world);
-  setWorldDirty(true);
-  setWorldSaveNotice(null);
-  setNewWorldName('');
-  setShowNewWorldDialog(false);
+  setWorldCreateError(
+    'World creation is not connected yet.'
+  );
 }
 
 async function handleOpenLoadWorld() {
@@ -1652,33 +1721,147 @@ async function handleDiscardAllAndClose() {
     <div className="dialog">
       <h2>New World</h2>
 
+      {worldCreateError && (
+        <div
+          className="dialog-error"
+          role="alert"
+        >
+          {worldCreateError}
+        </div>
+      )}
+
       <input
         type="text"
         placeholder="World name"
         value={newWorldName}
-        onChange={(event) => setNewWorldName(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') {
-            void handleCreateWorld();
-          }
+        disabled={worldCreating}
+        onChange={(event) => {
+          setNewWorldName(
+            event.target.value
+          );
+
+          setWorldCreateError(null);
         }}
         autoFocus
       />
 
+      <h3>Modules</h3>
+
+      <p>
+        Select at least one module for
+        this World.
+      </p>
+
+      <div className="world-module-list">
+        {availableModules.map((module) => {
+          const selection =
+            newWorldModuleSelections.find(
+              (candidate) =>
+                candidate.moduleId ===
+                module.id
+            );
+
+          return (
+            <div
+              key={module.id}
+              className="world-module-option"
+            >
+              <label>
+                <input
+                  type="checkbox"
+                  checked={
+                    selection !==
+                    undefined
+                  }
+                  disabled={worldCreating}
+                  onChange={() => {
+                    toggleNewWorldModule(
+                      module.id
+                    );
+
+                    setWorldCreateError(
+                      null
+                    );
+                  }}
+                />
+
+                {module.name}
+              </label>
+
+              {selection && (
+                <div className="world-project-source">
+                  <label>
+                    <input
+                      type="radio"
+                      name={`new-world-${module.id}`}
+                      checked={
+                        selection.source ===
+                        'create'
+                      }
+                      disabled={worldCreating}
+                      onChange={() =>
+                        setNewWorldModuleSource(
+                          module.id,
+                          'create'
+                        )
+                      }
+                    />
+
+                    Create New Project
+                  </label>
+
+                  <label>
+                    <input
+                      type="radio"
+                      name={`new-world-${module.id}`}
+                      checked={
+                        selection.source ===
+                        'import'
+                      }
+                      disabled={worldCreating}
+                      onChange={() =>
+                        setNewWorldModuleSource(
+                          module.id,
+                          'import'
+                        )
+                      }
+                    />
+
+                    Import Existing Project
+                  </label>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
       <div className="dialog-buttons">
         <button
           type="button"
-          onClick={() => setShowNewWorldDialog(false)}
+          disabled={worldCreating}
+          onClick={() => {
+            setShowNewWorldDialog(false);
+            setWorldCreateError(null);
+          }}
         >
           Cancel
         </button>
 
         <button
           type="button"
-          disabled={!newWorldName.trim()}
-          onClick={() => void handleCreateWorld()}
+          disabled={
+            worldCreating ||
+            !newWorldName.trim() ||
+            newWorldModuleSelections.length === 0
+          }
+          onClick={() =>
+            void handleCreateWorld()
+          }
         >
-          Create
+          {worldCreating
+            ? 'Creating...'
+            : 'Create World'}
         </button>
       </div>
     </div>
