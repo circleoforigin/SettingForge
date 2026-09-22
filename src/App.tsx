@@ -51,6 +51,17 @@ interface WorldCreationOperation {
   failures: WorldCreationFailure[];
 }
 
+interface WorldAddModuleOperation {
+  runId: string;
+  world: World;
+  moduleId: string;
+  projectReference?: {
+    moduleId: string;
+    projectId: string;
+  };
+  failure?: string;
+}
+
 interface ModuleProjectStatus {
   projectId?: string;
   projectName?: string;
@@ -393,6 +404,49 @@ const worldCreationOperationRef =
 const pendingImportListModuleRef =
   useRef<string | null>(null);
 
+const worldAddModuleOperationRef =
+  useRef<WorldAddModuleOperation | null>(
+    null
+  );
+
+const [
+  addWorldModuleId,
+  setAddWorldModuleId,
+] = useState<string | null>(
+  null
+);
+
+const [
+  addWorldModuleSource,
+  setAddWorldModuleSource,
+] = useState<NewWorldProjectSource>(
+  'create'
+);
+
+const [
+  addWorldModuleImportedProjectId,
+  setAddWorldModuleImportedProjectId,
+] = useState('');
+
+const [
+  addWorldModuleProjects,
+  setAddWorldModuleProjects,
+] = useState<ProjectSummary[]>(
+  []
+);
+
+const [
+  addWorldModuleLoading,
+  setAddWorldModuleLoading,
+] = useState(false);
+
+const [
+  addWorldModuleError,
+  setAddWorldModuleError,
+] = useState<string | null>(
+  null
+);
+
   const [showLoadWorldDialog, setShowLoadWorldDialog] =
     useState(false);
 
@@ -538,6 +592,7 @@ if (!loadQueueRef.current) {
               );
           });
       },
+      
       projectCreated: (
         run,
         result
@@ -546,6 +601,24 @@ if (!loadQueueRef.current) {
           `[LoadQueue] ${run.id} project.create completed ` +
           `${result.moduleId} → ${result.projectId}`
         );
+
+        const addOperation =
+          worldAddModuleOperationRef.current;
+
+        if (
+          addOperation?.runId ===
+          run.id
+        ) {
+          addOperation.projectReference = {
+            moduleId:
+              result.moduleId,
+
+            projectId:
+              result.projectId,
+          };
+
+          return;
+        }
 
         const operation =
           worldCreationOperationRef.current;
@@ -565,6 +638,7 @@ if (!loadQueueRef.current) {
             result.projectId,
         });
       },
+
       projectRenamed: (
         run,
         result
@@ -573,6 +647,24 @@ if (!loadQueueRef.current) {
           `[LoadQueue] ${run.id} project.rename completed ` +
           `${result.moduleId} → ${result.projectId}`
         );
+
+        const addOperation =
+          worldAddModuleOperationRef.current;
+
+        if (
+          addOperation?.runId ===
+          run.id
+        ) {
+          addOperation.projectReference = {
+            moduleId:
+              result.moduleId,
+
+            projectId:
+              result.projectId,
+          };
+
+          return;
+        }
 
         const operation =
           worldCreationOperationRef.current;
@@ -603,11 +695,25 @@ if (!loadQueueRef.current) {
           });
         }
       },
+
       failed: (run, item, message) => {
         console.error(
           `[LoadQueue] ${run.id} ${item.type} failed:`,
           message
         );
+
+        const addOperation =
+          worldAddModuleOperationRef.current;
+
+        if (
+          addOperation?.runId ===
+          run.id
+        ) {
+          addOperation.failure =
+            message;
+
+          return;
+        }
 
         const creationOperation =
           worldCreationOperationRef.current;
@@ -638,7 +744,7 @@ if (!loadQueueRef.current) {
           `[LoadQueue] ${run.id} complete`
         );
 
-                if (
+        if (
           run.id.startsWith(
             'world.import-list:'
           )
@@ -654,6 +760,118 @@ if (!loadQueueRef.current) {
               moduleId
             );
           }
+
+          return;
+        }
+
+                const addOperation =
+          worldAddModuleOperationRef.current;
+
+        if (
+          addOperation?.runId ===
+          run.id
+        ) {
+          worldAddModuleOperationRef.current =
+            null;
+
+          const reference =
+            addOperation.projectReference;
+
+          if (
+            !reference ||
+            addOperation.failure
+          ) {
+            setAddWorldModuleLoading(
+              false
+            );
+
+            setAddWorldModuleError(
+              addOperation.failure ??
+              'The module Project could not be prepared.'
+            );
+
+            return;
+          }
+
+          const updatedWorld:
+            World = {
+            ...addOperation.world,
+
+            modules: [
+              ...addOperation.world.modules,
+              reference,
+            ],
+
+            updatedAt:
+              new Date(),
+          };
+
+          void worldRepository
+            .saveWorld(
+              updatedWorld
+            )
+            .then(() => {
+              setActiveWorld(
+                updatedWorld
+              );
+
+              setWorldDirty(
+                false
+              );
+
+              setActiveModuleId(
+                reference.moduleId
+              );
+
+              setModuleManagerOpen(
+                false
+              );
+
+              setAddWorldModuleId(
+                null
+              );
+
+              setAddWorldModuleProjects(
+                []
+              );
+
+              setAddWorldModuleImportedProjectId(
+                ''
+              );
+
+              setWorldSaveNotice({
+                kind:
+                  'success',
+
+                message:
+                  `Added ${
+                    moduleRegistry.get(
+                      reference.moduleId
+                    )?.name ??
+                    reference.moduleId
+                  } to ${updatedWorld.name}.world.`,
+              });
+            })
+            .catch((error) => {
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to update the World manifest.';
+
+              console.error(
+                'Unable to save World after adding module:',
+                error
+              );
+
+              setAddWorldModuleError(
+                message
+              );
+            })
+            .finally(() => {
+              setAddWorldModuleLoading(
+                false
+              );
+            });
 
           return;
         }
@@ -1596,6 +1814,86 @@ async function scanReadyProjectStatuses(): Promise<ProjectStatusScan> {
   return { projects, failures };
 }
 
+async function scanWorldProjectStatuses(
+  world: World
+): Promise<ProjectStatusScan> {
+  const results =
+    await requestProjectStatuses(
+      world.modules.map(
+        (reference) =>
+          reference.moduleId
+      )
+    );
+
+  const projects:
+    OpenModuleProject[] = [];
+
+  const failures:
+    string[] = [];
+
+  results.forEach(
+    (result, index) => {
+      const reference =
+        world.modules[index];
+
+      if (
+        result.status ===
+        'rejected'
+      ) {
+        const message =
+          result.reason instanceof Error
+            ? result.reason.message
+            : 'Project status failed.';
+
+        failures.push(
+          `${reference.moduleId}: ${message}`
+        );
+
+        return;
+      }
+
+      const projectId =
+        typeof result.value
+          ?.projectId === 'string'
+          ? result.value.projectId.trim()
+          : '';
+
+      if (
+        projectId !==
+        reference.projectId
+      ) {
+        failures.push(
+          `${reference.moduleId}: expected World Project ` +
+          `${reference.projectId}, but ` +
+          `${projectId || 'no Project'} is active.`
+        );
+
+        return;
+      }
+
+      projects.push({
+        moduleId:
+          reference.moduleId,
+
+        projectId:
+          reference.projectId,
+
+        projectName:
+          result.value.projectName,
+
+        dirty:
+          result.value.dirty ===
+          true,
+      });
+    }
+  );
+
+  return {
+    projects,
+    failures,
+  };
+}
+
 async function saveWorldManifest(
   world: World
 ): Promise<World> {
@@ -1830,24 +2128,106 @@ async function closeOpenProjects(
   });
 }
 
-async function finishClose(target: CloseTarget): Promise<void> {
-  setShowCloseWorldDialog(false);
-  setCloseWorldProjects([]);
+async function finishClose(
+  target: CloseTarget
+): Promise<void> {
+  setShowCloseWorldDialog(
+    false
+  );
 
-  if (target === 'application') {
-    const closing = await window.settingForge.window.closeApp();
+  setCloseWorldProjects(
+    []
+  );
 
-    if (!closing) throw new Error('SettingForge could not close.');
+  if (
+    target === 'application'
+  ) {
+    const closing =
+      await window.settingForge.window
+        .closeApp();
+
+    if (!closing) {
+      throw new Error(
+        'SettingForge could not close.'
+      );
+    }
+
     return;
   }
 
-  setActiveWorld(null);
-  worldLoadGenerationRef.current += 1;
+  const world =
+    activeWorld;
+
+  if (world) {
+    for (
+      const reference of
+      world.modules
+    ) {
+      modulePresenceService
+        .removeModule(
+          reference.moduleId
+        );
+    }
+
+    const worldModuleIds =
+      new Set(
+        world.modules.map(
+          (reference) =>
+            reference.moduleId
+        )
+      );
+
+    setReadyModuleIds(
+      (current) =>
+        current.filter(
+          (moduleId) =>
+            !worldModuleIds.has(
+              moduleId
+            )
+        )
+    );
+
+    setEnabledModuleIds(
+      (current) =>
+        current.filter(
+          (moduleId) =>
+            !worldModuleIds.has(
+              moduleId
+            )
+        )
+    );
+
+    if (
+      activeModuleId &&
+      worldModuleIds.has(
+        activeModuleId
+      )
+    ) {
+      setActiveModuleId(
+        null
+      );
+    }
+  }
+
+  setActiveWorld(
+    null
+  );
+
+  worldLoadGenerationRef.current +=
+    1;
+
   loadQueueRef.current?.clear();
-  setWorldDirty(false);
+
+  setWorldDirty(
+    false
+  );
+
   setWorldSaveNotice({
-    kind: 'success',
-    message: 'World closed.',
+    kind:
+      'success',
+
+    message:
+      'World closed.',
   });
 }
 
@@ -1876,7 +2256,13 @@ async function handleCloseRequest(target: CloseTarget) {
   setCloseTarget(target);
 
   try {
-    const scan = await scanReadyProjectStatuses();
+    const scan =
+    target === 'world' &&
+    activeWorld
+      ? await scanWorldProjectStatuses(
+        activeWorld
+      )
+    : await scanReadyProjectStatuses();
 
     if (scan.failures.length > 0) {
       const details = scan.failures.join(' ');
@@ -1971,7 +2357,9 @@ async function handleSaveAllAndClose() {
     }
 
     const scan =
-      await scanReadyProjectStatuses();
+      await scanWorldProjectStatuses(
+        world
+      );
 
     if (
       scan.failures.length > 0
@@ -2072,6 +2460,302 @@ async function handleDiscardAllAndClose() {
   } finally {
     setWorldClosing(false);
   }
+}
+
+function openAddModuleToWorld(
+  moduleId: string
+) {
+  if (!activeWorld) {
+    return;
+  }
+
+  setAddWorldModuleId(
+    moduleId
+  );
+
+  setAddWorldModuleSource(
+    'create'
+  );
+
+  setAddWorldModuleImportedProjectId(
+    ''
+  );
+
+  setAddWorldModuleProjects(
+    []
+  );
+
+  setAddWorldModuleError(
+    null
+  );
+}
+
+async function prepareAddModuleImport() {
+  if (
+    !addWorldModuleId ||
+    addWorldModuleLoading
+  ) {
+    return;
+  }
+
+  setAddWorldModuleSource(
+    'import'
+  );
+
+  setAddWorldModuleError(
+    null
+  );
+
+  setAddWorldModuleLoading(
+    true
+  );
+
+  try {
+    const presence =
+      modulePresenceService.get(
+        addWorldModuleId
+      );
+
+    if (
+      presence?.state !== 'ready'
+    ) {
+      enableRequiredModule(
+        addWorldModuleId
+      );
+
+      /*
+       * project.list requires a ready module.
+       * Poll only for this dialog preparation;
+       * actual World lifecycle still uses
+       * the normal queue.
+       */
+      const startedAt =
+        Date.now();
+
+      while (
+        modulePresenceService.get(
+          addWorldModuleId
+        )?.state !== 'ready'
+      ) {
+        if (
+          Date.now() -
+            startedAt >
+          5000
+        ) {
+          throw new Error(
+            'Module did not become ready.'
+          );
+        }
+
+        await new Promise(
+          (resolve) =>
+            window.setTimeout(
+              resolve,
+              50
+            )
+        );
+      }
+    }
+
+    const response =
+      await projectLifecycleService
+        .listProjects(
+          addWorldModuleId
+        );
+
+    setAddWorldModuleProjects(
+      response.projects
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Unable to load existing Projects.';
+
+    console.error(
+      'Unable to prepare Project import:',
+      error
+    );
+
+    setAddWorldModuleError(
+      message
+    );
+  } finally {
+    setAddWorldModuleLoading(
+      false
+    );
+  }
+}
+
+async function confirmAddModuleToWorld() {
+  if (
+    !activeWorld ||
+    !addWorldModuleId ||
+    addWorldModuleLoading
+  ) {
+    return;
+  }
+
+  if (
+    activeWorld.modules.some(
+      (reference) =>
+        reference.moduleId ===
+        addWorldModuleId
+    )
+  ) {
+    setAddWorldModuleError(
+      'This module already belongs to the World.'
+    );
+
+    return;
+  }
+
+  if (
+    addWorldModuleSource ===
+      'import' &&
+    !addWorldModuleImportedProjectId
+  ) {
+    setAddWorldModuleError(
+      'Select an existing Project.'
+    );
+
+    return;
+  }
+
+  setAddWorldModuleLoading(
+    true
+  );
+
+  setAddWorldModuleError(
+    null
+  );
+
+  if (
+    addWorldModuleSource ===
+      'import'
+  ) {
+    try {
+      const owner =
+        await worldRepository
+          .findProjectOwner(
+            addWorldModuleId,
+            addWorldModuleImportedProjectId
+          );
+
+      if (owner) {
+        setAddWorldModuleError(
+          `That Project already belongs to ${owner.worldName}.world.`
+        );
+
+        setAddWorldModuleLoading(
+          false
+        );
+
+        return;
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Unable to verify Project ownership.';
+
+      setAddWorldModuleError(
+        message
+      );
+
+      setAddWorldModuleLoading(
+        false
+      );
+
+      return;
+    }
+  }
+
+  const runId =
+    `world.add-module:${crypto.randomUUID()}`;
+
+  worldAddModuleOperationRef.current = {
+    runId,
+    world:
+      activeWorld,
+    moduleId:
+      addWorldModuleId,
+  };
+
+  const queueItems:
+    LoadQueueItem[] = [
+    {
+      id:
+        crypto.randomUUID(),
+
+      type:
+        'module.load',
+
+      moduleId:
+        addWorldModuleId,
+    },
+  ];
+
+  if (
+    addWorldModuleSource ===
+      'create'
+  ) {
+    queueItems.push({
+      id:
+        crypto.randomUUID(),
+
+      type:
+        'project.create',
+
+      moduleId:
+        addWorldModuleId,
+
+      projectName:
+        activeWorld.name,
+    });
+  } else {
+    queueItems.push({
+      id:
+        crypto.randomUUID(),
+
+      type:
+        'project.rename',
+
+      moduleId:
+        addWorldModuleId,
+
+      projectId:
+        addWorldModuleImportedProjectId,
+
+      projectName:
+        activeWorld.name,
+    });
+
+    queueItems.push({
+      id:
+        crypto.randomUUID(),
+
+      type:
+        'project.load',
+
+      moduleId:
+        addWorldModuleId,
+
+      projectId:
+        addWorldModuleImportedProjectId,
+
+      loadId:
+        crypto.randomUUID(),
+    });
+  }
+
+  loadQueueRef.current?.replace(
+    {
+      id:
+        runId,
+    },
+    queueItems
+  );
 }
 
 async function removeModuleFromWorld(
@@ -3121,7 +3805,186 @@ async function removeModuleFromWorld(
   </div>
 )}
 
-      {moduleManagerOpen && (
+{addWorldModuleId && activeWorld && (
+  <div className="dialog-backdrop">
+    <div className="dialog">
+      <h2>
+        Add {
+          moduleRegistry.get(
+            addWorldModuleId
+          )?.name ??
+          addWorldModuleId
+        }
+      </h2>
+
+      <p>
+        Add this module to{' '}
+        <strong>
+          {activeWorld.name}.world
+        </strong>
+      </p>
+
+      {addWorldModuleError && (
+        <div
+          className="dialog-error"
+          role="alert"
+        >
+          {addWorldModuleError}
+        </div>
+      )}
+
+      <div className="world-project-source">
+        <label>
+          <input
+            type="radio"
+            checked={
+              addWorldModuleSource ===
+              'create'
+            }
+            disabled={
+              addWorldModuleLoading
+            }
+            onChange={() => {
+              setAddWorldModuleSource(
+                'create'
+              );
+
+              setAddWorldModuleImportedProjectId(
+                ''
+              );
+
+              setAddWorldModuleError(
+                null
+              );
+            }}
+          />
+
+          Create New Project
+        </label>
+
+        <label>
+          <input
+            type="radio"
+            checked={
+              addWorldModuleSource ===
+              'import'
+            }
+            disabled={
+              addWorldModuleLoading
+            }
+            onChange={() =>
+              void prepareAddModuleImport()
+            }
+          />
+
+          Import Existing Project
+        </label>
+      </div>
+
+      {addWorldModuleSource ===
+        'import' && (
+        <div className="world-import-project">
+          {addWorldModuleLoading ? (
+            <p>
+              Loading Projects...
+            </p>
+          ) : (
+            <>
+              <select
+                value={
+                  addWorldModuleImportedProjectId
+                }
+                onChange={(event) => {
+                  setAddWorldModuleImportedProjectId(
+                    event.target.value
+                  );
+
+                  setAddWorldModuleError(
+                    null
+                  );
+                }}
+              >
+                <option value="">
+                  Select a Project...
+                </option>
+
+                {addWorldModuleProjects.map(
+                  (project) => (
+                    <option
+                      key={
+                        project.projectId
+                      }
+                      value={
+                        project.projectId
+                      }
+                    >
+                      {
+                        project.projectName
+                      }
+                    </option>
+                  )
+                )}
+              </select>
+
+              {addWorldModuleProjects.length ===
+                0 && (
+                <p>
+                  No existing Projects
+                  found.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      <div className="dialog-buttons">
+        <button
+          type="button"
+          disabled={
+            addWorldModuleLoading
+          }
+          onClick={() => {
+            setAddWorldModuleId(
+              null
+            );
+
+            setAddWorldModuleProjects(
+              []
+            );
+
+            setAddWorldModuleError(
+              null
+            );
+          }}
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          disabled={
+            addWorldModuleLoading ||
+            (
+              addWorldModuleSource ===
+                'import' &&
+              !addWorldModuleImportedProjectId
+            )
+          }
+          onClick={() =>
+            void confirmAddModuleToWorld()
+          }
+        >
+          {addWorldModuleLoading
+            ? 'Adding...'
+            : 'Add Module'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{moduleManagerOpen && (
   <div className="dialog-backdrop">
     <div className="dialog module-manager-dialog">
       <h2>Add / Remove Modules</h2>
@@ -3159,20 +4022,11 @@ async function removeModuleFromWorld(
   }
   onClick={() => {
     if (included) {
-      void removeModuleFromWorld(
-        module.id
-      );
-
+      void removeModuleFromWorld(module.id);
       return;
     }
 
-    setWorldSaveNotice({
-      kind:
-        'warning',
-
-      message:
-        'Add Module will use the World Project setup next.',
-    });
+    openAddModuleToWorld(module.id);
   }}
 >
   {included
