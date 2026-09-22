@@ -34,14 +34,18 @@ interface NewWorldModuleSelection {
   source: NewWorldProjectSource;
 }
 
+interface WorldCreationFailure {
+  moduleId: string;
+  message: string;
+}
+
 interface WorldCreationOperation {
   runId: string;
   worldId: string;
   worldName: string;
   createdAt: Date;
   projectReferences: World['modules'];
-  failed: boolean;
-  errors: string[];
+  failures: WorldCreationFailure[];
 }
 
 interface ModuleProjectStatus {
@@ -517,12 +521,12 @@ if (!loadQueueRef.current) {
           creationOperation?.runId ===
           run.id
         ) {
-          creationOperation.failed =
-            true;
+          creationOperation.failures.push({
+            moduleId:
+              item.moduleId,
 
-          creationOperation.errors.push(
-            `${item.moduleId}: ${message}`
-          );
+            message,
+          });
 
           return;
         }
@@ -552,11 +556,24 @@ if (!loadQueueRef.current) {
         worldCreationOperationRef.current =
           null;
 
-        if (operation.failed) {
-          setWorldCreating(false);
+        if (
+          operation.projectReferences.length === 0
+        ) {
+          setWorldCreating(
+            false
+          );
+
+          const failureDetails =
+            operation.failures
+              .map(
+                (failure) =>
+                  `${failure.moduleId}: ${failure.message}`
+              )
+              .join(' ');
 
           setWorldCreateError(
-            operation.errors.join(' ')
+            failureDetails ||
+              'No module was able to create a Project. The World was not created.'
           );
 
           return;
@@ -594,11 +611,31 @@ if (!loadQueueRef.current) {
                 null
             );
 
-            setWorldSaveNotice({
-              kind: 'success',
-              message:
-                `Created ${world.name}.world.`,
-            });
+            if (
+              operation.failures.length > 0
+            ) {
+              const failedModules =
+                operation.failures
+                  .map(
+                    (failure) =>
+                      failure.moduleId
+                  )
+                  .join(', ');
+
+              setWorldSaveNotice({
+                kind: 'warning',
+                message:
+                  `Created ${world.name}.world, but ` +
+                  `${failedModules} could not create a Project ` +
+                  `and was not added to the World.`,
+              });
+            } else {
+              setWorldSaveNotice({
+                kind: 'success',
+                message:
+                  `Created ${world.name}.world.`,
+              });
+            }
 
             setNewWorldName('');
 
@@ -856,9 +893,7 @@ function handleCreateWorld() {
       createdAt,
       projectReferences:
         [],
-      failed:
-        false,
-      errors:
+      failures:
         [],
     };
 
