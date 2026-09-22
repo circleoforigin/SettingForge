@@ -10,6 +10,12 @@ export type LoadQueueItem =
       moduleId: string;
       projectId: string;
       loadId: string;
+    }
+  | {
+      id: string;
+      type: 'project.create';
+      moduleId: string;
+      projectName: string;
     };
 
 interface LoadQueueCallbacks {
@@ -19,6 +25,10 @@ interface LoadQueueCallbacks {
     projectId: string,
     loadId: string
   ) => boolean;
+  createProject: (
+    moduleId: string,
+    projectName: string
+  ) => void;
   failed?: (
     item: LoadQueueItem,
     message: string
@@ -74,6 +84,40 @@ export class LoadQueueService {
     this.advance();
   }
 
+    completeProjectCreate(
+    moduleId: string
+  ): void {
+    if (
+      this.active?.type !==
+        'project.create' ||
+      this.active.moduleId !== moduleId
+    ) {
+      return;
+    }
+
+    this.advance();
+  }
+
+  failProjectCreate(
+    moduleId: string,
+    message: string
+  ): void {
+    if (
+      this.active?.type !==
+        'project.create' ||
+      this.active.moduleId !== moduleId
+    ) {
+      return;
+    }
+
+    this.callbacks.failed?.(
+      this.active,
+      message
+    );
+
+    this.advance();
+  }
+
   failProject(
     moduleId: string,
     projectId: string,
@@ -102,10 +146,11 @@ export class LoadQueueService {
     this.pump();
   }
 
-  private pump(): void {
+    private pump(): void {
     if (this.active) return;
 
-    const next = this.queue.shift();
+    const next =
+      this.queue.shift();
 
     if (!next) {
       this.callbacks.completed?.();
@@ -114,9 +159,24 @@ export class LoadQueueService {
 
     this.active = next;
 
-    if (next.type === 'module.load') {
+    if (
+      next.type ===
+      'module.load'
+    ) {
       this.callbacks.loadModule(
         next.moduleId
+      );
+
+      return;
+    }
+
+    if (
+      next.type ===
+      'project.create'
+    ) {
+      this.callbacks.createProject(
+        next.moduleId,
+        next.projectName
       );
 
       return;

@@ -402,7 +402,7 @@ if (!loadQueueRef.current) {
         enableRequiredModule(moduleId);
       },
 
-      loadProject: (
+           loadProject: (
         moduleId,
         projectId,
         loadId
@@ -419,6 +419,42 @@ if (!loadQueueRef.current) {
             loadId,
           }
         );
+      },
+
+      createProject: (
+        moduleId,
+        projectName
+      ) => {
+        console.info(
+          `[LoadQueue] dispatching project.create ${moduleId}`
+        );
+
+        void hostEventBroker
+          .requestModule(
+            moduleId,
+            'project.create',
+            {
+              name: projectName,
+            }
+          )
+          .then(() => {
+            loadQueueRef.current
+              ?.completeProjectCreate(
+                moduleId
+              );
+          })
+          .catch((error) => {
+            const message =
+              error instanceof Error
+                ? error.message
+                : 'Project creation failed.';
+
+            loadQueueRef.current
+              ?.failProjectCreate(
+                moduleId,
+                message
+              );
+          });
       },
 
       failed: (item, message) => {
