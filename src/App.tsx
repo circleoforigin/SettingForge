@@ -62,10 +62,6 @@ interface WorldSaveNotice {
   message: string;
 }
 
-interface WorldManifestSaveResult {
-  statusFailures: string[];
-}
-
 interface OpenModuleProject {
   moduleId: string;
   projectId: string;
@@ -81,8 +77,6 @@ interface ProjectStatusScan {
 interface SaveAllResult {
   statusFailures: string[];
   projectSaveFailures: string[];
-  manifestStatusFailures: string[];
-  manifestError?: string;
 }
 
 type CloseTarget = 'world' | 'application';
@@ -1604,145 +1598,147 @@ async function scanReadyProjectStatuses(): Promise<ProjectStatusScan> {
 
 async function saveWorldManifest(
   world: World
-): Promise<WorldManifestSaveResult> {
-  const moduleIds = getReadyModuleIds();
-  const results = await requestProjectStatuses(moduleIds);
-  const previousReferences = new Map(
-    world.modules.map((reference) => [reference.moduleId, reference])
-  );
-  const modules = [] as World['modules'];
-  const statusFailures: string[] = [];
-
-  results.forEach((result, index) => {
-    const moduleId = moduleIds[index];
-
-    if (result.status === 'fulfilled') {
-      const projectId = typeof result.value?.projectId === 'string'
-        ? result.value.projectId.trim()
-        : undefined;
-
-      if (projectId) modules.push({ moduleId, projectId });
-      return;
-    }
-
-    const previous = previousReferences.get(moduleId);
-    const message = result.reason instanceof Error
-      ? result.reason.message
-      : 'Project status failed.';
-
-    if (previous) modules.push(previous);
-    statusFailures.push(`${moduleId}: ${message}`);
-  });
-
+): Promise<World> {
   const savedWorld: World = {
     ...world,
-    modules,
-    updatedAt: new Date(),
+    updatedAt:
+      new Date(),
   };
 
-  await worldRepository.saveWorld(savedWorld);
-  setActiveWorld(savedWorld);
-  setWorldDirty(false);
-
-  return { statusFailures };
-}
-
-async function handleSaveWorld() {
-  if (!activeWorld || worldSaving) return;
-
-  const world = activeWorld;
-
-  setFileMenuOpen(false);
-  setWorldSaving(true);
-  setWorldSaveNotice(null);
-
-  try {
-    const result = await saveWorldManifest(world);
-
-    if (result.statusFailures.length > 0) {
-      const details = result.statusFailures.join(' ');
-
-      console.error('World saved with status errors:', details);
-      setWorldSaveNotice({
-        kind: 'warning',
-        message: `World saved. Status unavailable: ${details}`,
-      });
-    } else {
-      setWorldSaveNotice({
-        kind: 'success',
-        message: 'World saved.',
-      });
-    }
-  } catch (error) {
-    const message = error instanceof Error
-      ? error.message
-      : 'Unable to save World.';
-
-    console.error('Unable to save World:', error);
-    setWorldSaveNotice({
-      kind: 'error',
-      message,
-    });
-  } finally {
-    setWorldSaving(false);
-  }
-}
-
-async function saveOpenModuleProjects() {
-  const scan = await scanReadyProjectStatuses();
-  const saveResults = await Promise.allSettled(
-    scan.projects.map((project) => {
-      return hostEventBroker.requestModule(
-        project.moduleId,
-        'project.save'
-      );
-    })
+  await worldRepository.saveWorld(
+    savedWorld
   );
-  const projectSaveFailures = saveResults.flatMap((result, index) => {
-    if (result.status === 'fulfilled') return [];
 
-    const moduleId = scan.projects[index].moduleId;
-    const message = result.reason instanceof Error
-      ? result.reason.message
-      : 'Project save failed.';
+  setActiveWorld(
+    savedWorld
+  );
 
-    return [`${moduleId}: ${message}`];
-  });
+  setWorldDirty(
+    false
+  );
+
+  return savedWorld;
+}
+
+async function saveWorldProjects(
+  world: World
+) {
+  const statusResults =
+    await requestProjectStatuses(
+      world.modules.map(
+        (reference) =>
+          reference.moduleId
+      )
+    );
+
+  const statusFailures:
+    string[] = [];
+
+  const projectsToSave:
+    World['modules'] = [];
+
+  statusResults.forEach(
+    (result, index) => {
+      const reference =
+        world.modules[index];
+
+      if (
+        result.status ===
+        'rejected'
+      ) {
+        const message =
+          result.reason instanceof Error
+            ? result.reason.message
+            : 'Project status failed.';
+
+        statusFailures.push(
+          `${reference.moduleId}: ${message}`
+        );
+
+        return;
+      }
+
+      const activeProjectId =
+        typeof result.value
+          ?.projectId === 'string'
+          ? result.value.projectId.trim()
+          : '';
+
+      if (
+        activeProjectId !==
+        reference.projectId
+      ) {
+        statusFailures.push(
+          `${reference.moduleId}: expected Project ` +
+          `${reference.projectId}, but ` +
+          `${activeProjectId || 'no Project'} is active.`
+        );
+
+        return;
+      }
+
+      projectsToSave.push(
+        reference
+      );
+    }
+  );
+
+  const saveResults =
+    await Promise.allSettled(
+      projectsToSave.map(
+        (reference) =>
+          projectLifecycleService
+            .saveProject(
+              reference.moduleId
+            )
+      )
+    );
+
+  const projectSaveFailures =
+    saveResults.flatMap(
+      (result, index) => {
+        if (
+          result.status ===
+          'fulfilled'
+        ) {
+          return [];
+        }
+
+        const moduleId =
+          projectsToSave[index]
+            .moduleId;
+
+        const message =
+          result.reason instanceof Error
+            ? result.reason.message
+            : 'Project save failed.';
+
+        return [
+          `${moduleId}: ${message}`,
+        ];
+      }
+    );
 
   return {
-    statusFailures: scan.failures,
+    statusFailures,
     projectSaveFailures,
   };
 }
 
-async function saveAllProjectsAndWorld(world: World) {
-  const moduleResult = await saveOpenModuleProjects();
-
-  try {
-    const manifest = await saveWorldManifest(world);
-
-    return {
-      ...moduleResult,
-      manifestStatusFailures: manifest.statusFailures,
-    } as SaveAllResult;
-  } catch (error) {
-    const manifestError = error instanceof Error
-      ? error.message
-      : 'Unable to save World.';
-
-    return {
-      ...moduleResult,
-      manifestStatusFailures: [],
-      manifestError,
-    } as SaveAllResult;
-  }
+async function saveAllProjectsAndWorld(
+  world: World
+): Promise<SaveAllResult> {
+  return saveWorldProjects(
+    world
+  );
 }
 
-function getSaveAllFailures(result: SaveAllResult): string[] {
+function getSaveAllFailures(
+  result: SaveAllResult
+): string[] {
   return [
     ...result.statusFailures,
     ...result.projectSaveFailures,
-    ...result.manifestStatusFailures,
   ];
 }
 
@@ -1756,33 +1752,43 @@ async function handleSaveAll() {
   setWorldSaveNotice(null);
 
   try {
-    const result = await saveAllProjectsAndWorld(world);
-    const failures = getSaveAllFailures(result);
+        const result =
+      await saveAllProjectsAndWorld(
+        world
+      );
 
-    if (result.manifestError) {
-      const warning = failures.length > 0
-        ? ` Module warnings: ${failures.join(' ')}`
-        : '';
+    const failures =
+      getSaveAllFailures(
+        result
+      );
+
+    if (
+      failures.length > 0
+    ) {
+      const details =
+        failures.join(' ');
+
+      console.error(
+        'Save All completed with warnings:',
+        details
+      );
 
       setWorldSaveNotice({
-        kind: 'error',
-        message: `Module saves completed, but World save failed: `
-          + `${result.manifestError}.${warning}`,
-      });
-    } else if (failures.length > 0) {
-      const details = failures.join(' ');
+        kind:
+          'warning',
 
-      console.error('Save All completed with warnings:', details);
-      setWorldSaveNotice({
-        kind: 'warning',
-        message: `Save All completed with warnings: ${details}`,
+        message:
+          `Save All completed with warnings: ${details}`,
       });
     } else {
       setWorldSaveNotice({
-        kind: 'success',
-        message: 'Everything saved.',
+        kind:
+          'success',
+
+        message:
+          'Everything saved.',
       });
-    }
+    }   
   } catch (error) {
     const message = error instanceof Error
       ? error.message
@@ -1910,78 +1916,134 @@ async function handleCloseRequest(target: CloseTarget) {
 }
 
 async function handleSaveAllAndClose() {
-  if (worldSaving || worldClosing) return;
+  if (
+    worldSaving ||
+    worldClosing
+  ) {
+    return;
+  }
 
-  const world = activeWorld;
+  const world =
+    activeWorld;
 
-  setWorldClosing(true);
-  setWorldSaveNotice(null);
+  setWorldClosing(
+    true
+  );
+
+  setWorldSaveNotice(
+    null
+  );
 
   try {
-    let saveResult: SaveAllResult;
+    if (!world) {
+      await finishClose(
+        closeTarget
+      );
 
-    if (world) {
-      saveResult = await saveAllProjectsAndWorld(world);
-    } else {
-      const moduleResult = await saveOpenModuleProjects();
-
-      saveResult = {
-        ...moduleResult,
-        manifestStatusFailures: [],
-      };
+      return;
     }
 
-    const saveFailures = getSaveAllFailures(saveResult);
+    const saveResult =
+      await saveAllProjectsAndWorld(
+        world
+      );
 
-    if (saveResult.manifestError || saveFailures.length > 0) {
-      const details = [
-        saveResult.manifestError,
-        ...saveFailures,
-      ].filter(Boolean).join(' ');
+    const saveFailures =
+      getSaveAllFailures(
+        saveResult
+      );
+
+    if (
+      saveFailures.length > 0
+    ) {
+      const details =
+        saveFailures.join(' ');
 
       setWorldSaveNotice({
-        kind: 'error',
-        message: `Close cancelled. Save All failed: ${details}`,
+        kind:
+          'error',
+
+        message:
+          `Close cancelled. Save All failed: ${details}`,
       });
+
       return;
     }
 
-    const scan = await scanReadyProjectStatuses();
+    const scan =
+      await scanReadyProjectStatuses();
 
-    if (scan.failures.length > 0) {
+    if (
+      scan.failures.length > 0
+    ) {
       setWorldSaveNotice({
-        kind: 'error',
-        message: 'Close cancelled. Saved projects could not '
-          + 'be verified.',
+        kind:
+          'error',
+
+        message:
+          'Close cancelled. Saved projects could not be verified.',
       });
+
       return;
     }
 
-    if (scan.projects.some((project) => project.dirty)) {
+    if (
+      scan.projects.some(
+        (project) =>
+          project.dirty
+      )
+    ) {
       setWorldSaveNotice({
-        kind: 'error',
-        message: 'Close cancelled. Some projects remain unsaved.',
+        kind:
+          'error',
+
+        message:
+          'Close cancelled. Some projects remain unsaved.',
       });
+
       return;
     }
 
-    const failures = await closeOpenProjects(scan.projects);
+    const failures =
+      await closeOpenProjects(
+        scan.projects
+      );
 
-    if (failures.length > 0) {
-      reportCloseFailures(failures, closeTarget);
+    if (
+      failures.length > 0
+    ) {
+      reportCloseFailures(
+        failures,
+        closeTarget
+      );
+
       return;
     }
 
-    await finishClose(closeTarget);
+    await finishClose(
+      closeTarget
+    );
   } catch (error) {
-    const message = error instanceof Error
-      ? error.message
-      : 'Unable to complete close request.';
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Unable to complete close request.';
 
-    console.error('Unable to complete close request:', error);
-    setWorldSaveNotice({ kind: 'error', message });
+    console.error(
+      'Unable to complete close request:',
+      error
+    );
+
+    setWorldSaveNotice({
+      kind:
+        'error',
+
+      message,
+    });
   } finally {
-    setWorldClosing(false);
+    setWorldClosing(
+      false
+    );
   }
 }
 
@@ -2012,38 +2074,195 @@ async function handleDiscardAllAndClose() {
   }
 }
 
-  function toggleModule(moduleId: string) {
-  const isEnabled =
-    enabledModuleIds.includes(moduleId);
+async function removeModuleFromWorld(
+  moduleId: string
+) {
+  if (
+    !activeWorld ||
+    worldSaving
+  ) {
+    return;
+  }
 
-  if (isEnabled) {
-    modulePresenceService.removeModule(moduleId);
-
-    setReadyModuleIds((ready) =>
-      ready.filter((id) => id !== moduleId)
+  const reference =
+    activeWorld.modules.find(
+      (candidate) =>
+        candidate.moduleId ===
+        moduleId
     );
 
-    if (activeModuleId === moduleId) {
-      setActiveModuleId(null);
-    }
+  if (!reference) {
+    return;
+  }
 
-    setEnabledModuleIds((current) =>
-      current.filter((id) => id !== moduleId)
-    );
+  if (
+    activeWorld.modules.length === 1
+  ) {
+    setWorldSaveNotice({
+      kind:
+        'error',
+
+      message:
+        'A World must contain at least one module.',
+    });
 
     return;
   }
 
-  console.warn(
-    `[ModuleMount] requested ${moduleId} ${Date.now()}`
+  const moduleName =
+    moduleRegistry.get(
+      moduleId
+    )?.name ??
+    moduleId;
+
+  const confirmed =
+    window.confirm(
+      `Remove ${moduleName} from ${activeWorld.name}.world?\n\n` +
+      `Its associated Project will also be deleted.`
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  setWorldSaving(
+    true
   );
 
-  modulePresenceService.enableModule(moduleId);
+  setWorldSaveNotice(
+    null
+  );
 
-  setEnabledModuleIds((current) => [
-    ...current,
-    moduleId,
-  ]);
+  try {
+    /*
+     * Close the active Project first if this
+     * module currently has that World Project open.
+     */
+    try {
+      const status =
+        await projectLifecycleService
+          .getStatus(
+            moduleId
+          );
+
+      if (
+        status.projectId ===
+        reference.projectId
+      ) {
+        await projectLifecycleService
+          .closeProject(
+            moduleId,
+            true
+          );
+      }
+    } catch (error) {
+      console.warn(
+        `Unable to close ${moduleId} before removal:`,
+        error
+      );
+    }
+
+    const deletion =
+      await projectLifecycleService
+        .deleteProject(
+          moduleId,
+          reference.projectId
+        );
+
+    if (!deletion.deleted) {
+      throw new Error(
+        `${moduleName} Project could not be deleted.`
+      );
+    }
+
+    const updatedWorld:
+      World = {
+      ...activeWorld,
+
+      modules:
+        activeWorld.modules.filter(
+          (candidate) =>
+            candidate.moduleId !==
+            moduleId
+        ),
+
+      updatedAt:
+        new Date(),
+    };
+
+    await worldRepository.saveWorld(
+      updatedWorld
+    );
+
+    setActiveWorld(
+      updatedWorld
+    );
+
+    setWorldDirty(
+      false
+    );
+
+    modulePresenceService
+      .removeModule(
+        moduleId
+      );
+
+    setReadyModuleIds(
+      (current) =>
+        current.filter(
+          (id) =>
+            id !== moduleId
+        )
+    );
+
+    setEnabledModuleIds(
+      (current) =>
+        current.filter(
+          (id) =>
+            id !== moduleId
+        )
+    );
+
+    if (
+      activeModuleId ===
+      moduleId
+    ) {
+      setActiveModuleId(
+        updatedWorld.modules[0]
+          ?.moduleId ??
+          null
+      );
+    }
+
+    setWorldSaveNotice({
+      kind:
+        'success',
+
+      message:
+        `${moduleName} removed from ${updatedWorld.name}.world.`,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Unable to remove module from World.';
+
+    console.error(
+      'Unable to remove module from World:',
+      error
+    );
+
+    setWorldSaveNotice({
+      kind:
+        'error',
+
+      message,
+    });
+  } finally {
+    setWorldSaving(
+      false
+    );
+  }
 }
 
   return (
@@ -2084,14 +2303,6 @@ async function handleDiscardAllAndClose() {
   onClick={() => void handleOpenLoadWorld()}
 >
   Load World...
-</button>
-
-<button
-  className="dropdown-item"
-  disabled={!activeWorld || worldSaving}
-  onClick={() => void handleSaveWorld()}
->
-  {worldSaving ? 'Saving World...' : 'Save World'}
 </button>
 
 <button
@@ -2917,8 +3128,12 @@ async function handleDiscardAllAndClose() {
 
       <div className="module-list">
         {availableModules.map((module) => {
-          const enabled =
-            enabledModuleIds.includes(module.id);
+          const included =
+  activeWorld?.modules.some(
+    (reference) =>
+      reference.moduleId ===
+      module.id
+  ) ?? false;
 
           return (
             <div
@@ -2938,12 +3153,32 @@ async function handleDiscardAllAndClose() {
               </div>
 
               <button
-                onClick={() =>
-                  toggleModule(module.id)
-                }
-              >
-                {enabled ? 'Remove' : 'Add'}
-              </button>
+  disabled={
+    !activeWorld ||
+    worldSaving
+  }
+  onClick={() => {
+    if (included) {
+      void removeModuleFromWorld(
+        module.id
+      );
+
+      return;
+    }
+
+    setWorldSaveNotice({
+      kind:
+        'warning',
+
+      message:
+        'Add Module will use the World Project setup next.',
+    });
+  }}
+>
+  {included
+    ? 'Remove'
+    : 'Add'}
+</button>
             </div>
           );
         })}
