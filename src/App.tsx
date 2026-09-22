@@ -10,7 +10,11 @@ import type { World } from './models/World';
 import { worldRepository } from './worlds/WorldRepository';
 import { projectLifecycleService } from './projects/ProjectLifecycleService';
 import { overlayRegistry } from './overlays/registry';
-import type { OverlayPlacement } from './overlays/OverlayPlacement';
+import {
+  MessengerOverlay,
+  useMessengerOverlay,
+} from './overlays/messenger/MessengerOverlay';
+import type { MessengerTabConfig } from './overlays/messenger/MessengerOverlay';
 import {
   registerActionHostService,
   sendActionCatalogTo,
@@ -62,17 +66,6 @@ interface WorldAddModuleOperation {
   failure?: string;
 }
 
-interface WorldAddModuleOperation {
-  runId: string;
-  world: World;
-  moduleId: string;
-  projectReference?: {
-    moduleId: string;
-    projectId: string;
-  };
-  failure?: string;
-}
-
 interface ModuleProjectStatus {
   projectId?: string;
   projectName?: string;
@@ -103,12 +96,6 @@ interface SaveAllResult {
 
 type CloseTarget = 'world' | 'application';
 
-interface MessengerTabConfig {
-  id: string;
-  name: string;
-  phoneNumber: string;
-}
-
 const TRANSIENT_NOTICE_DURATION_MS = 8000;
 const DROPDOWN_DISMISS_DISTANCE_PX = 36;
 
@@ -135,11 +122,7 @@ function App()
     useState<Set<string>>(() => new Set());
   const isOverlayEnabled = (overlayId: string) =>
     enabledOverlayIds.has(overlayId);
-  const [messengerPlacement, setMessengerPlacement] =
-  useState<OverlayPlacement>({
-    edge: 'bottom',
-    alignment: 'center',
-  });
+  const messenger = useMessengerOverlay();
 
 const [messengerSettingsOpen, setMessengerSettingsOpen] =
   useState(false);
@@ -824,11 +807,7 @@ if (!loadQueueRef.current) {
             .then(() => {
               setActiveWorld(
                 updatedWorld
-              );
-
-              setWorldDirty(
-                false
-              );
+              );              
 
               setActiveModuleId(
                 reference.moduleId
@@ -947,8 +926,6 @@ if (!loadQueueRef.current) {
               world
             );
 
-            setWorldDirty(false);
-
             setActiveModuleId(
               world.modules[0]
                 ?.moduleId ??
@@ -1026,7 +1003,7 @@ useEffect(() => {
     return () => window.clearTimeout(timeoutId);
   }, [showLoadWorldDialog, worldLoadError]);
 
-  const [worldDirty, setWorldDirty] = useState(false);
+ 
 
   const [showCloseWorldDialog, setShowCloseWorldDialog] =
     useState(false);
@@ -1859,10 +1836,6 @@ async function handleDeleteWorld() {
         null
       );
 
-      setWorldDirty(
-        false
-      );
-
       setShowCloseWorldDialog(
         false
       );
@@ -2036,7 +2009,6 @@ async function handleLoadWorld(worldId: string) {
     }
 
     setActiveWorld(world);
-    setWorldDirty(false);
     setShowLoadWorldDialog(false);
 
    const missingModules = world.modules.filter(
@@ -2245,30 +2217,6 @@ async function scanWorldProjectStatuses(
     projects,
     failures,
   };
-}
-
-async function saveWorldManifest(
-  world: World
-): Promise<World> {
-  const savedWorld: World = {
-    ...world,
-    updatedAt:
-      new Date(),
-  };
-
-  await worldRepository.saveWorld(
-    savedWorld
-  );
-
-  setActiveWorld(
-    savedWorld
-  );
-
-  setWorldDirty(
-    false
-  );
-
-  return savedWorld;
 }
 
 async function saveWorldProjects(
@@ -2571,10 +2519,6 @@ async function finishClose(
 
   loadQueueRef.current?.clear();
 
-  setWorldDirty(
-    false
-  );
-
   setWorldSaveNotice({
     kind:
       'success',
@@ -2629,7 +2573,7 @@ async function handleCloseRequest(target: CloseTarget) {
 
     setCloseWorldProjects(scan.projects);
 
-    if (worldDirty || scan.projects.some((project) => project.dirty)) {
+    if (scan.projects.some((project) => project.dirty)) {
       setShowCloseWorldDialog(true);
       return;
     }
@@ -3235,10 +3179,6 @@ async function removeModuleFromWorld(
       updatedWorld
     );
 
-    setWorldDirty(
-      false
-    );
-
     modulePresenceService
       .removeModule(
         moduleId
@@ -3442,9 +3382,9 @@ async function removeModuleFromWorld(
           type="button"
           className="dropdown-item"
           onClick={() => {
-            setOverlayMenuOpen(false);
-            setMessengerSettingsOpen(true);
-          }}
+  setOverlayMenuOpen(false);
+  messenger.setSettingsOpen(true);
+}}
         >
           Settings...
         </button>
@@ -3555,149 +3495,43 @@ async function removeModuleFromWorld(
   )}
 
     <div className="overlay-layer">
-    {registeredOverlays
-      .filter((overlay) =>
-        isOverlayEnabled(overlay.id)
-      )
-      .map((overlay) => {
-        const Surface = overlay.Surface;
+  {registeredOverlays
+    .filter(
+      (overlay) =>
+        overlay.id !==
+          'messenger' &&
+        isOverlayEnabled(
+          overlay.id
+        )
+    )
+    .map((overlay) => {
+      const Surface =
+        overlay.Surface;
 
-        return (
-          <Surface
-            key={overlay.id}
-            placement={messengerPlacement}
-            tabs={
-              overlay.id === 'messenger'
-                ? messengerTabs
-                : undefined
-            }
-          />
-        );
-      })}
-  </div>
-</main>
-
-{messengerSettingsOpen && (
-  <div className="dialog-backdrop">
-    <div className="dialog messenger-settings-dialog">
-      <h2>Messenger Settings</h2>
-
-      <label className="messenger-settings-field">
-        <span>Docking Position</span>
-
-        <select
-          value={
-            `${messengerPlacement.edge}-${messengerPlacement.alignment}`
-          }
-          onChange={(event) => {
-            const [edge, alignment] =
-              event.target.value.split('-') as [
-                OverlayPlacement['edge'],
-                OverlayPlacement['alignment'],
-              ];
-
-            setMessengerPlacement({
-              edge,
-              alignment,
-            });
+      return (
+        <Surface
+          key={overlay.id}
+          placement={{
+            edge:
+              'bottom',
+            alignment:
+              'center',
           }}
-        >
-          <option value="top-left">Top Left</option>
-          <option value="top-center">Top Center</option>
-          <option value="top-right">Top Right</option>
-          <option value="bottom-left">Bottom Left</option>
-          <option value="bottom-center">Bottom Center</option>
-          <option value="bottom-right">Bottom Right</option>
-        </select>
-      </label>
+        />
+      );
+    })}
 
-      <div className="messenger-settings-section">
-        <strong>Tabs</strong>
-
-        {messengerTabs.map((tab) => (
-          <div
-            key={tab.id}
-            className="messenger-settings-tab-row"
-          >
-            <input
-              type="text"
-              placeholder="Name"
-              value={tab.name}
-              onChange={(event) => {
-                const name = event.target.value;
-
-                setMessengerTabs((current) =>
-                  current.map((item) =>
-                    item.id === tab.id
-                      ? { ...item, name }
-                      : item
-                  )
-                );
-              }}
-            />
-
-            <input
-              type="tel"
-              placeholder="Phone number"
-              value={tab.phoneNumber}
-              onChange={(event) => {
-                const phoneNumber = event.target.value;
-
-                setMessengerTabs((current) =>
-                  current.map((item) =>
-                    item.id === tab.id
-                      ? { ...item, phoneNumber }
-                      : item
-                  )
-                );
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={() =>
-                setMessengerTabs((current) =>
-                  current.filter(
-                    (item) => item.id !== tab.id
-                  )
-                )
-              }
-            >
-              ×
-            </button>
-          </div>
-        ))}
-
-        <button
-          type="button"
-          onClick={() =>
-            setMessengerTabs((current) => [
-              ...current,
-              {
-                id: crypto.randomUUID(),
-                name: '',
-                phoneNumber: '',
-              },
-            ])
-          }
-        >
-          + Add Tab
-        </button>
-      </div>
-
-      <div className="dialog-buttons">
-        <button
-          type="button"
-          onClick={() =>
-            setMessengerSettingsOpen(false)
-          }
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+  {isOverlayEnabled(
+    'messenger'
+  ) && (
+    <MessengerOverlay
+      controller={
+        messenger
+      }
+    />
+  )}
+</div>
+</main>
 
 {showNewWorldDialog && (
   <div className="dialog-backdrop">
@@ -4100,7 +3934,7 @@ async function removeModuleFromWorld(
       <p>Unsaved changes:</p>
 
       <ul className="world-unsaved-list">
-        {worldDirty && activeWorld && (
+        {activeWorld && (
           <li>{activeWorld.name}.world</li>
         )}
 
