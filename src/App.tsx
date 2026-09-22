@@ -62,6 +62,17 @@ interface WorldAddModuleOperation {
   failure?: string;
 }
 
+interface WorldAddModuleOperation {
+  runId: string;
+  world: World;
+  moduleId: string;
+  projectReference?: {
+    moduleId: string;
+    projectId: string;
+  };
+  failure?: string;
+}
+
 interface ModuleProjectStatus {
   projectId?: string;
   projectName?: string;
@@ -402,7 +413,7 @@ const worldCreationOperationRef =
   );
 
 const pendingImportListModuleRef =
-  useRef<string | null>(null);
+  useRef<string | null>(null);  
 
 const worldAddModuleOperationRef =
   useRef<WorldAddModuleOperation | null>(
@@ -1601,56 +1612,398 @@ async function handleOpenDeleteWorld() {
   }
 }
 
+async function waitForModuleReady(
+  moduleId: string,
+  timeoutMs = 5000
+): Promise<void> {
+  const existing =
+    modulePresenceService.get(
+      moduleId
+    );
+
+  if (
+    existing?.state === 'ready'
+  ) {
+    return;
+  }
+
+  enableRequiredModule(
+    moduleId
+  );
+
+  const startedAt =
+    Date.now();
+
+  while (
+    modulePresenceService.get(
+      moduleId
+    )?.state !== 'ready'
+  ) {
+    if (
+      Date.now() -
+        startedAt >=
+      timeoutMs
+    ) {
+      throw new Error(
+        `${moduleId} did not become ready.`
+      );
+    }
+
+    await new Promise<void>(
+      (resolve) => {
+        window.setTimeout(
+          resolve,
+          50
+        );
+      }
+    );
+  }
+}
+
 async function handleDeleteWorld() {
-  if (!worldPendingDelete || worldDeleting) return;
+  if (
+    !worldPendingDelete ||
+    worldDeleting
+  ) {
+    return;
+  }
 
-  const world = worldPendingDelete;
+  const world =
+    worldPendingDelete;
 
-  setWorldDeleting(true);
-  setWorldDeleteError(null);
-  setWorldDeleteMessage(null);
+  setWorldDeleting(
+    true
+  );
+
+  setWorldDeleteError(
+    null
+  );
+
+  setWorldDeleteMessage(
+    null
+  );
+
+  const modulesStartedForDeletion =
+    new Set<string>();
 
   try {
-    const deleted = await worldRepository.deleteWorld(world.id);
+    /*
+     * First make sure every module required by
+     * this World actually exists.
+     *
+     * We do this before deleting anything so a
+     * missing module cannot cause an avoidable
+     * partial World deletion.
+     */
+    const missingModules =
+      world.modules.filter(
+        (reference) =>
+          !moduleRegistry.get(
+            reference.moduleId
+          )
+      );
+
+    if (
+      missingModules.length > 0
+    ) {
+      const names =
+        missingModules
+          .map(
+            (reference) =>
+              reference.moduleId
+          )
+          .join(', ');
+
+      throw new Error(
+        `World cannot be deleted because these modules are unavailable: ${names}.`
+      );
+    }
+
+    /*
+     * Ready every required module before deleting
+     * any Project. This gives us the safest
+     * possible starting point for the destructive
+     * portion of the operation.
+     */
+    for (
+      const reference of
+      world.modules
+    ) {
+      const presence =
+        modulePresenceService.get(
+          reference.moduleId
+        );
+
+      if (
+        presence?.state !==
+        'ready'
+      ) {
+        modulesStartedForDeletion.add(
+          reference.moduleId
+        );
+      }
+
+      await waitForModuleReady(
+        reference.moduleId
+      );
+    }
+
+    /*
+     * A World may currently be open. Its Projects
+     * must be closed before their modules will
+     * allow deletion.
+     */
+    for (
+      const reference of
+      world.modules
+    ) {
+      try {
+        const status =
+          await projectLifecycleService
+            .getStatus(
+              reference.moduleId
+            );
+
+        if (
+          status.projectId ===
+          reference.projectId
+        ) {
+          await projectLifecycleService
+            .closeProject(
+              reference.moduleId,
+              true
+            );
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Unable to close Project.';
+
+        throw new Error(
+          `${reference.moduleId}: ${message}`
+        );
+      }
+    }
+
+    /*
+     * Delete the Projects one at a time.
+     *
+     * If any deletion fails, stop immediately and
+     * KEEP the World manifest. The manifest remains
+     * our ownership/recovery record.
+     */
+    for (
+      const reference of
+      world.modules
+    ) {
+      try {
+        const result =
+          await projectLifecycleService
+            .deleteProject(
+              reference.moduleId,
+              reference.projectId
+            );
+
+        if (
+          !result.deleted
+        ) {
+          throw new Error(
+            'Project was not deleted.'
+          );
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Project deletion failed.';
+
+        throw new Error(
+          `${reference.moduleId}: ${message} ` +
+          `The World file was kept so the remaining Project ownership can be recovered.`
+        );
+      }
+    }
+
+    /*
+     * Only after every associated Project has been
+     * successfully deleted do we remove the World
+     * manifest itself.
+     */
+    const deleted =
+      await worldRepository
+        .deleteWorld(
+          world.id
+        );
 
     if (!deleted) {
-      throw new Error('The selected World could not be deleted.');
+      throw new Error(
+        'All associated Projects were deleted, but the World file could not be deleted.'
+      );
     }
 
-    if (activeWorld?.id === world.id) {
-      worldLoadGenerationRef.current += 1;
+    /*
+     * If the deleted World was active, completely
+     * clear its active runtime state.
+     */
+    if (
+      activeWorld?.id ===
+      world.id
+    ) {
+      worldLoadGenerationRef.current +=
+        1;
+
       loadQueueRef.current?.clear();
-      setActiveWorld(null);
-      setWorldDirty(false);
-      setShowCloseWorldDialog(false);
-      setCloseWorldProjects([]);
-      setWorldLoadError(null);
+
+      setActiveWorld(
+        null
+      );
+
+      setWorldDirty(
+        false
+      );
+
+      setShowCloseWorldDialog(
+        false
+      );
+
+      setCloseWorldProjects(
+        []
+      );
+
+      setWorldLoadError(
+        null
+      );
+
+      setActiveModuleId(
+        null
+      );
     }
 
-    setWorldPendingDelete(null);
-    setWorldDeleteMessage(`Deleted ${world.name}.world.`);
+    /*
+     * The deleted World no longer needs any of its
+     * modules running.
+     */
+    for (
+      const reference of
+      world.modules
+    ) {
+      modulePresenceService
+        .removeModule(
+          reference.moduleId
+        );
+    }
+
+    const deletedModuleIds =
+      new Set(
+        world.modules.map(
+          (reference) =>
+            reference.moduleId
+        )
+      );
+
+    setReadyModuleIds(
+      (current) =>
+        current.filter(
+          (moduleId) =>
+            !deletedModuleIds.has(
+              moduleId
+            )
+        )
+    );
+
+    setEnabledModuleIds(
+      (current) =>
+        current.filter(
+          (moduleId) =>
+            !deletedModuleIds.has(
+              moduleId
+            )
+        )
+    );
+
+    setWorldPendingDelete(
+      null
+    );
+
+    setWorldDeleteMessage(
+      `Deleted ${world.name}.world and its associated Projects.`
+    );
+
     setWorldSaveNotice({
-      kind: 'success',
-      message: `Deleted ${world.name}.world.`,
+      kind:
+        'success',
+
+      message:
+        `Deleted ${world.name}.world and its associated Projects.`,
     });
 
     try {
-      setSavedWorlds(await worldRepository.loadWorlds());
+      setSavedWorlds(
+        await worldRepository
+          .loadWorlds()
+      );
     } catch (error) {
-      console.error('Unable to refresh saved Worlds:', error);
+      console.error(
+        'Unable to refresh saved Worlds:',
+        error
+      );
+
       setWorldDeleteError(
         'World deleted, but the saved World list could not be refreshed.'
       );
     }
   } catch (error) {
-    const message = error instanceof Error
-      ? error.message
-      : 'Unable to delete World.';
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Unable to delete World.';
 
-    console.error('Unable to delete World:', error);
-    setWorldDeleteError(message);
+    console.error(
+      'Unable to delete World:',
+      error
+    );
+
+    setWorldDeleteError(
+      message
+    );
+
+    /*
+     * If deletion failed, shut down modules that
+     * this operation started solely for deletion.
+     *
+     * Do not stop modules that were already ready
+     * before we began.
+     */
+    for (
+      const moduleId of
+      modulesStartedForDeletion
+    ) {
+      modulePresenceService
+        .removeModule(
+          moduleId
+        );
+
+      setReadyModuleIds(
+        (current) =>
+          current.filter(
+            (id) =>
+              id !== moduleId
+          )
+      );
+
+      setEnabledModuleIds(
+        (current) =>
+          current.filter(
+            (id) =>
+              id !== moduleId
+          )
+      );
+    }
   } finally {
-    setWorldDeleting(false);
+    setWorldDeleting(
+      false
+    );
   }
 }
 
@@ -3679,9 +4032,9 @@ async function removeModuleFromWorld(
           <p>Delete "{worldPendingDelete.name}.world"?</p>
 
           <p>
-            This removes only the SettingForge World file. Associated
-            module projects will NOT be deleted.
-          </p>
+  This permanently deletes the World and all Projects
+  associated with it. This cannot be undone.
+</p>
 
           <div className="dialog-buttons">
             <button
@@ -3689,7 +4042,7 @@ async function removeModuleFromWorld(
               disabled={worldDeleting}
               onClick={() => void handleDeleteWorld()}
             >
-              {worldDeleting ? 'Deleting...' : 'Delete'}
+              {worldDeleting ? 'Deleting...' : 'Delete World and Projects'}
             </button>
 
             <button
