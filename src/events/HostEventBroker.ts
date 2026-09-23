@@ -6,6 +6,12 @@ import type {
 } from './HostMessage';
 import { actionRegistry } from '../actions/ActionRegistry';
 import { actionStateStore } from '../actions/ActionStateStore';
+import {
+  capabilityRegistry,
+} from '../capabilities/CapabilityRegistry';
+import {
+  eventStateStore,
+} from '../capabilities/EventStateStore';
 
 type EventHandler =
   (message: HostEventMessage) => void;
@@ -90,10 +96,22 @@ export class HostEventBroker {
     message
   );
 
-  if (message.sourceModuleId !== 'settingforge' &&
-      actionRegistry.get(message.type)) {
-    this.relayAction(message);
-  }
+  if (
+  message.sourceModuleId !== 'settingforge' &&
+  (
+    capabilityRegistry.getEvent(
+      message.type,
+      message.sourceModuleId
+    ) ||
+    actionRegistry.get(
+      message.type
+    )
+  )
+) {
+  this.relayModuleEvent(
+    message
+  );
+}
 
   return;
 }
@@ -147,15 +165,53 @@ void this.handleRequest(
     };
   }
 
-  private relayAction(message: HostEventMessage): void {
-    const action = actionRegistry.get(message.type);
-    if (action?.delivery === 'state') actionStateStore.retain(message);
+ private relayModuleEvent(
+  message: HostEventMessage
+): void {
+  const eventDefinition =
+    capabilityRegistry.getEvent(
+      message.type,
+      message.sourceModuleId
+    );
 
-    for (const [moduleId, moduleWindow] of this.moduleWindows) {
-      if (moduleId === message.sourceModuleId) continue;
-      moduleWindow.postMessage(message, '*');
-    }
+  const legacyAction =
+    actionRegistry.get(
+      message.type
+    );
+
+  if (
+    eventDefinition?.delivery ===
+    'state'
+  ) {
+    eventStateStore.retain(
+      message
+    );
+  } else if (
+    legacyAction?.delivery ===
+    'state'
+  ) {
+    actionStateStore.retain(
+      message
+    );
   }
+
+  for (
+    const [moduleId, moduleWindow]
+    of this.moduleWindows
+  ) {
+    if (
+      moduleId ===
+      message.sourceModuleId
+    ) {
+      continue;
+    }
+
+    moduleWindow.postMessage(
+      message,
+      '*'
+    );
+  }
+}
 
   sendEventToModule(
     moduleId: string,

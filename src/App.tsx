@@ -22,6 +22,8 @@ import {
 } from './actions/ActionHostService';
 import {
   registerCapabilityHostService,
+  sendCapabilityCatalogTo,
+  sendRetainedEventStateTo,
 } from './capabilities/CapabilityHostService';
 import type {
   ProjectCreateResponse,
@@ -209,9 +211,26 @@ setReadyModuleIds((current) => {
   return [...current, message.sourceModuleId];
 });
 
-modulePresenceService.sendSnapshotTo(message.sourceModuleId);
-sendActionCatalogTo(message.sourceModuleId);
-sendRetainedActionStateTo(message.sourceModuleId);
+modulePresenceService.sendSnapshotTo(
+  message.sourceModuleId
+);
+
+sendActionCatalogTo(
+  message.sourceModuleId
+);
+
+sendRetainedActionStateTo(
+  message.sourceModuleId
+);
+
+sendCapabilityCatalogTo(
+  message.sourceModuleId
+);
+
+sendRetainedEventStateTo(
+  message.sourceModuleId
+);
+
 loadQueueRef.current?.completeModule(
   message.sourceModuleId
 );

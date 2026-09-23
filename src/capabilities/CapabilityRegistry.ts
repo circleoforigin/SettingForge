@@ -18,172 +18,309 @@ export interface ModuleCapabilityRegistration {
 type CapabilityRegistryListener =
   () => void;
 
-function cloneEvents(
-  definitions: RegisteredEventDefinition[]
-): RegisteredEventDefinition[] {
-  return definitions.map((definition) => ({
+function cloneEvent(
+  definition: RegisteredEventDefinition
+): RegisteredEventDefinition {
+  return {
     ...definition,
     fields:
-      definition.fields?.map((field) => ({
-        ...field,
-      })),
-  }));
+      definition.fields?.map(
+        (field) => ({
+          ...field,
+        })
+      ),
+  };
 }
 
-function cloneCommands(
-  definitions: RegisteredCommandDefinition[]
-): RegisteredCommandDefinition[] {
-  return definitions.map((definition) => ({
+function cloneCommand(
+  definition: RegisteredCommandDefinition
+): RegisteredCommandDefinition {
+  return {
     ...definition,
     input:
-      definition.input?.map((field) => ({
-        ...field,
-      })),
+      definition.input?.map(
+        (field) => ({
+          ...field,
+        })
+      ),
     output:
-      definition.output?.map((field) => ({
-        ...field,
-      })),
-  }));
+      definition.output?.map(
+        (field) => ({
+          ...field,
+        })
+      ),
+  };
 }
 
-function cloneQueries(
-  definitions: RegisteredQueryDefinition[]
-): RegisteredQueryDefinition[] {
-  return definitions.map((definition) => ({
+function cloneQuery(
+  definition: RegisteredQueryDefinition
+): RegisteredQueryDefinition {
+  return {
     ...definition,
     input:
-      definition.input?.map((field) => ({
-        ...field,
-      })),
+      definition.input?.map(
+        (field) => ({
+          ...field,
+        })
+      ),
     output:
-      definition.output?.map((field) => ({
-        ...field,
-      })),
-  }));
+      definition.output?.map(
+        (field) => ({
+          ...field,
+        })
+      ),
+  };
 }
 
 export class CapabilityRegistry {
   private readonly events =
-    new Map<string, RegisteredEventDefinition>();
+    new Map<
+      string,
+      Map<
+        string,
+        RegisteredEventDefinition
+      >
+    >();
 
   private readonly commands =
-    new Map<string, RegisteredCommandDefinition>();
+    new Map<
+      string,
+      Map<
+        string,
+        RegisteredCommandDefinition
+      >
+    >();
 
   private readonly queries =
-    new Map<string, RegisteredQueryDefinition>();
+    new Map<
+      string,
+      Map<
+        string,
+        RegisteredQueryDefinition
+      >
+    >();
 
   private readonly listeners =
     new Set<CapabilityRegistryListener>();
 
   registerModule(
-    registration: ModuleCapabilityRegistration
+    registration:
+      ModuleCapabilityRegistration
   ): void {
-    this.validateRegistration(registration);
+    this.validateRegistration(
+      registration
+    );
 
     this.removeModuleCapabilities(
       registration.moduleId,
       false
     );
 
-    for (const definition of registration.events ?? []) {
-      this.events.set(definition.id, {
-        ...definition,
-        fields:
-          definition.fields?.map((field) => ({
-            ...field,
-          })),
-        moduleId: registration.moduleId,
-        moduleName: registration.moduleName,
-      });
+    for (
+      const definition
+      of registration.events ?? []
+    ) {
+      this.setProvider(
+        this.events,
+        definition.id,
+        registration.moduleId,
+        {
+          ...definition,
+          fields:
+            definition.fields?.map(
+              (field) => ({
+                ...field,
+              })
+            ),
+          moduleId:
+            registration.moduleId,
+          moduleName:
+            registration.moduleName,
+        }
+      );
     }
 
-    for (const definition of registration.commands ?? []) {
-      this.commands.set(definition.id, {
-        ...definition,
-        input:
-          definition.input?.map((field) => ({
-            ...field,
-          })),
-        output:
-          definition.output?.map((field) => ({
-            ...field,
-          })),
-        moduleId: registration.moduleId,
-        moduleName: registration.moduleName,
-      });
+    for (
+      const definition
+      of registration.commands ?? []
+    ) {
+      this.setProvider(
+        this.commands,
+        definition.id,
+        registration.moduleId,
+        {
+          ...definition,
+          input:
+            definition.input?.map(
+              (field) => ({
+                ...field,
+              })
+            ),
+          output:
+            definition.output?.map(
+              (field) => ({
+                ...field,
+              })
+            ),
+          moduleId:
+            registration.moduleId,
+          moduleName:
+            registration.moduleName,
+        }
+      );
     }
 
-    for (const definition of registration.queries ?? []) {
-      this.queries.set(definition.id, {
-        ...definition,
-        input:
-          definition.input?.map((field) => ({
-            ...field,
-          })),
-        output:
-          definition.output?.map((field) => ({
-            ...field,
-          })),
-        moduleId: registration.moduleId,
-        moduleName: registration.moduleName,
-      });
+    for (
+      const definition
+      of registration.queries ?? []
+    ) {
+      this.setProvider(
+        this.queries,
+        definition.id,
+        registration.moduleId,
+        {
+          ...definition,
+          input:
+            definition.input?.map(
+              (field) => ({
+                ...field,
+              })
+            ),
+          output:
+            definition.output?.map(
+              (field) => ({
+                ...field,
+              })
+            ),
+          moduleId:
+            registration.moduleId,
+          moduleName:
+            registration.moduleName,
+        }
+      );
     }
 
     this.notify();
   }
 
   getEvent(
-    id: string
+    id: string,
+    moduleId?: string
   ): RegisteredEventDefinition | undefined {
-    const definition = this.events.get(id);
+    const definition =
+      this.getProvider(
+        this.events,
+        id,
+        moduleId
+      );
 
     return definition
-      ? cloneEvents([definition])[0]
+      ? cloneEvent(definition)
       : undefined;
   }
 
   getCommand(
-    id: string
+    id: string,
+    moduleId?: string
   ): RegisteredCommandDefinition | undefined {
-    const definition = this.commands.get(id);
+    const definition =
+      this.getProvider(
+        this.commands,
+        id,
+        moduleId
+      );
 
     return definition
-      ? cloneCommands([definition])[0]
+      ? cloneCommand(definition)
       : undefined;
   }
 
   getQuery(
-    id: string
+    id: string,
+    moduleId?: string
   ): RegisteredQueryDefinition | undefined {
-    const definition = this.queries.get(id);
+    const definition =
+      this.getProvider(
+        this.queries,
+        id,
+        moduleId
+      );
 
     return definition
-      ? cloneQueries([definition])[0]
+      ? cloneQuery(definition)
       : undefined;
   }
 
-  getEvents(): RegisteredEventDefinition[] {
-    return cloneEvents(
-      Array.from(this.events.values())
-    ).sort((left, right) =>
-      left.id.localeCompare(right.id)
-    );
+  getEventProviders(
+    id: string
+  ): RegisteredEventDefinition[] {
+    return Array.from(
+      this.events.get(id)?.values() ?? []
+    )
+      .map(cloneEvent)
+      .sort(
+        (left, right) =>
+          left.moduleId.localeCompare(
+            right.moduleId
+          )
+      );
   }
 
-  getCommands(): RegisteredCommandDefinition[] {
-    return cloneCommands(
-      Array.from(this.commands.values())
-    ).sort((left, right) =>
-      left.id.localeCompare(right.id)
-    );
+  getCommandProviders(
+    id: string
+  ): RegisteredCommandDefinition[] {
+    return Array.from(
+      this.commands.get(id)?.values() ?? []
+    )
+      .map(cloneCommand)
+      .sort(
+        (left, right) =>
+          left.moduleId.localeCompare(
+            right.moduleId
+          )
+      );
   }
 
-  getQueries(): RegisteredQueryDefinition[] {
-    return cloneQueries(
-      Array.from(this.queries.values())
-    ).sort((left, right) =>
-      left.id.localeCompare(right.id)
-    );
+  getQueryProviders(
+    id: string
+  ): RegisteredQueryDefinition[] {
+    return Array.from(
+      this.queries.get(id)?.values() ?? []
+    )
+      .map(cloneQuery)
+      .sort(
+        (left, right) =>
+          left.moduleId.localeCompare(
+            right.moduleId
+          )
+      );
+  }
+
+  getEvents():
+    RegisteredEventDefinition[] {
+    return this.flatten(
+      this.events
+    )
+      .map(cloneEvent)
+      .sort(this.compareCapabilities);
+  }
+
+  getCommands():
+    RegisteredCommandDefinition[] {
+    return this.flatten(
+      this.commands
+    )
+      .map(cloneCommand)
+      .sort(this.compareCapabilities);
+  }
+
+  getQueries():
+    RegisteredQueryDefinition[] {
+    return this.flatten(
+      this.queries
+    )
+      .map(cloneQuery)
+      .sort(this.compareCapabilities);
   }
 
   getEventsByModule(
@@ -237,16 +374,21 @@ export class CapabilityRegistry {
   }
 
   private validateRegistration(
-    registration: ModuleCapabilityRegistration
+    registration:
+      ModuleCapabilityRegistration
   ): void {
-    const incoming = new Map<
-      string,
-      'event' | 'command' | 'query'
-    >();
+    const incoming =
+      new Map<
+        string,
+        'event' | 'command' | 'query'
+      >();
 
     const validate = (
       id: string,
-      kind: 'event' | 'command' | 'query'
+      kind:
+        | 'event'
+        | 'command'
+        | 'query'
     ) => {
       if (!id) {
         throw new Error(
@@ -254,7 +396,8 @@ export class CapabilityRegistry {
         );
       }
 
-      const incomingKind = incoming.get(id);
+      const incomingKind =
+        incoming.get(id);
 
       if (incomingKind) {
         throw new Error(
@@ -262,34 +405,130 @@ export class CapabilityRegistry {
         );
       }
 
-      incoming.set(id, kind);
+      incoming.set(
+        id,
+        kind
+      );
 
-      const existing =
-        this.events.get(id) ??
-        this.commands.get(id) ??
-        this.queries.get(id);
+      const otherKind =
+        kind === 'event'
+          ? (
+              this.commands.has(id) ||
+              this.queries.has(id)
+            )
+          : kind === 'command'
+            ? (
+                this.events.has(id) ||
+                this.queries.has(id)
+              )
+            : (
+                this.events.has(id) ||
+                this.commands.has(id)
+              );
 
-      if (
-        existing &&
-        existing.moduleId !== registration.moduleId
-      ) {
+      if (otherKind) {
         throw new Error(
-          `Capability "${id}" is already registered by module "${existing.moduleId}".`
+          `Capability "${id}" is already registered as a different capability kind.`
         );
       }
     };
 
-    for (const definition of registration.events ?? []) {
-      validate(definition.id, 'event');
+    for (
+      const definition
+      of registration.events ?? []
+    ) {
+      validate(
+        definition.id,
+        'event'
+      );
     }
 
-    for (const definition of registration.commands ?? []) {
-      validate(definition.id, 'command');
+    for (
+      const definition
+      of registration.commands ?? []
+    ) {
+      validate(
+        definition.id,
+        'command'
+      );
     }
 
-    for (const definition of registration.queries ?? []) {
-      validate(definition.id, 'query');
+    for (
+      const definition
+      of registration.queries ?? []
+    ) {
+      validate(
+        definition.id,
+        'query'
+      );
     }
+  }
+
+  private setProvider<T>(
+    registry:
+      Map<string, Map<string, T>>,
+    capabilityId: string,
+    moduleId: string,
+    definition: T
+  ): void {
+    let providers =
+      registry.get(capabilityId);
+
+    if (!providers) {
+      providers =
+        new Map<string, T>();
+
+      registry.set(
+        capabilityId,
+        providers
+      );
+    }
+
+    providers.set(
+      moduleId,
+      definition
+    );
+  }
+
+  private getProvider<T>(
+    registry:
+      Map<string, Map<string, T>>,
+    capabilityId: string,
+    moduleId?: string
+  ): T | undefined {
+    const providers =
+      registry.get(capabilityId);
+
+    if (!providers) {
+      return undefined;
+    }
+
+    if (moduleId) {
+      return providers.get(moduleId);
+    }
+
+    return providers
+      .values()
+      .next()
+      .value;
+  }
+
+  private flatten<T>(
+    registry:
+      Map<string, Map<string, T>>
+  ): T[] {
+    const definitions: T[] = [];
+
+    for (
+      const providers
+      of registry.values()
+    ) {
+      definitions.push(
+        ...providers.values()
+      );
+    }
+
+    return definitions;
   }
 
   private removeModuleCapabilities(
@@ -298,36 +537,94 @@ export class CapabilityRegistry {
   ): boolean {
     let changed = false;
 
-    for (const [id, definition] of this.events) {
-      if (definition.moduleId === moduleId) {
-        this.events.delete(id);
-        changed = true;
-      }
-    }
+    changed =
+      this.removeProvider(
+        this.events,
+        moduleId
+      ) || changed;
 
-    for (const [id, definition] of this.commands) {
-      if (definition.moduleId === moduleId) {
-        this.commands.delete(id);
-        changed = true;
-      }
-    }
+    changed =
+      this.removeProvider(
+        this.commands,
+        moduleId
+      ) || changed;
 
-    for (const [id, definition] of this.queries) {
-      if (definition.moduleId === moduleId) {
-        this.queries.delete(id);
-        changed = true;
-      }
-    }
+    changed =
+      this.removeProvider(
+        this.queries,
+        moduleId
+      ) || changed;
 
-    if (changed && notify) {
+    if (
+      changed &&
+      notify
+    ) {
       this.notify();
     }
 
     return changed;
   }
 
+  private removeProvider<T>(
+    registry:
+      Map<string, Map<string, T>>,
+    moduleId: string
+  ): boolean {
+    let changed = false;
+
+    for (
+      const [
+        capabilityId,
+        providers,
+      ]
+      of registry
+    ) {
+      if (
+        providers.delete(moduleId)
+      ) {
+        changed = true;
+      }
+
+      if (
+        providers.size === 0
+      ) {
+        registry.delete(
+          capabilityId
+        );
+      }
+    }
+
+    return changed;
+  }
+
+  private compareCapabilities<
+    T extends {
+      id: string;
+      moduleId: string;
+    }
+  >(
+    left: T,
+    right: T
+  ): number {
+    const idComparison =
+      left.id.localeCompare(
+        right.id
+      );
+
+    if (idComparison !== 0) {
+      return idComparison;
+    }
+
+    return left.moduleId.localeCompare(
+      right.moduleId
+    );
+  }
+
   private notify(): void {
-    for (const listener of this.listeners) {
+    for (
+      const listener
+      of this.listeners
+    ) {
       listener();
     }
   }

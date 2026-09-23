@@ -17,6 +17,10 @@ import {
   capabilityRegistry,
 } from './CapabilityRegistry';
 
+import {
+  eventStateStore,
+} from './EventStateStore';
+
 type RegisterRequestHandler = (
   type: string,
   handler: (
@@ -98,6 +102,22 @@ export function sendCapabilityCatalogTo(
   );
 }
 
+export function sendRetainedEventStateTo(
+  moduleId: string
+): void {
+  for (
+    const message
+    of eventStateStore.getForModule(
+      moduleId
+    )
+  ) {
+    hostEventBroker.sendEventToModule(
+      moduleId,
+      message
+    );
+  }
+}
+
 export function registerCapabilityHostService(
   registerRequestHandler: RegisterRequestHandler
 ): () => void {
@@ -134,19 +154,25 @@ export function registerCapabilityHostService(
     );
 
   const unsubscribe =
-    capabilityRegistry.subscribe(() => {
-      hostEventBroker.broadcast(
-        'capabilities.updated',
-        {
-          events:
-            capabilityRegistry.getEvents(),
-          commands:
-            capabilityRegistry.getCommands(),
-          queries:
-            capabilityRegistry.getQueries(),
-        }
-      );
-    });
+  capabilityRegistry.subscribe(() => {
+    const events =
+      capabilityRegistry.getEvents();
+
+    eventStateStore.synchronize(
+      events
+    );
+
+    hostEventBroker.broadcast(
+      'capabilities.updated',
+      {
+        events,
+        commands:
+          capabilityRegistry.getCommands(),
+        queries:
+          capabilityRegistry.getQueries(),
+      }
+    );
+  });
 
   return () => {
     unsubscribe();
