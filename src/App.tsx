@@ -14,7 +14,7 @@ import {
   MessengerOverlay,
   useMessengerOverlay,
 } from './overlays/messenger/MessengerOverlay';
-import type { MessengerTabConfig } from './overlays/messenger/MessengerOverlay';
+
 import {
   registerActionHostService,
   sendActionCatalogTo,
@@ -123,18 +123,6 @@ function App()
   const isOverlayEnabled = (overlayId: string) =>
     enabledOverlayIds.has(overlayId);
   const messenger = useMessengerOverlay();
-
-const [messengerSettingsOpen, setMessengerSettingsOpen] =
-  useState(false);
-
-const [messengerTabs, setMessengerTabs] =
-  useState<MessengerTabConfig[]>([
-    {
-      id: crypto.randomUUID(),
-      name: 'PLAYER ONE',
-      phoneNumber: '',
-    },
-  ]);
 
 const setOverlayEnabled = (
   overlayId: string,
