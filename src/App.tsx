@@ -20,6 +20,9 @@ import {
   sendActionCatalogTo,
   sendRetainedActionStateTo,
 } from './actions/ActionHostService';
+import {
+  registerCapabilityHostService,
+} from './capabilities/CapabilityHostService';
 import type {
   ProjectCreateResponse,
   ProjectLoadFailedPayload,
@@ -162,11 +165,21 @@ const setOverlayEnabled = (
       )
     );
 
-  const unregisterActionService = registerActionHostService(
-    hostEventBroker.registerRequestHandler.bind(hostEventBroker)
+  const unregisterActionService =
+  registerActionHostService(
+    hostEventBroker.registerRequestHandler.bind(
+      hostEventBroker
+    )
   );
 
-    const unregisterModuleReady =
+const unregisterCapabilityService =
+  registerCapabilityHostService(
+    hostEventBroker.registerRequestHandler.bind(
+      hostEventBroker
+    )
+  );
+
+const unregisterModuleReady =
   hostEventBroker.subscribe(
     'module.ready',
     (message) => {
@@ -252,14 +265,15 @@ loadQueueRef.current?.completeModule(
   );
 
   return () => {
-    unregisterProjectLoadFailed();
-    unregisterProjectLoaded();
-    unregisterModuleReady();
-    unregisterActionService();
-    unregisterFileServices();
-    unregisterStorageServices();
-    stopBroker();
-  };
+  unregisterProjectLoadFailed();
+  unregisterProjectLoaded();
+  unregisterModuleReady();
+  unregisterCapabilityService();
+  unregisterActionService();
+  unregisterFileServices();
+  unregisterStorageServices();
+  stopBroker();
+};
 }, []);
   
   const [fileMenuOpen, setFileMenuOpen] =

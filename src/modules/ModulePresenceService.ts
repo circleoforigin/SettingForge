@@ -7,6 +7,10 @@ import {
 } from './registry';
 
 import {
+  capabilityRegistry,
+} from '../capabilities/CapabilityRegistry';
+
+import {
   hostEventBroker,
 } from '../events/HostEventBroker';
 import { actionRegistry } from '../actions/ActionRegistry';
@@ -165,6 +169,7 @@ export class ModulePresenceService {
     );
 
     actionRegistry.unregisterModule(moduleId);
+    capabilityRegistry.unregisterModule(moduleId);
 
     hostEventBroker.broadcast(
       'module.removed',
