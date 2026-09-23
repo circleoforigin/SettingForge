@@ -6,45 +6,74 @@ import type {
 function cloneMessage(
   message: HostEventMessage
 ): HostEventMessage {
-  return structuredClone(message);
+  return structuredClone(
+    message
+  );
+}
+
+function stateKey(
+  sourceModuleId: string,
+  type: string
+): string {
+  return (
+    `${sourceModuleId}\u0000${type}`
+  );
 }
 
 export class EventStateStore {
   private readonly states =
-    new Map<string, HostEventMessage>();
+    new Map<
+      string,
+      HostEventMessage
+    >();
 
   retain(
     message: HostEventMessage
   ): void {
     this.states.set(
-      message.type,
-      cloneMessage(message)
+      stateKey(
+        message.sourceModuleId,
+        message.type
+      ),
+      cloneMessage(
+        message
+      )
     );
   }
 
   synchronize(
-    events: RegisteredEventDefinition[]
+    events:
+      RegisteredEventDefinition[]
   ): void {
-    const stateEventIds =
+    const stateEventKeys =
       new Set(
         events
           .filter(
             (event) =>
-              event.delivery === 'state'
+              event.delivery ===
+              'state'
           )
           .map(
-            (event) => event.id
+            (event) =>
+              stateKey(
+                event.moduleId,
+                event.id
+              )
           )
       );
 
     for (
-      const eventId
+      const key
       of this.states.keys()
     ) {
       if (
-        !stateEventIds.has(eventId)
+        !stateEventKeys.has(
+          key
+        )
       ) {
-        this.states.delete(eventId);
+        this.states.delete(
+          key
+        );
       }
     }
   }
@@ -61,12 +90,29 @@ export class EventStateStore {
           moduleId
       )
       .sort(
-        (left, right) =>
-          left.type.localeCompare(
-            right.type
-          )
+        (left, right) => {
+          const typeOrder =
+            left.type.localeCompare(
+              right.type
+            );
+
+          if (
+            typeOrder !== 0
+          ) {
+            return typeOrder;
+          }
+
+          return (
+            left.sourceModuleId
+              .localeCompare(
+                right.sourceModuleId
+              )
+          );
+        }
       )
-      .map(cloneMessage);
+      .map(
+        cloneMessage
+      );
   }
 }
 
