@@ -16,11 +16,6 @@ import {
 } from './overlays/messenger/MessengerOverlay';
 
 import {
-  registerActionHostService,
-  sendActionCatalogTo,
-  sendRetainedActionStateTo,
-} from './actions/ActionHostService';
-import {
   registerCapabilityHostService,
   sendCapabilityCatalogTo,
   sendRetainedEventStateTo,
@@ -167,13 +162,6 @@ const setOverlayEnabled = (
       )
     );
 
-  const unregisterActionService =
-  registerActionHostService(
-    hostEventBroker.registerRequestHandler.bind(
-      hostEventBroker
-    )
-  );
-
 const unregisterCapabilityService =
   registerCapabilityHostService(
     hostEventBroker.registerRequestHandler.bind(
@@ -190,7 +178,6 @@ const unregisterModuleReady =
           | {
               capabilities?: {
                 events?: string[];
-                actions?: string[];
               };
             }
           | undefined;
@@ -212,14 +199,6 @@ setReadyModuleIds((current) => {
 });
 
 modulePresenceService.sendSnapshotTo(
-  message.sourceModuleId
-);
-
-sendActionCatalogTo(
-  message.sourceModuleId
-);
-
-sendRetainedActionStateTo(
   message.sourceModuleId
 );
 
@@ -288,7 +267,6 @@ loadQueueRef.current?.completeModule(
   unregisterProjectLoaded();
   unregisterModuleReady();
   unregisterCapabilityService();
-  unregisterActionService();
   unregisterFileServices();
   unregisterStorageServices();
   stopBroker();

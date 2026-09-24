@@ -4,8 +4,7 @@ import type {
   HostRequestMessage,
   HostResponseMessage,
 } from './HostMessage';
-import { actionRegistry } from '../actions/ActionRegistry';
-import { actionStateStore } from '../actions/ActionStateStore';
+
 import {
   capabilityRegistry,
 } from '../capabilities/CapabilityRegistry';
@@ -96,16 +95,12 @@ export class HostEventBroker {
     message
   );
 
-  if (
-  message.sourceModuleId !== 'settingforge' &&
-  (
-    capabilityRegistry.getEvent(
-      message.type,
-      message.sourceModuleId
-    ) ||
-    actionRegistry.get(
-      message.type
-    )
+if (
+  message.sourceModuleId !==
+    'settingforge' &&
+  capabilityRegistry.getEvent(
+    message.type,
+    message.sourceModuleId
   )
 ) {
   this.relayModuleEvent(
@@ -165,7 +160,7 @@ void this.handleRequest(
     };
   }
 
- private relayModuleEvent(
+private relayModuleEvent(
   message: HostEventMessage
 ): void {
   const eventDefinition =
@@ -174,23 +169,11 @@ void this.handleRequest(
       message.sourceModuleId
     );
 
-  const legacyAction =
-    actionRegistry.get(
-      message.type
-    );
-
   if (
     eventDefinition?.delivery ===
     'state'
   ) {
     eventStateStore.retain(
-      message
-    );
-  } else if (
-    legacyAction?.delivery ===
-    'state'
-  ) {
-    actionStateStore.retain(
       message
     );
   }

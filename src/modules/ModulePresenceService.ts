@@ -13,7 +13,6 @@ import {
 import {
   hostEventBroker,
 } from '../events/HostEventBroker';
-import { actionRegistry } from '../actions/ActionRegistry';
 
 export type ModulePresenceState =
   | 'enabled'
@@ -23,7 +22,8 @@ export type ModulePresenceState =
 
 export interface ModuleCapabilitySet {
   events?: string[];
-  actions?: string[];
+  commands?: string[];
+  queries?: string[];
 }
 
 export interface ModulePresence {
@@ -65,15 +65,15 @@ export class ModulePresenceService {
       state:
         'starting',
 
-      capabilities: {
+            capabilities: {
         events:
           definition.events.map(
             (event) =>
               event.type
           ),
 
-        actions:
-          [],
+        commands: [],
+        queries: [],
       },
     };
 
@@ -120,7 +120,7 @@ export class ModulePresenceService {
       state:
         'ready',
 
-      capabilities: {
+            capabilities: {
         events:
           capabilities?.events ??
           existing?.capabilities.events ??
@@ -129,9 +129,14 @@ export class ModulePresenceService {
               event.type
           ),
 
-        actions:
-          capabilities?.actions ??
-          existing?.capabilities.actions ??
+        commands:
+          capabilities?.commands ??
+          existing?.capabilities.commands ??
+          [],
+
+        queries:
+          capabilities?.queries ??
+          existing?.capabilities.queries ??
           [],
       },
     };
@@ -167,8 +172,7 @@ export class ModulePresenceService {
     this.modules.delete(
       moduleId
     );
-
-    actionRegistry.unregisterModule(moduleId);
+    
     capabilityRegistry.unregisterModule(moduleId);
 
     hostEventBroker.broadcast(
