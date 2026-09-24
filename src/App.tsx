@@ -10,6 +10,7 @@ import type { World } from './models/World';
 import { worldRepository } from './worlds/WorldRepository';
 import { projectLifecycleService } from './projects/ProjectLifecycleService';
 import { overlayRegistry } from './overlays/registry';
+import { rulesetRegistry } from './rules/RulesetRegistry';
 import {
   MessengerOverlay,
   useMessengerOverlay,
@@ -276,59 +277,75 @@ loadQueueRef.current?.completeModule(
   const [fileMenuOpen, setFileMenuOpen] =
     useState(false);
 
-  const [overlayMenuOpen, setOverlayMenuOpen] =
+  const [settingsMenuOpen, setSettingsMenuOpen] =
     useState(false);
 
-    useEffect(() => {
-  if (!fileMenuOpen && !overlayMenuOpen) return;
+  useEffect(() => {
+  if (!fileMenuOpen && !settingsMenuOpen) {
+    return;
+  }
 
-  const handlePointerMove = (event: PointerEvent) => {
-    const openMenu = fileMenuOpen
-      ? {
-          selector: '[data-menu-group="file"]',
-          close: () => setFileMenuOpen(false),
-        }
-      : {
-          selector: '[data-menu-group="overlays"]',
-          close: () => setOverlayMenuOpen(false),
-        };
+  const handlePointerMove = (
+    event: PointerEvent
+  ) => {
+    const openMenu =
+      fileMenuOpen
+        ? {
+            selector:
+              '[data-menu-group="file"]',
 
-    const menuGroup = document.querySelector(
-      openMenu.selector
-    );
+            close: () =>
+              setFileMenuOpen(false),
+          }
+        : {
+            selector:
+              '[data-menu-group="settings"]',
 
-    const dropdowns = menuGroup?.querySelectorAll(
-  '.dropdown-menu'
-);
+            close: () =>
+              setSettingsMenuOpen(false),
+          };
 
-if (
-  !(menuGroup instanceof HTMLElement) ||
-  !dropdowns
-) {
-  return;
-}
+    const menuGroup =
+      document.querySelector(
+        openMenu.selector
+      );
 
-const pointerIsNearButton =
-  isPointerWithinGraceArea(
-    menuGroup,
-    event.clientX,
-    event.clientY
-  );
+    const dropdowns =
+      menuGroup?.querySelectorAll(
+        '.dropdown-menu'
+      );
 
-const pointerIsNearDropdown =
-  Array.from(dropdowns).some(
-    (dropdown) =>
-      dropdown instanceof HTMLElement &&
+    if (
+      !(menuGroup instanceof HTMLElement) ||
+      !dropdowns
+    ) {
+      return;
+    }
+
+    const pointerIsNearButton =
       isPointerWithinGraceArea(
-        dropdown,
+        menuGroup,
         event.clientX,
         event.clientY
-      )
-  );
+      );
 
-if (!pointerIsNearButton && !pointerIsNearDropdown) {
-  openMenu.close();
-}
+    const pointerIsNearDropdown =
+      Array.from(dropdowns).some(
+        (dropdown) =>
+          dropdown instanceof HTMLElement &&
+          isPointerWithinGraceArea(
+            dropdown,
+            event.clientX,
+            event.clientY
+          )
+      );
+
+    if (
+      !pointerIsNearButton &&
+      !pointerIsNearDropdown
+    ) {
+      openMenu.close();
+    }
   };
 
   window.addEventListener(
@@ -342,9 +359,58 @@ if (!pointerIsNearButton && !pointerIsNearDropdown) {
       handlePointerMove
     );
   };
-}, [fileMenuOpen, overlayMenuOpen]);
+}, [
+  fileMenuOpen,
+  settingsMenuOpen,
+]);
 
-  const [activeWorld, setActiveWorld] = useState<World | null>(null);
+const [activeWorld, setActiveWorld] = useState<World | null>(null);
+
+const availableRulesets =
+  rulesetRegistry.getAll();
+
+const handleSelectRuleset = async (
+  rulesetId: string,
+  version: string
+) => {
+  if (
+    !activeWorld ||
+    activeWorld.ruleset
+  ) {
+    return;
+  }
+
+  try {
+    const updatedWorld =
+      await worldRepository.setRuleset(
+        activeWorld.id,
+        {
+          rulesetId,
+          version,
+        }
+      );
+
+    setActiveWorld(updatedWorld);
+
+    setWorldSaveNotice({
+      kind: 'success',
+      message:
+        'Ruleset assigned to World.',
+    });
+
+    setSettingsMenuOpen(false);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Unable to assign Ruleset.';
+
+    setWorldSaveNotice({
+      kind: 'error',
+      message,
+    });
+  }
+};
 
 useEffect(() => {
   const title = activeWorld
@@ -3251,7 +3317,7 @@ async function removeModuleFromWorld(
           <button
             className="menu-item"
             onClick={() => {
-              setOverlayMenuOpen(false);
+              setSettingsMenuOpen(false);
               setFileMenuOpen(
                 (current) => !current
               );
@@ -3332,66 +3398,158 @@ async function removeModuleFromWorld(
           )}
         </div>
 
-        <button className="menu-item">
-          Settings
-        </button>
-
         <div
   className="menu-group"
-  data-menu-group="overlays"
+  data-menu-group="settings"
 >
   <button
     className="menu-item"
     onClick={() => {
       setFileMenuOpen(false);
-      setOverlayMenuOpen(
+
+      setSettingsMenuOpen(
         (current) => !current
       );
     }}
   >
-    Overlays
+    Settings
   </button>
 
-  {overlayMenuOpen && (
-  <div className="dropdown-menu">
-    <div className="overlay-menu-entry">
-      <div className="dropdown-item overlay-menu-label">
-        Messenger
-        <span>›</span>
+  {settingsMenuOpen && (
+    <div className="dropdown-menu">
+      <div className="overlay-menu-entry">
+        <div className="dropdown-item overlay-menu-label">
+          Ruleset
+          <span>›</span>
+        </div>
+
+        <div className="dropdown-menu overlay-submenu">
+          {!activeWorld && (
+            <button
+              type="button"
+              className="dropdown-item"
+              disabled
+            >
+              No World Open
+            </button>
+          )}
+
+          {activeWorld &&
+            !activeWorld.ruleset && (
+              <>
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  disabled
+                >
+                  ✓ None Assigned
+                </button>
+
+                <div className="dropdown-separator" />
+
+                {availableRulesets.map(
+                  (ruleset) => (
+                    <button
+                      key={
+                        `${ruleset.id}@${ruleset.version}`
+                      }
+                      type="button"
+                      className="dropdown-item"
+                      onClick={() =>
+                        void handleSelectRuleset(
+                          ruleset.id,
+                          ruleset.version
+                        )
+                      }
+                    >
+                      {ruleset.name}
+                    </button>
+                  )
+                )}
+              </>
+            )}
+
+          {activeWorld?.ruleset &&
+            (() => {
+              const assignedRuleset =
+                rulesetRegistry.get(
+                  activeWorld.ruleset.rulesetId,
+                  activeWorld.ruleset.version
+                );
+
+              return (
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  disabled
+                >
+                  ✓{' '}
+                  {assignedRuleset?.name ??
+                    activeWorld.ruleset.rulesetId}
+                </button>
+              );
+            })()}
+        </div>
       </div>
 
-      <div className="dropdown-menu overlay-submenu">
-        <button
-          type="button"
-          className="dropdown-item"
-          onClick={() =>
-            setOverlayEnabled(
-              'messenger',
-              !isOverlayEnabled('messenger')
-            )
-          }
-        >
-          {isOverlayEnabled('messenger') ? '✓ ' : ''}
-          Enabled
-        </button>
+      <div className="overlay-menu-entry">
+        <div className="dropdown-item overlay-menu-label">
+          Overlays
+          <span>›</span>
+        </div>
 
-        <div className="dropdown-separator" />
+        <div className="dropdown-menu overlay-submenu">
+          <div className="overlay-menu-entry">
+            <div className="dropdown-item overlay-menu-label">
+              Messenger
+              <span>›</span>
+            </div>
 
-        <button
-          type="button"
-          className="dropdown-item"
-          onClick={() => {
-  setOverlayMenuOpen(false);
-  messenger.setSettingsOpen(true);
-}}
-        >
-          Settings...
-        </button>
+            <div className="dropdown-menu overlay-submenu">
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() =>
+                  setOverlayEnabled(
+                    'messenger',
+                    !isOverlayEnabled(
+                      'messenger'
+                    )
+                  )
+                }
+              >
+                {isOverlayEnabled(
+                  'messenger'
+                )
+                  ? '✓ '
+                  : ''}
+                Enabled
+              </button>
+
+              <div className="dropdown-separator" />
+
+              <button
+                type="button"
+                className="dropdown-item"
+                onClick={() => {
+                  setSettingsMenuOpen(
+                    false
+                  );
+
+                  messenger.setSettingsOpen(
+                    true
+                  );
+                }}
+              >
+                Settings...
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-)}
-</div>    
+  )}
+</div>   
 
         {readyModules.length > 0 && (  <>
           <div className="module-menu-separator" />

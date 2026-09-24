@@ -1,4 +1,7 @@
-import type { World } from '../models/World';
+import type {
+  World,
+  WorldRulesetReference,
+} from '../models/World';
 
 export interface ProjectWorldOwnership {
   worldId: string
@@ -69,13 +72,44 @@ export class WorldRepository {
     return world as World | null;
   }
 
-  async saveWorld(world: World): Promise<void> {
+    async saveWorld(world: World): Promise<void> {
     await window.settingForge.storage.write(
       HOST_ID,
       WORLDS_COLLECTION,
       world.id,
       world
     );
+  }
+
+  async setRuleset(
+    worldId: string,
+    ruleset:
+      WorldRulesetReference | null
+  ): Promise<World> {
+    const world =
+      await this.loadWorld(worldId);
+
+    if (!world) {
+      throw new Error(
+        `World "${worldId}" was not found.`
+      );
+    }
+
+    const updatedWorld: World = {
+      ...world,
+
+      ruleset:
+        ruleset ?? undefined,
+
+      updatedAt:
+        new Date(),
+    };
+
+    await this.saveWorld(
+      updatedWorld
+    );
+
+    return updatedWorld;
   }
 
   async deleteWorld(worldId: string): Promise<boolean> {
