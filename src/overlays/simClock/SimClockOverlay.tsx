@@ -84,17 +84,10 @@ const DEFAULT_SETTINGS: SimClockSettings = {
 
 export function useSimClockOverlay()
 {
-  const [placement, setPlacement] = useState<OverlayPlacement>({
-    edge: 'top',
-    alignment: 'right',
-  });
-
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<SimClockSettings>(DEFAULT_SETTINGS);
 
   return {
-    placement,
-    setPlacement,
     settingsOpen,
     setSettingsOpen,
     settings,
@@ -108,15 +101,17 @@ export type SimClockOverlayController =
 interface SimClockOverlayProps
 {
   controller: SimClockOverlayController;
+  placement: OverlayPlacement;
 }
 
 export function SimClockOverlay({
   controller,
+  placement,
 }: SimClockOverlayProps)
 {
   return (
     <SimClockSurface
-      placement={controller.placement}
+      placement={placement}
     />
   );
 }

@@ -119,46 +119,44 @@ function isPointerWithinGraceArea(
   );
 }
 
-
-function App() 
+function App()
 {
   const activeWorldRef =
     useRef<World | null>(null);
-  const registeredOverlays = overlayRegistry.getAll();
 
-const [overlayManager] = useState(
-  () => new OverlayManager()
-);
-
-const [activeOverlays, setActiveOverlays] = useState(
-  () => overlayManager.getAllActive()
-);
-
-const isOverlayEnabled = (overlayId: string) =>
-  overlayManager.isActive(overlayId);
-
-const setOverlayEnabled = (
-  overlayId: string,
-  enabled: boolean
-) =>
-{
-  if (enabled)
-  {
-    overlayManager.enable(overlayId);
-  }
-  else
-  {
-    overlayManager.disable(overlayId);
-  }
-
-  setActiveOverlays(
-    overlayManager.getAllActive()
+  const [overlayManager] = useState(
+    () => new OverlayManager()
   );
-};
 
-const messenger = useMessengerOverlay();
+  const [activeOverlays, setActiveOverlays] = useState(
+    () => overlayManager.getAllActive()
+  );
+
+  const isOverlayEnabled = (overlayId: string) =>
+    overlayManager.isActive(overlayId);
+
+  const setOverlayEnabled = (
+    overlayId: string,
+    enabled: boolean
+  ) =>
+  {
+    if (enabled)
+    {
+      overlayManager.enable(overlayId);
+    }
+    else
+    {
+      overlayManager.disable(overlayId);
+    }
+
+    setActiveOverlays(
+      overlayManager.getAllActive()
+    );
+  };
+
+  const messenger = useMessengerOverlay();
   
-    const loadQueueRef =
+  const loadQueueRef =
     useRef<LoadQueueService | null>(null);
 
   useEffect(() => {
@@ -3676,41 +3674,42 @@ async function removeModuleFromWorld(
   )}
 
     <div className="overlay-layer">
-  {registeredOverlays
-    .filter(
-      (overlay) =>
-        overlay.id !==
-          'messenger' &&
-        isOverlayEnabled(
-          overlay.id
-        )
-    )
-    .map((overlay) => {
-      const Surface =
-        overlay.Surface;
+  {activeOverlays.map((activeOverlay) => {
+    const overlay =
+      overlayRegistry.get(
+        activeOverlay.overlayId
+      );
 
+    if (!overlay)
+    {
+      return null;
+    }
+
+    const placement = {
+      index:
+        activeOverlay.placementIndex,
+    };
+
+    if (overlay.id === 'messenger')
+    {
       return (
-        <Surface
+        <MessengerOverlay
           key={overlay.id}
-          placement={{
-            edge:
-              'bottom',
-            alignment:
-              'center',
-          }}
+          controller={messenger}
+          placement={placement}
         />
       );
-    })}
+    }
 
-  {isOverlayEnabled(
-    'messenger'
-  ) && (
-    <MessengerOverlay
-      controller={
-        messenger
-      }
-    />
-  )}
+    const Surface = overlay.Surface;
+
+    return (
+      <Surface
+        key={overlay.id}
+        placement={placement}
+      />
+    );
+  })}
 </div>
 </main>
 
