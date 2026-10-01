@@ -23,4 +23,23 @@ export const srd521Ruleset:
       'SettingForge rules implementation based on SRD 5.2.1.',
 
     requirements: [],
-  };
+
+    interactions: [
+    {
+        target: 'Regions.Section',
+        schemaId:
+            'srd521.regions.section',
+        fields: [
+            {
+            id: 'difficultTerrain',
+            label:
+                'Difficult Terrain',
+            type: 'boolean',
+            defaultValue: false,
+            description:
+            'Movement through Difficult Terrain costs 1 extra foot for every foot moved.',
+        },
+      ],
+    },
+  ],
+};

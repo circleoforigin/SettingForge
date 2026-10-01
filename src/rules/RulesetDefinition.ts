@@ -1,3 +1,7 @@
+import type {
+  RulesetInteractionDefinition,
+} from '@settingforge/module-sdk';
+
 export type RulesetRequirementKind =
   | 'event'
   | 'command'
@@ -17,4 +21,7 @@ export interface RulesetDefinition {
   description?: string;
 
   requirements: RulesetRequirement[];
+
+  interactions?:
+    RulesetInteractionDefinition[];
 }

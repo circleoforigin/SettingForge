@@ -10,7 +10,11 @@ import type { World } from './models/World';
 import { worldRepository } from './worlds/WorldRepository';
 import { projectLifecycleService } from './projects/ProjectLifecycleService';
 import { overlayRegistry } from './overlays/registry';
+import { OverlayManager } from './overlays/OverlayManager';
 import { rulesetRegistry } from './rules/RulesetRegistry';
+import {
+  registerRulesHostService,
+} from './rules/RulesHostService';
 import {
   MessengerOverlay,
   useMessengerOverlay,
@@ -118,29 +122,41 @@ function isPointerWithinGraceArea(
 
 function App() 
 {
+  const activeWorldRef =
+    useRef<World | null>(null);
   const registeredOverlays = overlayRegistry.getAll();
-  const [enabledOverlayIds, setEnabledOverlayIds] =
-    useState<Set<string>>(() => new Set());
-  const isOverlayEnabled = (overlayId: string) =>
-    enabledOverlayIds.has(overlayId);
-  const messenger = useMessengerOverlay();
+
+const [overlayManager] = useState(
+  () => new OverlayManager()
+);
+
+const [activeOverlays, setActiveOverlays] = useState(
+  () => overlayManager.getAllActive()
+);
+
+const isOverlayEnabled = (overlayId: string) =>
+  overlayManager.isActive(overlayId);
 
 const setOverlayEnabled = (
   overlayId: string,
   enabled: boolean
-) => {
-  setEnabledOverlayIds((current) => {
-    const next = new Set(current);
+) =>
+{
+  if (enabled)
+  {
+    overlayManager.enable(overlayId);
+  }
+  else
+  {
+    overlayManager.disable(overlayId);
+  }
 
-    if (enabled) {
-      next.add(overlayId);
-    } else {
-      next.delete(overlayId);
-    }
-
-    return next;
-  });
+  setActiveOverlays(
+    overlayManager.getAllActive()
+  );
 };
+
+const messenger = useMessengerOverlay();
   
     const loadQueueRef =
     useRef<LoadQueueService | null>(null);
@@ -168,6 +184,14 @@ const unregisterCapabilityService =
     hostEventBroker.registerRequestHandler.bind(
       hostEventBroker
     )
+  );
+
+const unregisterRulesService =
+  registerRulesHostService(
+    hostEventBroker.registerRequestHandler.bind(
+      hostEventBroker
+    ),
+    () => activeWorldRef.current
   );
 
 const unregisterModuleReady =
@@ -267,6 +291,7 @@ loadQueueRef.current?.completeModule(
   unregisterProjectLoadFailed();
   unregisterProjectLoaded();
   unregisterModuleReady();
+  unregisterRulesService();
   unregisterCapabilityService();
   unregisterFileServices();
   unregisterStorageServices();
@@ -365,9 +390,8 @@ loadQueueRef.current?.completeModule(
 ]);
 
 const [activeWorld, setActiveWorld] = useState<World | null>(null);
-
-const availableRulesets =
-  rulesetRegistry.getAll();
+activeWorldRef.current = activeWorld;
+const availableRulesets = rulesetRegistry.getAll();
 
 const handleSelectRuleset = async (
   rulesetId: string,

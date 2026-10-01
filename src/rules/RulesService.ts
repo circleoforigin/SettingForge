@@ -4,6 +4,10 @@ import type {
 } from '../models/World';
 
 import type {
+  RulesetInteractionDefinition,
+} from '@settingforge/module-sdk';
+
+import type {
   RulesetDefinition,
 } from './RulesetDefinition';
 
@@ -56,6 +60,28 @@ export class RulesService {
         ),
     };
   }
+
+  getInteraction(
+  world: World,
+  target: string
+): RulesetInteractionDefinition | null {
+  const activeRuleset =
+    this.getActiveRuleset(world);
+
+  if (!activeRuleset) {
+    return null;
+  }
+
+  return (
+    activeRuleset.definition
+      .interactions
+      ?.find(
+        (interaction) =>
+          interaction.target === target
+      ) ??
+    null
+  );
+}
 
   getResolution(
     world: World
