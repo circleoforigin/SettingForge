@@ -1,30 +1,16 @@
-import {
-  useState,
-} from 'react';
+import { useState } from 'react';
+import type { OverlayPlacement } from '../OverlayPlacement';
+import { MessengerSurface } from './MessengerSurface';
 
-import type {
-  OverlayPlacement,
-} from '../OverlayPlacement';
-
-import {
-  MessengerSurface,
-} from './MessengerSurface';
-
-export interface MessengerTabConfig {
+export interface MessengerTabConfig 
+{
   id: string;
   name: string;
   phoneNumber: string;
 }
 
-export function useMessengerOverlay() {
-  const [
-    placement,
-    setPlacement,
-  ] = useState<OverlayPlacement>({
-    edge: 'bottom',
-    alignment: 'center',
-  });
-
+export function useMessengerOverlay() 
+{
   const [
     settingsOpen,
     setSettingsOpen,
@@ -44,9 +30,7 @@ export function useMessengerOverlay() {
     },
   ]);
 
-  return {
-    placement,
-    setPlacement,
+  return {    
     settingsOpen,
     setSettingsOpen,
     tabs,
@@ -59,16 +43,18 @@ export type MessengerOverlayController =
     typeof useMessengerOverlay
   >;
 
-interface MessengerOverlayProps {
-  controller:
-    MessengerOverlayController;
+interface MessengerOverlayProps
+{
+  controller: MessengerOverlayController;
+  placement: OverlayPlacement;
 }
 
 export function MessengerOverlay({
   controller,
-}: MessengerOverlayProps) {
+  placement,
+}: MessengerOverlayProps) 
+{
   const {
-    placement,
     settingsOpen,
     setSettingsOpen,
     tabs,
@@ -87,60 +73,7 @@ export function MessengerOverlay({
           <div className="dialog messenger-settings-dialog">
             <h2>
               Messenger Settings
-            </h2>
-
-            <label className="messenger-settings-field">
-              <span>
-                Docking Position
-              </span>
-
-              <select
-                value={
-                  `${placement.edge}-${placement.alignment}`
-                }
-                onChange={(event) => {
-                  const [
-                    edge,
-                    alignment,
-                  ] =
-                    event.target.value.split(
-                      '-'
-                    ) as [
-                      OverlayPlacement['edge'],
-                      OverlayPlacement['alignment'],
-                    ];
-
-                  controller.setPlacement({
-                    edge,
-                    alignment,
-                  });
-                }}
-              >
-                <option value="top-left">
-                  Top Left
-                </option>
-
-                <option value="top-center">
-                  Top Center
-                </option>
-
-                <option value="top-right">
-                  Top Right
-                </option>
-
-                <option value="bottom-left">
-                  Bottom Left
-                </option>
-
-                <option value="bottom-center">
-                  Bottom Center
-                </option>
-
-                <option value="bottom-right">
-                  Bottom Right
-                </option>
-              </select>
-            </label>
+            </h2>            
 
             <div className="messenger-settings-section">
               <strong>

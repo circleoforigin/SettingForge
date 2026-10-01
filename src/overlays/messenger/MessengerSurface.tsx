@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react';
 import type { OverlaySurfaceProps } from '../OverlayDefinition';
+import { OVERLAY_PLACEMENTS } from '../OverlayPlacement';
 
 export function MessengerSurface({
   placement,
   tabs = [],
 }: OverlaySurfaceProps) {
+const resolvedPlacement = OVERLAY_PLACEMENTS[placement.index];
+
 const [unreadConversationIds, setUnreadConversationIds] =
   useState<Set<string>>(
     () =>
@@ -87,8 +90,8 @@ const showNextConversation = () => {
   return (
     <div
         className="messenger-surface"
-        data-edge={placement.edge}
-        data-alignment={placement.alignment}
+        data-edge={resolvedPlacement.edge}
+        data-alignment={resolvedPlacement.alignment}
     >
       {openConversation && (
         <div className="messenger-panel">
