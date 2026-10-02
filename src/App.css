@@ -609,41 +609,162 @@ body,
   font-size: 14px;
 }
 
-/* ---------- SIMCLOCK PLACEMENT ---------- */
+/* ---------- SIMCLOCK ---------- */
 
-.sim-clock-day-list {
-  height: 224px;
-  overflow-y: auto;
-  overflow-x: hidden;
+.sim-clock-settings-dialog {
+  width: min(1100px, calc(100vw - 48px));
+  max-width: none;
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
 }
 
+.sim-clock-settings-dialog h2,
+.sim-clock-settings-dialog h3 {
+  margin: 0;
+}
+
+.sim-clock-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sim-clock-settings-columns {
+  display: grid;
+  grid-template-columns:
+    minmax(200px, 0.75fr)
+    minmax(260px, 1fr)
+    minmax(300px, 1.15fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.sim-clock-settings-column {
+  min-width: 0;
+}
+
+.sim-clock-basic-settings,
+.sim-clock-leap-settings,
+.sim-clock-reckoning-settings,
+.sim-clock-display-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sim-clock-basic-settings label,
+.sim-clock-leap-settings label,
+.sim-clock-reckoning-settings label,
+.sim-clock-display-settings label {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.sim-clock-basic-settings label > span,
+.sim-clock-leap-settings label > span,
+.sim-clock-reckoning-settings label > span,
+.sim-clock-display-settings label > span {
+  color: #b8bac0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.sim-clock-basic-settings input,
+.sim-clock-leap-settings input,
+.sim-clock-leap-settings select,
+.sim-clock-reckoning-settings input,
+.sim-clock-display-settings input,
+.sim-clock-display-settings select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.sim-clock-leap-section {
+  margin-top: 18px;
+}
+
+.sim-clock-leap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sim-clock-leap-toggle input {
+  margin: 0;
+}
+
+.sim-clock-inline-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sim-clock-inline-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sim-clock-inline-field span {
+  flex: 0 0 auto;
+  color: #b8bac0;
+  font-size: 12px;
+}
+
+.sim-clock-settings-list {
+  min-width: 0;
+}
+
+.sim-clock-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 30px;
+  margin-bottom: 4px;
+}
+
+.sim-clock-list-header button {
+  padding: 3px 7px;
+  font-size: 11px;
+}
+
+.sim-clock-day-list,
 .sim-clock-month-list {
   height: 224px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
+.sim-clock-day-list::-webkit-scrollbar,
+.sim-clock-month-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sim-clock-day-list::-webkit-scrollbar-track,
+.sim-clock-month-list::-webkit-scrollbar-track {
+  background: #242529;
+}
+
+.sim-clock-day-list::-webkit-scrollbar-thumb,
+.sim-clock-month-list::-webkit-scrollbar-thumb {
+  background: #4b4e55;
+  border-radius: 3px;
+}
+
 .sim-clock-settings-row {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
   gap: 1px;
-  min-height: 0px;
-  margin-bottom: 1px;
+  min-height: 0;
+  margin: 0 0 1px;
 }
 
-.sim-clock-settings-row button {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  padding: 0;
-  margin: 0;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  line-height: 1;
+.sim-clock-settings-row input {
+  box-sizing: border-box;
+  height: 28px;
 }
 
 .sim-clock-settings-row input[type='text'] {
@@ -653,116 +774,26 @@ body,
 }
 
 .sim-clock-settings-row input[type='number'] {
-  width: 56px;
-  flex: 0 0 56px;
+  width: 58px;
+  flex: 0 0 58px;
   margin: 0;
 }
 
 .sim-clock-settings-row button {
-  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+
+  padding: 0;
   margin: 0;
+
+  line-height: 1;
 }
 
-.sim-clock-settings-dialog {
-  width: min(1100px, calc(100vw - 48px));
-  max-height: calc(100vh - 48px);
-  overflow: hidden;
-}
-
-.sim-clock-settings-columns {
-  display: grid;
-  grid-template-columns:
-    minmax(210px, 0.8fr)
-    minmax(260px, 1fr)
-    minmax(300px, 1.15fr);
-  gap: 24px;
-  align-items: start;
-}
-
-.sim-clock-settings-column {
-  min-width: 0;
-}
-
-.sim-clock-number-setting {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.sim-clock-number-setting span {
-  white-space: nowrap;
-}
-
-.sim-clock-number-setting input {
-  width: 46px;
-  flex: 0 0 46px;
-  min-width: 0;
-}
-
-.sim-clock-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 30px;
-}
-
-.sim-clock-list-header button {
-  padding: 3px 7px;
-  font-size: 11px;
-}
-.sim-clock-settings-lower {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 28px;
-
-  padding-top: 14px;
-  margin-top: 14px;
-
-  border-top: 1px solid #45474e;
-}
-
-.sim-clock-text-setting {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-}
-
-.sim-clock-text-setting span {
-  flex: 0 0 88px;
-  font-size: 12px;
-  color: #b8bac0;
-}
-
-.sim-clock-text-setting input,
-.sim-clock-text-setting select {
-  flex: 1;
-  min-width: 0;
-}
-
-.sim-clock-text-setting input[type='number'] {
-  max-width: 70px;
-}
-
-.sim-clock-format-help {
-  margin-top: 8px;
-  color: #8b8d93;
-  font-size: 10px;
-  line-height: 1.4;
-}
-
-.sim-clock-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.sim-clock-list-header button {
-  padding: 3px 7px;
-  font-size: 11px;
-}
 .sim-clock-settings-secondary {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
@@ -770,6 +801,39 @@ body,
 
   padding-top: 12px;
   border-top: 1px solid #45474e;
+}
+
+.sim-clock-settings-secondary h3 {
+  margin-bottom: 8px;
+}
+
+.sim-clock-reckoning-settings {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.4fr)
+    minmax(0, 0.8fr)
+    minmax(0, 0.7fr);
+  gap: 12px;
+}
+
+.sim-clock-reckoning-settings label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+}
+
+.sim-clock-display-settings {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+}
+
+.sim-clock-display-settings label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
 }
 
 /* ---------- DROPDOWN MENUS ---------- */
