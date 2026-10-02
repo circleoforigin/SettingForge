@@ -11,6 +11,7 @@ import { worldRepository } from './worlds/WorldRepository';
 import { projectLifecycleService } from './projects/ProjectLifecycleService';
 import { overlayRegistry } from './overlays/registry';
 import { OverlayManager } from './overlays/OverlayManager';
+import type { OverlayPlacementIndex } from './overlays/OverlayPlacement';
 import { rulesetRegistry } from './rules/RulesetRegistry';
 import {
   registerRulesHostService,
@@ -19,6 +20,10 @@ import {
   MessengerOverlay,
   useMessengerOverlay,
 } from './overlays/messenger/MessengerOverlay';
+import {
+  SimClockOverlay,
+  useSimClockOverlay,
+} from './overlays/simClock/SimClockOverlay';
 
 import {
   registerCapabilityHostService,
@@ -154,7 +159,31 @@ function App()
     );
   };
 
+const setOverlayPlacement = (
+  overlayId: string,
+  placementIndex: OverlayPlacementIndex
+) =>
+{
+  const result =
+    overlayManager.setPlacement(
+      overlayId,
+      placementIndex
+    );
+
+  if (!result)
+  {
+    return false;
+  }
+
+  setActiveOverlays(
+    overlayManager.getAllActive()
+  );
+
+  return true;
+};
+
   const messenger = useMessengerOverlay();
+  const simClock = useSimClockOverlay();
   
   const loadQueueRef =
     useRef<LoadQueueService | null>(null);
@@ -3515,60 +3544,139 @@ async function removeModuleFromWorld(
       </div>
 
       <div className="overlay-menu-entry">
+  <div className="dropdown-item overlay-menu-label">
+    Overlays
+    <span>›</span>
+  </div>
+
+  <div className="dropdown-menu overlay-submenu">
+    {overlayRegistry.getAll().map((overlay) => (
+      <div
+        key={overlay.id}
+        className="overlay-menu-entry"
+      >
         <div className="dropdown-item overlay-menu-label">
-          Overlays
+          {overlay.name}
           <span>›</span>
         </div>
 
         <div className="dropdown-menu overlay-submenu">
+          <button
+            type="button"
+            className="dropdown-item"
+            onClick={() =>
+              setOverlayEnabled(
+                overlay.id,
+                !isOverlayEnabled(
+                  overlay.id
+                )
+              )
+            }
+          >
+            {isOverlayEnabled(
+              overlay.id
+            )
+              ? '✓ '
+              : ''}
+            Enabled
+          </button>
+
+          <div className="dropdown-separator" />
+
           <div className="overlay-menu-entry">
             <div className="dropdown-item overlay-menu-label">
-              Messenger
+              Position
               <span>›</span>
             </div>
 
             <div className="dropdown-menu overlay-submenu">
-              <button
-                type="button"
-                className="dropdown-item"
-                onClick={() =>
-                  setOverlayEnabled(
-                    'messenger',
-                    !isOverlayEnabled(
-                      'messenger'
-                    )
-                  )
-                }
-              >
-                {isOverlayEnabled(
-                  'messenger'
-                )
-                  ? '✓ '
-                  : ''}
-                Enabled
-              </button>
+              {[
+                'Top Left',
+                'Top Center',
+                'Top Right',
+                'Bottom Left',
+                'Bottom Center',
+                'Bottom Right',
+              ].map((label, index) => {
+                const placementIndex =
+                  index as OverlayPlacementIndex;
 
-              <div className="dropdown-separator" />
-
-              <button
-                type="button"
-                className="dropdown-item"
-                onClick={() => {
-                  setSettingsMenuOpen(
-                    false
+                const activeOverlay =
+                  overlayManager.getActive(
+                    overlay.id
                   );
 
-                  messenger.setSettingsOpen(
-                    true
+                const occupied =
+                  activeOverlays.some(
+                    (candidate) =>
+                      candidate.overlayId !==
+                        overlay.id &&
+                      candidate.placementIndex ===
+                        placementIndex
                   );
-                }}
-              >
-                Settings...
-              </button>
+
+                const selected =
+                  activeOverlay?.placementIndex ===
+                  placementIndex;
+
+                return (
+                  <button
+                    key={placementIndex}
+                    type="button"
+                    className="dropdown-item"
+                    disabled={
+                      !isOverlayEnabled(
+                        overlay.id
+                      ) ||
+                      occupied
+                    }
+                    onClick={() =>
+                      setOverlayPlacement(
+                        overlay.id,
+                        placementIndex
+                      )
+                    }
+                  >
+                    {selected ? '✓ ' : ''}
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
+
+          <div className="dropdown-separator" />
+
+          <button
+            type="button"
+            className="dropdown-item"
+            onClick={() => {
+              setSettingsMenuOpen(
+                false
+              );
+
+              if (overlay.id === 'messenger')
+              {
+                messenger.setSettingsOpen(
+                  true
+                );
+              }
+
+              if (overlay.id === 'sim-clock')
+              {
+                simClock.setSettingsOpen(
+                  true
+                );
+              }
+            }}
+          >
+            Settings...
+          </button>
         </div>
       </div>
+    ))}
+  </div>
+</div>
     </div>
   )}
 </div>   
@@ -3691,17 +3799,28 @@ async function removeModuleFromWorld(
     };
 
     if (overlay.id === 'messenger')
-    {
-      return (
-        <MessengerOverlay
-          key={overlay.id}
-          controller={messenger}
-          placement={placement}
-        />
-      );
-    }
+{
+  return (
+    <MessengerOverlay
+      key={overlay.id}
+      controller={messenger}
+      placement={placement}
+    />
+  );
+}
 
-    const Surface = overlay.Surface;
+if (overlay.id === 'sim-clock')
+{
+  return (
+    <SimClockOverlay
+      key={overlay.id}
+      controller={simClock}
+      placement={placement}
+    />
+  );
+}
+
+const Surface = overlay.Surface;
 
     return (
       <Surface

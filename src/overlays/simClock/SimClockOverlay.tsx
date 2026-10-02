@@ -110,8 +110,517 @@ export function SimClockOverlay({
 }: SimClockOverlayProps)
 {
   return (
+  <>
     <SimClockSurface
       placement={placement}
     />
-  );
+
+    {controller.settingsOpen && (
+      <div className="dialog-backdrop">
+        <div className="dialog sim-clock-settings-dialog">
+          <h2>
+            SimClock Settings
+          </h2>
+
+          <div className="sim-clock-settings-section">
+            <h3>
+              Calendar
+            </h3>
+
+            <div className="sim-clock-settings-columns">
+            <div className="sim-clock-settings-column"></div>
+            <label>
+              <span>
+                Minutes per Hour
+              </span>
+
+              <input
+                type="number"
+                min="1"
+                value={
+                  controller.settings
+                    .minutesPerHour
+                }
+                onChange={(event) => {
+                  const minutesPerHour =
+                    Math.max(
+                      1,
+                      Number(
+                        event.target.value
+                      )
+                    );
+
+                  controller.setSettings(
+                    (current) => ({
+                      ...current,
+                      minutesPerHour,
+                    })
+                  );
+                }}
+              />
+            </label>
+
+            <label>
+              <span>
+                Hours per Day
+              </span>
+
+              <input
+                type="number"
+                min="1"
+                value={
+                  controller.settings
+                    .hoursPerDay
+                }
+                onChange={(event) => {
+                  const hoursPerDay =
+                    Math.max(
+                      1,
+                      Number(
+                        event.target.value
+                      )
+                    );
+
+                  controller.setSettings(
+                    (current) => ({
+                      ...current,
+                      hoursPerDay,
+                    })
+                  );
+                }}
+              />
+            </label>
+
+           <div className="sim-clock-settings-list">
+  <strong>
+    Day Names
+  </strong>
+
+  <div className="sim-clock-day-list">
+    {controller.settings.dayNames.map(
+      (dayName, index) => (
+        <div
+          key={index}
+          className="sim-clock-settings-row"
+        >
+          <input
+            type="text"
+            value={dayName}
+            onChange={(event) => {
+              const name =
+                event.target.value;
+
+              controller.setSettings(
+                (current) => ({
+                  ...current,
+                  dayNames:
+                    current.dayNames.map(
+                      (
+                        currentName,
+                        currentIndex
+                      ) =>
+                        currentIndex === index
+                          ? name
+                          : currentName
+                    ),
+                })
+              );
+            }}
+          />
+
+          <button
+            type="button"
+            disabled={
+              controller.settings
+                .dayNames.length <= 1
+            }
+            onClick={() =>
+              controller.setSettings(
+                (current) => ({
+                  ...current,
+                  dayNames:
+                    current.dayNames.filter(
+                      (_, currentIndex) =>
+                        currentIndex !== index
+                    ),
+                })
+              )
+            }
+          >
+            ×
+          </button>
+        </div>
+      )
+    )}
+  </div>
+
+  <button
+    type="button"
+    onClick={() =>
+      controller.setSettings(
+        (current) => ({
+          ...current,
+          dayNames: [
+            ...current.dayNames,
+            `Day ${
+              current.dayNames.length + 1
+            }`,
+          ],
+        })
+      )
+    }
+  >
+    + Add Day
+  </button>
+</div>
+
+  </div>
+
+  <div className="sim-clock-settings-column"></div>
+
+<div className="sim-clock-settings-list">
+  <strong>
+    Months
+  </strong>
+
+  <div className="sim-clock-month-list">
+    {controller.settings.months.map(
+      (month, index) => (
+        <div
+          key={month.id}
+          className="sim-clock-settings-row"
+        >
+          <input
+            type="text"
+            value={month.name}
+            onChange={(event) => {
+              const name =
+                event.target.value;
+
+              controller.setSettings(
+                (current) => ({
+                  ...current,
+                  months:
+                    current.months.map(
+                      (currentMonth) =>
+                        currentMonth.id ===
+                        month.id
+                          ? {
+                              ...currentMonth,
+                              name,
+                            }
+                          : currentMonth
+                    ),
+                })
+              );
+            }}
+          />
+
+          <input
+            type="number"
+            min="1"
+            title="Days"
+            value={month.days}
+            onChange={(event) => {
+              const days =
+                Math.max(
+                  1,
+                  Number(
+                    event.target.value
+                  )
+                );
+
+              controller.setSettings(
+                (current) => ({
+                  ...current,
+                  months:
+                    current.months.map(
+                      (currentMonth) =>
+                        currentMonth.id ===
+                        month.id
+                          ? {
+                              ...currentMonth,
+                              days,
+                            }
+                          : currentMonth
+                    ),
+                })
+              );
+            }}
+          />
+
+          <button
+            type="button"
+            disabled={
+              controller.settings
+                .months.length <= 1
+            }
+            onClick={() =>
+              controller.setSettings(
+                (current) => ({
+                  ...current,
+                  months:
+                    current.months.filter(
+                      (currentMonth) =>
+                        currentMonth.id !==
+                        month.id
+                    ),
+                  leapRule:
+                    current.leapRule
+                      ?.monthId === month.id
+                      ? undefined
+                      : current.leapRule,
+                })
+              )
+            }
+          >
+            ×
+          </button>
+        </div>
+      )
+    )}
+  </div>
+
+  <button
+    type="button"
+    onClick={() =>
+      controller.setSettings(
+        (current) => ({
+          ...current,
+          months: [
+            ...current.months,
+            {
+              id:
+                crypto.randomUUID(),
+              name:
+                `Month ${
+                  current.months.length + 1
+                }`,
+              days: 30,
+            },
+          ],
+        })
+      )
+    }
+  >
+    + Add Month
+  </button>
+</div>
+ 
+<div className="sim-clock-settings-list">
+  <label>
+    <input
+      type="checkbox"
+      checked={
+        controller.settings.leapRule !==
+        undefined
+      }
+      onChange={(event) => {
+        const enabled =
+          event.target.checked;
+
+        controller.setSettings(
+          (current) => ({
+            ...current,
+            leapRule: enabled
+              ? {
+                  interval: 4,
+                  monthId:
+                    current.months[0].id,
+                  afterDay:
+                    current.months[0].days,
+                  additionalDays: 1,
+                }
+              : undefined,
+          })
+        );
+      }}
+    />
+
+    <strong>
+      Leap Day
+    </strong>
+  </label>
+
+  {controller.settings.leapRule && (
+    <div className="sim-clock-leap-settings">
+      <label>
+        <span>
+          Every
+        </span>
+
+        <input
+          type="number"
+          min="1"
+          value={
+            controller.settings
+              .leapRule.interval
+          }
+          onChange={(event) => {
+            const interval =
+              Math.max(
+                1,
+                Number(
+                  event.target.value
+                )
+              );
+
+            controller.setSettings(
+              (current) => ({
+                ...current,
+                leapRule:
+                  current.leapRule
+                    ? {
+                        ...current.leapRule,
+                        interval,
+                      }
+                    : undefined,
+              })
+            );
+          }}
+        />
+
+        <span>
+          years
+        </span>
+      </label>
+
+      <label>
+        <span>
+          Month
+        </span>
+
+        <select
+          value={
+            controller.settings
+              .leapRule.monthId
+          }
+          onChange={(event) => {
+            const monthId =
+              event.target.value;
+
+            controller.setSettings(
+              (current) => ({
+                ...current,
+                leapRule:
+                  current.leapRule
+                    ? {
+                        ...current.leapRule,
+                        monthId,
+                      }
+                    : undefined,
+              })
+            );
+          }}
+        >
+          {controller.settings.months.map(
+            (month) => (
+              <option
+                key={month.id}
+                value={month.id}
+              >
+                {month.name}
+              </option>
+            )
+          )}
+        </select>
+      </label>
+
+      <label>
+        <span>
+          After Day
+        </span>
+
+        <input
+          type="number"
+          min="1"
+          value={
+            controller.settings
+              .leapRule.afterDay
+          }
+          onChange={(event) => {
+            const afterDay =
+              Math.max(
+                1,
+                Number(
+                  event.target.value
+                )
+              );
+
+            controller.setSettings(
+              (current) => ({
+                ...current,
+                leapRule:
+                  current.leapRule
+                    ? {
+                        ...current.leapRule,
+                        afterDay,
+                      }
+                    : undefined,
+              })
+            );
+          }}
+        />
+      </label>
+
+      <label>
+        <span>
+          Additional Days
+        </span>
+
+        <input
+          type="number"
+          min="1"
+          value={
+            controller.settings
+              .leapRule.additionalDays
+          }
+          onChange={(event) => {
+            const additionalDays =
+              Math.max(
+                1,
+                Number(
+                  event.target.value
+                )
+              );
+
+            controller.setSettings(
+              (current) => ({
+                ...current,
+                leapRule:
+                  current.leapRule
+                    ? {
+                        ...current.leapRule,
+                        additionalDays,
+                      }
+                    : undefined,
+              })
+            );
+          }}
+        />
+      </label>
+    </div>
+  )}
+</div>
+  </div>
+          </div>
+
+          <div className="dialog-buttons">
+            <button
+              type="button"
+              onClick={() =>
+                controller.setSettingsOpen(
+                  false
+                )
+              }
+            >
+              Close
+            </button>
+          </div>
+        </div>
+        
+      </div>
+    )}
+  </>
+);
 }

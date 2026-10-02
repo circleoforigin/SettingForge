@@ -252,7 +252,7 @@ body,
   align-items: center;
 }
 
-/* ---------- MESSENGER PLACEMENT ---------- */
+
 
 .messenger-surface[data-edge='bottom'] {
   bottom: 0;
@@ -607,6 +607,42 @@ body,
 .empty-workspace p {
   margin: 0;
   font-size: 14px;
+}
+
+/* ---------- SIMTIME PLACEMENT ---------- */
+
+.sim-clock-day-list {
+  max-height: 252px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sim-clock-month-list {
+  max-height: 252px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sim-clock-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+}
+
+.sim-clock-settings-dialog {
+  width: min(760px, calc(100vw - 48px));
+}
+
+.sim-clock-settings-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.sim-clock-settings-column {
+  min-width: 0;
 }
 
 /* ---------- DROPDOWN MENUS ---------- */
