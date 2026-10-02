@@ -609,7 +609,7 @@ body,
   font-size: 14px;
 }
 
-/* ---------- SIMTIME PLACEMENT ---------- */
+/* ---------- SIMCLOCK PLACEMENT ---------- */
 
 .sim-clock-day-list {
   max-height: 252px;
@@ -626,7 +626,7 @@ body,
 .sim-clock-settings-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 1px;
   min-height: 36px;
 }
 

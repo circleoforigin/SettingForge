@@ -128,7 +128,7 @@ export function SimClockOverlay({
             </h3>
 
             <div className="sim-clock-settings-columns">
-            <div className="sim-clock-settings-column"></div>
+            <div className="sim-clock-settings-column">
             <label>
               <span>
                 Minutes per Hour
@@ -276,7 +276,7 @@ export function SimClockOverlay({
 
   </div>
 
-  <div className="sim-clock-settings-column"></div>
+  <div className="sim-clock-settings-column">
 
 <div className="sim-clock-settings-list">
   <strong>
@@ -602,6 +602,7 @@ export function SimClockOverlay({
     </div>
   )}
 </div>
+  </div>
   </div>
           </div>
 
