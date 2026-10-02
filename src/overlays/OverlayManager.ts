@@ -66,6 +66,44 @@ export class OverlayManager
     return activeOverlay;
   }
 
+  setPlacement(
+  overlayId: string,
+  placementIndex: OverlayPlacementIndex
+): ActiveOverlay | undefined
+{
+  const activeOverlay =
+    this.activeOverlays.get(overlayId);
+
+  if (!activeOverlay)
+  {
+    return undefined;
+  }
+
+  const occupied =
+    this.getAllActive().some(
+      (overlay) =>
+        overlay.overlayId !== overlayId &&
+        overlay.placementIndex === placementIndex
+    );
+
+  if (occupied)
+  {
+    return undefined;
+  }
+
+  const updatedOverlay: ActiveOverlay = {
+    ...activeOverlay,
+    placementIndex,
+  };
+
+  this.activeOverlays.set(
+    overlayId,
+    updatedOverlay
+  );
+
+  return updatedOverlay;
+}
+
   disable(overlayId: string): void
   {
     this.activeOverlays.delete(overlayId);
