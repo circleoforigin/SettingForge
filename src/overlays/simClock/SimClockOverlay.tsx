@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { OverlayPlacement } from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
 
@@ -78,9 +78,80 @@ const DEFAULT_SETTINGS: SimClockSettings = {
     yearOffset: 0,
   },
 
-  dateFormat: '{month} {dayOrdinal}, {year}',
+  dateFormat: '{monthName} {dayOrdinal}, {year} {reckoning}',
   timeFormat: '12-hour',
 };
+
+type DateFormatField =
+  | 'monthName'
+  | 'monthOrdinal'
+  | 'dayOfWeek'
+  | 'dayOrdinal'
+  | 'reckoning'
+  | 'year';
+
+const DATE_FORMAT_FIELDS: {
+  value: DateFormatField;
+  label: string;
+  token: string;
+}[] = [
+  {
+    value: 'monthName',
+    label: 'Month Name',
+    token: '{monthName}',
+  },
+  {
+    value: 'monthOrdinal',
+    label: 'Month Ordinal',
+    token: '{monthOrdinal}',
+  },
+  {
+    value: 'dayOfWeek',
+    label: 'Day of Week',
+    token: '{dayOfWeek}',
+  },
+  {
+    value: 'dayOrdinal',
+    label: 'Day Ordinal',
+    token: '{dayOrdinal}',
+  },
+  {
+    value: 'reckoning',
+    label: 'Reckoning',
+    token: '{reckoning}',
+  },
+  {
+    value: 'year',
+    label: 'Year',
+    token: '{year}',
+  },
+];
+
+const DATE_FORMAT_PREVIEW: Record<DateFormatField, string> = {
+  monthName: 'October',
+  monthOrdinal: '10th',
+  dayOfWeek: 'Wednesday',
+  dayOrdinal: '6th',
+  reckoning: 'CE',
+  year: '1993',
+};
+
+function formatDatePreview(format: string): string
+{
+  const preview = DATE_FORMAT_FIELDS.reduce(
+    (result, field) =>
+      result.replaceAll(
+        field.token,
+        DATE_FORMAT_PREVIEW[field.value]
+      ),
+    format
+  );
+
+  return preview
+    .replaceAll('{month}', DATE_FORMAT_PREVIEW.monthName)
+    .replaceAll('{weekday}', DATE_FORMAT_PREVIEW.dayOfWeek)
+    .replaceAll('{era}', DATE_FORMAT_PREVIEW.reckoning);
+}
 
 export function useSimClockOverlay()
 {
@@ -109,6 +180,56 @@ export function SimClockOverlay({
   placement,
 }: SimClockOverlayProps)
 {
+  const [dateFormatField, setDateFormatField] =
+    useState<DateFormatField>('monthName');
+
+  const dateFormatInputRef =
+    useRef<HTMLInputElement>(null);
+
+  const addDateFormatField = () =>
+  {
+    const field = DATE_FORMAT_FIELDS.find(
+      (candidate) =>
+        candidate.value === dateFormatField
+    );
+
+    if (!field)
+      return;
+
+    const input = dateFormatInputRef.current;
+    const currentFormat =
+      controller.settings.dateFormat;
+
+    const start =
+      input?.selectionStart ??
+      currentFormat.length;
+
+    const end =
+      input?.selectionEnd ??
+      start;
+
+    const dateFormat =
+      currentFormat.slice(0, start) +
+      field.token +
+      currentFormat.slice(end);
+
+    controller.setSettings((current) => ({
+      ...current,
+      dateFormat,
+    }));
+
+    requestAnimationFrame(() => {
+      const nextPosition =
+        start + field.token.length;
+
+      input?.focus();
+      input?.setSelectionRange(
+        nextPosition,
+        nextPosition
+      );
+    });
+  };
+
   return (
     <>
       <SimClockSurface
@@ -691,60 +812,96 @@ export function SimClockOverlay({
                 <h3>Display</h3>
 
                 <div className="sim-clock-display-settings">
-                  <label>
-                    <span>Date Format</span>
+  <div className="sim-clock-date-format-settings">
+    <label>
+      <span>Date Format</span>
 
-                    <input
-                      type="text"
-                      title="Tokens: {weekday}, {day}, {dayOrdinal}, {month}, {monthNumber}, {year}, {era}"
-                      value={
-                        controller.settings.dateFormat
-                      }
-                      onChange={(event) => {
-                        const dateFormat =
-                          event.target.value;
+      <input
+        ref={dateFormatInputRef}
+        type="text"
+        value={
+          controller.settings.dateFormat
+        }
+        onChange={(event) => {
+          const dateFormat =
+            event.target.value;
 
-                        controller.setSettings(
-                          (current) => ({
-                            ...current,
-                            dateFormat,
-                          })
-                        );
-                      }}
-                    />
-                  </label>
+          controller.setSettings(
+            (current) => ({
+              ...current,
+              dateFormat,
+            })
+          );
+        }}
+      />
+    </label>
 
-                  <label>
-                    <span>Time Format</span>
+    <div className="sim-clock-format-builder">
+      <select
+        value={dateFormatField}
+        onChange={(event) =>
+          setDateFormatField(
+            event.target.value as
+              DateFormatField
+          )
+        }
+      >
+        {DATE_FORMAT_FIELDS.map((field) => (
+          <option
+            key={field.value}
+            value={field.value}
+          >
+            {field.label}
+          </option>
+        ))}
+      </select>
 
-                    <select
-                      value={
-                        controller.settings.timeFormat
-                      }
-                      onChange={(event) => {
-                        const timeFormat =
-                          event.target.value as
-                            | '12-hour'
-                            | '24-hour';
+      <button
+        type="button"
+        onClick={addDateFormatField}
+      >
+        Add
+        </button>
 
-                        controller.setSettings(
-                          (current) => ({
-                            ...current,
-                            timeFormat,
-                          })
-                        );
-                      }}
-                    >
-                      <option value="12-hour">
-                        12-hour
-                      </option>
+  <div className="sim-clock-format-preview">
+    {formatDatePreview(
+      controller.settings.dateFormat
+    )}
+  </div>
+</div>
+  </div>
 
-                      <option value="24-hour">
-                        24-hour
-                      </option>
-                    </select>
-                  </label>
-                </div>
+  <label>
+    <span>Time Format</span>
+
+    <select
+      value={
+        controller.settings.timeFormat
+      }
+      onChange={(event) => {
+        const timeFormat =
+          event.target.value as
+            | '12-hour'
+            | '24-hour';
+
+        controller.setSettings(
+          (current) => ({
+            ...current,
+            timeFormat,
+          })
+        );
+      }}
+    >
+      <option value="12-hour">
+        12-hour
+      </option>
+
+      <option value="24-hour">
+        24-hour
+      </option>
+    </select>
+  </label>
+</div>
               </div>
             </div>
 
