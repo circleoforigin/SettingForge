@@ -97,6 +97,12 @@ export function SimClockSurface({
   )}
 </div>
           ))}
+          <button
+  type="button"
+  className="sim-clock-set-time"
+>
+  Set Time
+</button>
         </div>
       )}
     </div>

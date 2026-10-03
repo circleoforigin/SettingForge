@@ -26,6 +26,7 @@ export interface SimClockReckoning
 
 export interface SimClockSettings
 {
+  secondsPerMinute: number;
   minutesPerHour: number;
   hoursPerDay: number;
   dayNames: string[];
@@ -37,6 +38,7 @@ export interface SimClockSettings
 }
 
 const DEFAULT_SETTINGS: SimClockSettings = {
+  secondsPerMinute: 60,
   minutesPerHour: 60,
   hoursPerDay: 24,
 
@@ -78,16 +80,16 @@ const DEFAULT_SETTINGS: SimClockSettings = {
     yearOffset: 0,
   },
 
-  dateFormat: '{monthName} {dayOrdinal}, {year} {reckoning}',
+  dateFormat: '{monthName} {dayOrdinal}, {year} {era}',
   timeFormat: '12-hour',
 };
 
 type DateFormatField =
   | 'monthName'
-  | 'monthOrdinal'
-  | 'dayOfWeek'
-  | 'dayOrdinal'
-  | 'reckoning'
+  | 'monthNumber'
+  | 'weekDay'
+  | 'dayNumber'
+  | 'era'
   | 'year';
 
 const DATE_FORMAT_FIELDS: {
@@ -97,28 +99,28 @@ const DATE_FORMAT_FIELDS: {
 }[] = [
   {
     value: 'monthName',
-    label: 'Month Name',
+    label: 'MonthName',
     token: '{monthName}',
   },
   {
-    value: 'monthOrdinal',
-    label: 'Month Ordinal',
-    token: '{monthOrdinal}',
+    value: 'monthNumber',
+    label: 'Month#',
+    token: '{month#}',
   },
   {
-    value: 'dayOfWeek',
-    label: 'Day of Week',
-    token: '{dayOfWeek}',
+    value: 'weekDay',
+    label: 'WeekDay',
+    token: '{weekDay}',
   },
   {
-    value: 'dayOrdinal',
-    label: 'Day Ordinal',
-    token: '{dayOrdinal}',
+    value: 'dayNumber',
+    label: 'Day#',
+    token: '{day#}',
   },
   {
-    value: 'reckoning',
-    label: 'Reckoning',
-    token: '{reckoning}',
+    value: 'era',
+    label: 'Era',
+    token: '{era}',
   },
   {
     value: 'year',
@@ -129,16 +131,16 @@ const DATE_FORMAT_FIELDS: {
 
 const DATE_FORMAT_PREVIEW: Record<DateFormatField, string> = {
   monthName: 'October',
-  monthOrdinal: '10th',
-  dayOfWeek: 'Wednesday',
-  dayOrdinal: '6th',
-  reckoning: 'CE',
+  monthNumber: '10th',
+  weekday: 'Wednesday',
+  dayNumber: '6th',
+  era: 'CE',
   year: '1993',
 };
 
 function formatDatePreview(format: string): string
 {
-  const preview = DATE_FORMAT_FIELDS.reduce(
+  return DATE_FORMAT_FIELDS.reduce(
     (result, field) =>
       result.replaceAll(
         field.token,
@@ -146,11 +148,6 @@ function formatDatePreview(format: string): string
       ),
     format
   );
-
-  return preview
-    .replaceAll('{month}', DATE_FORMAT_PREVIEW.monthName)
-    .replaceAll('{weekday}', DATE_FORMAT_PREVIEW.dayOfWeek)
-    .replaceAll('{era}', DATE_FORMAT_PREVIEW.reckoning);
 }
 
 export function useSimClockOverlay()
@@ -250,6 +247,25 @@ export function SimClockOverlay({
 
                 <div className="sim-clock-settings-column">
                   <div className="sim-clock-basic-settings">
+                    <label>
+  <span>Seconds per Minute</span>
+
+  <input
+    type="number"
+    min="1"
+    value={settings.secondsPerMinute}
+    onChange={(event) =>
+      setSettings((current) => ({
+        ...current,
+        secondsPerMinute:
+          Math.max(
+            1,
+            Number(event.target.value)
+          ),
+      }))
+    }
+  />
+</label>
                     <label>
                       <span>Minutes per Hour</span>
 

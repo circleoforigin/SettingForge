@@ -703,7 +703,7 @@ body,
 
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0px;
 
   padding: 7px;
@@ -752,7 +752,8 @@ body,
 }
 
 .sim-clock-field-month {
-  flex: 1 1 82px;
+  flex: 1 1 86px;
+  width: 86px;
 }
 
 .sim-clock-field-day {
@@ -848,6 +849,39 @@ body,
 .sim-clock-field-arrows button:hover {
   background: #3a3c41;
   color: #ffffff;
+}
+
+.sim-clock-set-time {
+  flex: 0 0 auto;
+
+  height: 20px;
+  margin-left: 18px;
+  margin-bottom: 4px;
+  padding: 0 8px;
+
+  background: #3a3c41;
+  color: #d8d8d8;
+
+  border: 1px solid #50535b;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.sim-clock-set-time:hover {
+  background: #50535b;
+  color: #ffffff;
+  border-color: #666a73;
+}
+
+.sim-clock-set-time:active {
+  background: #2b2d31;
 }
 
 .sim-clock-surface[data-edge='top']
