@@ -253,17 +253,23 @@ export function SimClockOverlay({
   <input
     type="number"
     min="1"
-    value={settings.secondsPerMinute}
-    onChange={(event) =>
-      setSettings((current) => ({
-        ...current,
-        secondsPerMinute:
-          Math.max(
-            1,
-            Number(event.target.value)
-          ),
-      }))
+    value={
+      controller.settings.secondsPerMinute
     }
+    onChange={(event) => {
+      const secondsPerMinute =
+        Math.max(
+          1,
+          Number(event.target.value)
+        );
+
+      controller.setSettings(
+        (current) => ({
+          ...current,
+          secondsPerMinute,
+        })
+      );
+    }}
   />
 </label>
                     <label>
