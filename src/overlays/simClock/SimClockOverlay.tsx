@@ -17,71 +17,83 @@ export interface SimClockLeapRule
   additionalDays: number;
 }
 
-export interface SimClockReckoning
+export interface SimClockEra
 {
+  id: string;
   name: string;
   abbreviation: string;
-  yearOffset: number;
-}
 
-export interface SimClockSettings
-{
   secondsPerMinute: number;
   minutesPerHour: number;
   hoursPerDay: number;
+
   dayNames: string[];
   months: SimClockMonth[];
   leapRule?: SimClockLeapRule;
-  reckoning: SimClockReckoning;
+
+  startingWeekday: string;
+
   dateFormat: string;
   timeFormat: '12-hour' | '24-hour';
 }
 
+export interface SimClockSettings
+{
+  eras: SimClockEra[];
+  activeEraId: string;
+}
+
 const DEFAULT_SETTINGS: SimClockSettings = {
-  secondsPerMinute: 60,
-  minutesPerHour: 60,
-  hoursPerDay: 24,
+  activeEraId: 'common-era',
 
-  dayNames: [
-    'Sunday',
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
+  eras: [
+    {
+      id: 'common-era',
+      name: 'Common Era',
+      abbreviation: 'CE',
+
+      secondsPerMinute: 60,
+      minutesPerHour: 60,
+      hoursPerDay: 24,
+
+      dayNames: [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ],
+
+      months: [
+        { id: 'january', name: 'January', days: 31 },
+        { id: 'february', name: 'February', days: 28 },
+        { id: 'march', name: 'March', days: 31 },
+        { id: 'april', name: 'April', days: 30 },
+        { id: 'may', name: 'May', days: 31 },
+        { id: 'june', name: 'June', days: 30 },
+        { id: 'july', name: 'July', days: 31 },
+        { id: 'august', name: 'August', days: 31 },
+        { id: 'september', name: 'September', days: 30 },
+        { id: 'october', name: 'October', days: 31 },
+        { id: 'november', name: 'November', days: 30 },
+        { id: 'december', name: 'December', days: 31 },
+      ],
+
+      leapRule: {
+        interval: 4,
+        monthId: 'february',
+        afterDay: 28,
+        additionalDays: 1,
+      },
+
+      startingWeekday: 'Monday',
+
+      dateFormat: '{monthName} {day#}, {year} {era}',
+      timeFormat: '12-hour',
+    },
   ],
-
-  months: [
-    { id: 'january', name: 'January', days: 31 },
-    { id: 'february', name: 'February', days: 28 },
-    { id: 'march', name: 'March', days: 31 },
-    { id: 'april', name: 'April', days: 30 },
-    { id: 'may', name: 'May', days: 31 },
-    { id: 'june', name: 'June', days: 30 },
-    { id: 'july', name: 'July', days: 31 },
-    { id: 'august', name: 'August', days: 31 },
-    { id: 'september', name: 'September', days: 30 },
-    { id: 'october', name: 'October', days: 31 },
-    { id: 'november', name: 'November', days: 30 },
-    { id: 'december', name: 'December', days: 31 },
-  ],
-
-  leapRule: {
-    interval: 4,
-    monthId: 'february',
-    afterDay: 28,
-    additionalDays: 1,
-  },
-
-  reckoning: {
-    name: 'Common Era',
-    abbreviation: 'CE',
-    yearOffset: 0,
-  },
-
-  dateFormat: '{monthName} {dayOrdinal}, {year} {era}',
-  timeFormat: '12-hour',
 };
 
 type DateFormatField =
@@ -152,14 +164,46 @@ function formatDatePreview(format: string): string
 
 export function useSimClockOverlay()
 {
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settings, setSettings] = useState<SimClockSettings>(DEFAULT_SETTINGS);
+  const [settingsOpen, setSettingsOpen] =
+    useState(false);
+
+  const [settings, setSettings] =
+    useState<SimClockSettings>(DEFAULT_SETTINGS);
+
+  const activeEra =
+    settings.eras.find(
+      (era) =>
+        era.id === settings.activeEraId
+    ) ??
+    settings.eras[0];
+
+  const updateActiveEra = (
+    update: (
+      current: SimClockEra
+    ) => SimClockEra
+  ) =>
+  {
+    if (!activeEra)
+      return;
+
+    setSettings((current) => ({
+      ...current,
+
+      eras: current.eras.map((era) =>
+        era.id === activeEra.id
+          ? update(era)
+          : era
+      ),
+    }));
+  };
 
   return {
     settingsOpen,
     setSettingsOpen,
     settings,
     setSettings,
+    activeEra,
+    updateActiveEra,
   };
 }
 
@@ -177,6 +221,10 @@ export function SimClockOverlay({
   placement,
 }: SimClockOverlayProps)
 {
+  const activeEra = controller.activeEra;
+  if (!activeEra)
+    return null;
+
   const [dateFormatField, setDateFormatField] =
     useState<DateFormatField>('monthName');
 
