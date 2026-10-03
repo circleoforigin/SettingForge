@@ -136,6 +136,8 @@ function App()
   const [activeOverlays, setActiveOverlays] = useState(
     () => overlayManager.getAllActive()
   );
+  const [overlayFont, setOverlayFont] =
+    useState('Arial, sans-serif');
 
   const isOverlayEnabled = (overlayId: string) =>
     overlayManager.isActive(overlayId);
@@ -3550,6 +3552,48 @@ async function removeModuleFromWorld(
   </div>
 
   <div className="dropdown-menu overlay-submenu">
+    <div className="overlay-menu-entry">
+      <div className="dropdown-item overlay-menu-label">
+        Overlay Font
+        <span>›</span>
+      </div>
+
+      <div className="dropdown-menu overlay-submenu">
+        {[
+          ['Arial', 'Arial, sans-serif'],
+          ['Segoe UI', '"Segoe UI", sans-serif'],
+          ['Bahnschrift', 'Bahnschrift, sans-serif'],
+          [
+            'Bahnschrift Condensed',
+            '"Bahnschrift Condensed", sans-serif',
+          ],
+          ['Georgia', 'Georgia, serif'],
+          [
+            'Times New Roman',
+            '"Times New Roman", serif',
+          ],
+          [
+            'Courier New',
+            '"Courier New", monospace',
+          ],
+        ].map(([label, font]) => (
+          <button
+            key={font}
+            type="button"
+            className="dropdown-item"
+            onClick={() =>
+              setOverlayFont(font)
+            }
+          >
+            {overlayFont === font ? '✓ ' : ''}
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div className="dropdown-separator" />
+
     {overlayRegistry.getAll().map((overlay) => (
       <div
         key={overlay.id}
@@ -3781,7 +3825,13 @@ async function removeModuleFromWorld(
     </div>
   )}
 
-    <div className="overlay-layer">
+    <div
+      className="overlay-layer"
+      style={{
+        '--overlay-font-family':
+          overlayFont,
+      } as React.CSSProperties}
+    >
   {activeOverlays.map((activeOverlay) => {
     const overlay =
       overlayRegistry.get(

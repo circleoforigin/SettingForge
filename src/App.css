@@ -197,6 +197,14 @@ body,
   pointer-events: auto;
 }
 
+.overlay-layer > * {
+  font-family: var(
+    --overlay-font-family,
+    Arial,
+    sans-serif
+  );
+}
+
 .messenger-settings-dialog {
   width: 480px;
 }
@@ -557,9 +565,12 @@ body,
   text-overflow: ellipsis;
 
   font: inherit;
-  font-family: "Bahnschrift Condensed", "Roboto Condensed," Arial, sans-serif;
+  font-family: var(
+    --overlay-font-family,
+    Arial,
+    sans-serif
+  );
   font-size: 11px;
-  font-stretch: condensed;
   line-height: 1.1;
 
   cursor: pointer;
@@ -692,8 +703,8 @@ body,
 
   display: flex;
   align-items: flex-end;
-  justify-content: center;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 0px;
 
   padding: 7px;
 
@@ -705,6 +716,138 @@ body,
 
   box-shadow:
     0 -4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.sim-clock-field-group {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+}
+
+.sim-clock-field {
+  min-width: 0;
+}
+
+.sim-clock-field-separator {
+  flex: 0 0 auto;
+
+  padding: 0 1px;
+
+  color: #aeb0b6;
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 28px;
+
+  white-space: pre;
+}
+
+.sim-clock-field-year {
+  flex: 0 1 54px;
+}
+
+.sim-clock-field-era {
+  flex: 0 1 42px;
+}
+
+.sim-clock-field-month {
+  flex: 1 1 82px;
+}
+
+.sim-clock-field-day {
+  flex: 0 1 42px;
+}
+
+.sim-clock-field-hour,
+.sim-clock-field-minute,
+.sim-clock-field-second {
+  flex: 0 0 30px;
+  width: 30px;
+}
+
+.sim-clock-field-control {
+  position: relative;
+
+  box-sizing: border-box;
+  width: 100%;
+  height: 28px;
+}
+
+.sim-clock-field-value {
+  box-sizing: border-box;
+
+  width: 100%;
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 2px 10px 2px 2px;
+
+  background: transparent;
+  color: #d8d8d8;
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+
+  white-space: nowrap;
+}
+
+.sim-clock-field-arrows {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+
+  width: 10px;
+
+  display: flex;
+  flex-direction: column;
+
+  border-left: 1px solid #45474e;
+}
+
+.sim-clock-field-arrows button {
+  box-sizing: border-box;
+
+  width: 100%;
+  min-width: 0;
+  height: 50%;
+
+  margin: 0;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: none;
+
+  font: inherit;
+  font-size: 5px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.sim-clock-field-arrows button:first-child {
+  border-radius: 0 2px 0 0;
+}
+
+.sim-clock-field-arrows button:last-child {
+  border-top: 1px solid #45474e;
+  border-radius: 0 0 2px 0;
+}
+
+.sim-clock-field-arrows button:hover {
+  background: #3a3c41;
+  color: #ffffff;
 }
 
 .sim-clock-surface[data-edge='top']
