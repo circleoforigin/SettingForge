@@ -611,6 +611,112 @@ body,
 
 /* ---------- SIMCLOCK ---------- */
 
+.sim-clock-surface {
+  position: absolute;
+
+  width: min(430px, calc(100% - 24px));
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sim-clock-surface[data-edge='bottom'] {
+  bottom: 0;
+}
+
+.sim-clock-surface[data-edge='top'] {
+  top: 0;
+}
+
+.sim-clock-surface[data-alignment='left'] {
+  left: 12px;
+}
+
+.sim-clock-surface[data-alignment='center'] {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sim-clock-surface[data-alignment='right'] {
+  right: 12px;
+}
+
+.sim-clock-summary {
+  position: relative;
+  z-index: 2;
+
+  box-sizing: border-box;
+  min-width: 260px;
+  height: 24px;
+
+  padding: 3px 10px;
+
+  background: #2b2d31;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.1;
+
+  cursor: pointer;
+}
+
+.sim-clock-summary:hover {
+  background: #3a3c41;
+  color: white;
+}
+
+.sim-clock-surface[data-edge='top'] {
+  flex-direction: column-reverse;
+}
+
+.sim-clock-surface[data-edge='top']
+.sim-clock-summary {
+  border-top: none;
+  border-bottom: 1px solid #45474e;
+  border-radius: 0 0 4px 4px;
+}
+
+.sim-clock-go-to {
+  box-sizing: border-box;
+  width: 100%;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+
+  padding: 7px;
+
+  background: #2b2d31;
+
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+
+  box-shadow:
+    0 -4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.sim-clock-surface[data-edge='top']
+.sim-clock-go-to {
+  border-top: none;
+  border-bottom: 1px solid #45474e;
+  border-radius: 0 0 5px 5px;
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
 .dialog.sim-clock-settings-dialog {
   box-sizing: border-box;
   width: 850px;
