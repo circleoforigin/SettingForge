@@ -17,12 +17,14 @@ interface SimClockSurfaceProps
   controller?: SimClockOverlayController;
 }
 
+type SimClockStage = 'collapsed' | 'go-to' | 'progression';
+
 export function SimClockSurface({
   placement,
   controller,
 }: SimClockSurfaceProps)
 {
-  const [expanded, setExpanded] = useState(false);
+  const [stage, setStage] = useState<SimClockStage>('collapsed');
 
   if (!controller)
     return null;
@@ -103,33 +105,25 @@ export function SimClockSurface({
       className="sim-clock-surface"
       data-edge={resolvedPlacement.edge}
       data-alignment={resolvedPlacement.alignment}
-      data-expanded={expanded}
+      data-stage={stage}
     >
-      <button
-        type="button"
-        className="sim-clock-summary"
-        onClick={() =>
-        {
-            if (!expanded)
+    {stage === 'collapsed' && (
+        <button
+            type="button"
+            className="sim-clock-summary"
+            onClick={() =>
             {
                 controller.setPendingTime(controller.committedTime);
-            }
+                setStage('go-to');
+            }}
+        >
+            {formatSimulationDate(controller.committedTime, controller.activeEra)}
+            {' · '}
+            {formatSimulationTime(controller.committedTime, controller.activeEra)}
+        </button>
+    )}
 
-            setExpanded((current) => !current);
-        }}
-      >
-        {formatSimulationDate(
-            controller.committedTime,
-            controller.activeEra
-        )}
-        {' · '}
-        {formatSimulationTime(
-            controller.committedTime,
-            controller.activeEra
-        )}
-      </button>
-
-      {expanded && (
+      {stage !== 'collapsed' && (
         <div className="sim-clock-go-to">
           {clockFields.map((field) => (
             <div
@@ -173,7 +167,15 @@ export function SimClockSurface({
             }
         >
             Set Time
-        </button>
+                  </button>
+
+          <button
+            type="button"
+            className="sim-clock-weekday"
+            onClick={() => setStage('collapsed')}
+          >
+            {calendar.weekDay}
+          </button>
         </div>
       )}
     </div>
