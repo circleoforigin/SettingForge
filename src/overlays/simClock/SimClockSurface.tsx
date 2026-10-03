@@ -8,7 +8,7 @@ import { simulationTimeToCalendar } from '../../simulation/SimCalendar';
 interface SimClockSurfaceProps
   extends OverlaySurfaceProps
 {
-  controller: SimClockOverlayController;
+  controller?: SimClockOverlayController;
 }
 
 export function SimClockSurface({
@@ -16,7 +16,10 @@ export function SimClockSurface({
   controller,
 }: SimClockSurfaceProps)
 {
-    const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  if (!controller)
+    return null;
 
   const calendar =
     simulationTimeToCalendar(

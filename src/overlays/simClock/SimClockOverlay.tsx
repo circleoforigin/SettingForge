@@ -301,9 +301,6 @@ export function useSimClockOverlay()
   };
 }
 
-export type SimClockOverlayController =
-  ReturnType<typeof useSimClockOverlay>;
-
 interface SimClockOverlayProps
 {
   controller: SimClockOverlayController;
