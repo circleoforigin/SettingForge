@@ -702,11 +702,12 @@ body,
   width: 100%;
 
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: center;
-  gap: 0px;
+  gap: 0;
 
-  padding: 7px;
+  padding: 3px 7px 0;
 
   background: #2b2d31;
 
@@ -714,8 +715,33 @@ body,
   border-bottom: none;
   border-radius: 5px 5px 0 0;
 
-  box-shadow:
-    0 -4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.sim-clock-weekday {
+  box-sizing: border-box;
+  width: 100%;
+  height: 18px;
+
+  margin: 0;
+  padding: 0;
+
+  background: transparent;
+  color: #aeb0b6;
+
+  border: none;
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+.sim-clock-weekday:hover {
+  background: #3a3c41;
+  color: #ffffff;
 }
 
 .sim-clock-field-group {
@@ -900,6 +926,16 @@ body,
 
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.sim-clock-surface[data-edge='top']
+.sim-clock-weekday {
+  order: 2;
+}
+
+.sim-clock-surface[data-edge='bottom']
+.sim-clock-weekday {
+  order: -1;
 }
 
 .dialog.sim-clock-settings-dialog {
