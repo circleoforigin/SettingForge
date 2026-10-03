@@ -3,7 +3,13 @@ import type { OverlaySurfaceProps } from '../OverlayDefinition';
 import { SimClockValueControl } from './SimClockValueControl';
 import { OVERLAY_PLACEMENTS } from '../OverlayPlacement';
 import type { SimClockOverlayController } from './SimClockOverlay';
-import { simulationTimeToCalendar } from '../../simulation/SimCalendar';
+import {
+  formatSimulationDate,
+  formatSimulationTime,
+  simulationTimeToCalendar,
+  stepSimulationTime,
+  type SimCalendarField,
+} from '../../simulation/SimCalendar';
 
 interface SimClockSurfaceProps
   extends OverlaySurfaceProps
@@ -26,6 +32,20 @@ export function SimClockSurface({
       controller.pendingTime,
       controller.activeEra
     );
+
+  const halfDay =
+    controller.activeEra.hoursPerDay / 2;
+
+  let displayHour =
+    calendar.hour % halfDay;
+
+  if (displayHour === 0)
+    displayHour = halfDay;
+
+  const period =
+    calendar.hour < halfDay
+      ? 'AM'
+      : 'PM';
 
   const clockFields = [
     {
@@ -56,8 +76,7 @@ export function SimClockSurface({
     {
       key: 'hour',
       label: 'Hour',
-      value: String(calendar.hour)
-        .padStart(2, '0'),
+      value: String(displayHour),
       after: ':',
     },
     {
@@ -72,7 +91,7 @@ export function SimClockSurface({
       label: 'Second',
       value: String(calendar.second)
         .padStart(2, '0'),
-      after: '',
+      after: ` ${period}`,
     },
   ] as const;
 
@@ -90,10 +109,24 @@ export function SimClockSurface({
         type="button"
         className="sim-clock-summary"
         onClick={() =>
-          setExpanded((current) => !current)
-        }
+        {
+            if (!expanded)
+            {
+                controller.setPendingTime(controller.committedTime);
+            }
+
+            setExpanded((current) => !current);
+        }}
       >
-        Wednesday, October 6th, 1993 CE · 10:42 PM
+        {formatSimulationDate(
+            controller.committedTime,
+            controller.activeEra
+        )}
+        {' · '}
+        {formatSimulationTime(
+            controller.committedTime,
+            controller.activeEra
+        )}
       </button>
 
       {expanded && (
@@ -107,9 +140,22 @@ export function SimClockSurface({
     className={`sim-clock-field sim-clock-field-${field.key}`}
   >
     <SimClockValueControl
-      label={field.label}
-      value={field.value}
-    />
+  label={field.label}
+  value={field.value}
+  onStep={
+    field.key === 'era'
+      ? undefined
+      : (direction) =>
+          controller.setPendingTime(
+            stepSimulationTime(
+              controller.pendingTime,
+              field.key as SimCalendarField,
+              direction,
+              controller.activeEra
+            )
+          )
+  }
+/>
   </div>
 
   {field.after && (

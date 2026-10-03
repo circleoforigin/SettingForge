@@ -802,13 +802,21 @@ body,
   top: 1px;
   right: 1px;
   bottom: 1px;
-
+  opacity: 0;
+  pointer-events: none;
   width: 10px;
-
   display: flex;
   flex-direction: column;
-
   border-left: 1px solid #45474e;
+}
+
+.sim-clock-field-control:hover .sim-clock-field-arrows {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sim-clock-field-arrows {
+  transition: opacity 0.12s ease;
 }
 
 .sim-clock-field-arrows button {

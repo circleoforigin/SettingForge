@@ -38,7 +38,6 @@ export interface SimClockEra
   startingWeekday: string;
 
   dateFormat: string;
-  timeFormat: '12-hour' | '24-hour';
 }
 
 export interface SimClockSettings
@@ -144,8 +143,6 @@ const DEFAULT_SETTINGS: SimClockSettings = {
 
       dateFormat:
         '{monthName} {day#}, {year} {era}',
-
-      timeFormat: '12-hour',
     },
   ],
 };
@@ -1234,44 +1231,7 @@ export function SimClockOverlay({
                         )}
                       </div>
                     </div>
-                  </div>
-
-                  <label>
-                    <span>
-                      Time Format
-                    </span>
-
-                    <select
-                      value={
-                        activeEra.timeFormat
-                      }
-                      onChange={(
-                        event
-                      ) => {
-                        const timeFormat =
-                          event
-                            .target
-                            .value as
-                            | '12-hour'
-                            | '24-hour';
-
-                        controller.updateActiveEra(
-                          (current) => ({
-                            ...current,
-                            timeFormat,
-                          })
-                        );
-                      }}
-                    >
-                      <option value="12-hour">
-                        12-hour
-                      </option>
-
-                      <option value="24-hour">
-                        24-hour
-                      </option>
-                    </select>
-                  </label>
+                  </div>                  
                 </div>
               </div>
             </div>
