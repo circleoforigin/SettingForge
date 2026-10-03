@@ -124,8 +124,16 @@ export function SimClockSurface({
     )}
 
       {stage !== 'collapsed' && (
-        <div className="sim-clock-go-to">
-          {clockFields.map((field) => (
+  <div className="sim-clock-go-to">
+    <button
+      type="button"
+      className="sim-clock-stage-handle"
+      onClick={() => setStage(stage === 'progression' ? 'go-to' : 'progression')}
+    >
+      {stage === 'progression' ? '▲' : '▼'}
+    </button>
+
+    {clockFields.map((field) => (
             <div
   key={field.key}
   className="sim-clock-field-group"
@@ -158,20 +166,26 @@ export function SimClockSurface({
     </span>
   )}
 </div>
-          ))}
-          <button
-            type="button"
-            className="sim-clock-set-time"
-            onClick={
-                controller.commitPendingTime
-            }
-        >
-            Set Time
-                  </button>
+))}
+<button
+  type="button"
+  className="sim-clock-set-time"
+  onClick={controller.commitPendingTime}
+>
+  Set Time
+</button>
 
-          <button
-            type="button"
-            className="sim-clock-weekday"
+<button
+  type="button"
+  className="sim-clock-stage-handle"
+  onClick={() => setStage(stage === 'progression' ? 'go-to' : 'progression')}
+>
+  {stage === 'progression' ? '▲' : '▼'}
+</button>
+
+<button
+  type="button"
+  className="sim-clock-weekday"
             onClick={() => setStage('collapsed')}
           >
             {calendar.weekDay}

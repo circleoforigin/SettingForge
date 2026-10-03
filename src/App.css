@@ -718,6 +718,31 @@ body,
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.25);
 }
 
+.sim-clock-stage-handle {
+  flex: 1 1 0;
+  align-self: stretch;
+
+  min-width: 20px;
+  margin: 0;
+  padding: 0;
+
+  background: transparent;
+  color: #aeb0b6;
+
+  border: none;
+
+  font: inherit;
+  font-size: 8px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.sim-clock-stage-handle:hover {
+  background: #3a3c41;
+  color: #ffffff;
+}
+
 .sim-clock-weekday {
   box-sizing: border-box;
   width: 100%;
