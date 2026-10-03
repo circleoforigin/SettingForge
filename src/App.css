@@ -1123,6 +1123,11 @@ body,
   gap: 6px;
 }
 
+.sim-clock-reckoning-settings select {
+  box-sizing: border-box;
+  height: 24px;
+}
+
 .sim-clock-display-settings {
   display: grid;
   grid-template-columns:

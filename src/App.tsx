@@ -3882,6 +3882,12 @@ const Surface = overlay.Surface;
 </div>
 </main>
 
+{!isOverlayEnabled('sim-clock') && (
+  <SimClockOverlay
+    controller={simClock}
+  />
+)}
+
 {showNewWorldDialog && (
   <div className="dialog-backdrop">
     <div className="dialog">

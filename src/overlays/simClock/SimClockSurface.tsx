@@ -2,57 +2,76 @@ import { useState } from 'react';
 import type { OverlaySurfaceProps } from '../OverlayDefinition';
 import { SimClockValueControl } from './SimClockValueControl';
 import { OVERLAY_PLACEMENTS } from '../OverlayPlacement';
+import type { SimClockOverlayController } from './SimClockOverlay';
+import { simulationTimeToCalendar } from '../../simulation/SimCalendar';
 
-const CLOCK_FIELDS = [
-  {
-    key: 'year',
-    label: 'Year',
-    value: '1993',
-    after: ' ',
-  },
-  {
-    key: 'era',
-    label: 'Era',
-    value: 'CE',
-    after: '   ',
-  },
-  {
-    key: 'month',
-    label: 'Month',
-    value: 'October',
-    after: ' ',
-  },
-  {
-    key: 'day',
-    label: 'Day',
-    value: '6',
-    after: '   ',
-  },
-  {
-    key: 'hour',
-    label: 'Hour',
-    value: '10',
-    after: ':',
-  },
-  {
-    key: 'minute',
-    label: 'Min',
-    value: '42',
-    after: ':',
-  },
-  {
-    key: 'second',
-    label: 'Second',
-    value: '00',
-    after: ' PM',
-  },
-] as const;
+interface SimClockSurfaceProps
+  extends OverlaySurfaceProps
+{
+  controller: SimClockOverlayController;
+}
 
 export function SimClockSurface({
   placement,
-}: OverlaySurfaceProps)
+  controller,
+}: SimClockSurfaceProps)
 {
-  const [expanded, setExpanded] = useState(false);
+    const [expanded, setExpanded] = useState(false);
+
+  const calendar =
+    simulationTimeToCalendar(
+      controller.pendingTime,
+      controller.activeEra
+    );
+
+  const clockFields = [
+    {
+      key: 'year',
+      label: 'Year',
+      value: String(calendar.year),
+      after: ' ',
+    },
+    {
+      key: 'era',
+      label: 'Era',
+      value:
+        controller.activeEra.abbreviation,
+      after: '   ',
+    },
+    {
+      key: 'month',
+      label: 'Month',
+      value: calendar.monthName,
+      after: ' ',
+    },
+    {
+      key: 'day',
+      label: 'Day',
+      value: String(calendar.day),
+      after: '   ',
+    },
+    {
+      key: 'hour',
+      label: 'Hour',
+      value: String(calendar.hour)
+        .padStart(2, '0'),
+      after: ':',
+    },
+    {
+      key: 'minute',
+      label: 'Min',
+      value: String(calendar.minute)
+        .padStart(2, '0'),
+      after: ':',
+    },
+    {
+      key: 'second',
+      label: 'Second',
+      value: String(calendar.second)
+        .padStart(2, '0'),
+      after: '',
+    },
+  ] as const;
 
   const resolvedPlacement =
     OVERLAY_PLACEMENTS[placement.index];
@@ -76,7 +95,7 @@ export function SimClockSurface({
 
       {expanded && (
         <div className="sim-clock-go-to">
-          {CLOCK_FIELDS.map((field) => (
+          {clockFields.map((field) => (
             <div
   key={field.key}
   className="sim-clock-field-group"
@@ -98,11 +117,14 @@ export function SimClockSurface({
 </div>
           ))}
           <button
-  type="button"
-  className="sim-clock-set-time"
->
-  Set Time
-</button>
+            type="button"
+            className="sim-clock-set-time"
+            onClick={
+                controller.commitPendingTime
+            }
+        >
+            Set Time
+        </button>
         </div>
       )}
     </div>

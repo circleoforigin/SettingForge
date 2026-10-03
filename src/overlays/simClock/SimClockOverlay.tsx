@@ -1,4 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  simulationClockService,
+  type SimulationTime,
+} from '../../simulation/SimulationClockService';
 import type { OverlayPlacement } from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
 
@@ -67,18 +71,66 @@ const DEFAULT_SETTINGS: SimClockSettings = {
       ],
 
       months: [
-        { id: 'january', name: 'January', days: 31 },
-        { id: 'february', name: 'February', days: 28 },
-        { id: 'march', name: 'March', days: 31 },
-        { id: 'april', name: 'April', days: 30 },
-        { id: 'may', name: 'May', days: 31 },
-        { id: 'june', name: 'June', days: 30 },
-        { id: 'july', name: 'July', days: 31 },
-        { id: 'august', name: 'August', days: 31 },
-        { id: 'september', name: 'September', days: 30 },
-        { id: 'october', name: 'October', days: 31 },
-        { id: 'november', name: 'November', days: 30 },
-        { id: 'december', name: 'December', days: 31 },
+        {
+          id: 'january',
+          name: 'January',
+          days: 31,
+        },
+        {
+          id: 'february',
+          name: 'February',
+          days: 28,
+        },
+        {
+          id: 'march',
+          name: 'March',
+          days: 31,
+        },
+        {
+          id: 'april',
+          name: 'April',
+          days: 30,
+        },
+        {
+          id: 'may',
+          name: 'May',
+          days: 31,
+        },
+        {
+          id: 'june',
+          name: 'June',
+          days: 30,
+        },
+        {
+          id: 'july',
+          name: 'July',
+          days: 31,
+        },
+        {
+          id: 'august',
+          name: 'August',
+          days: 31,
+        },
+        {
+          id: 'september',
+          name: 'September',
+          days: 30,
+        },
+        {
+          id: 'october',
+          name: 'October',
+          days: 31,
+        },
+        {
+          id: 'november',
+          name: 'November',
+          days: 30,
+        },
+        {
+          id: 'december',
+          name: 'December',
+          days: 31,
+        },
       ],
 
       leapRule: {
@@ -90,7 +142,9 @@ const DEFAULT_SETTINGS: SimClockSettings = {
 
       startingWeekday: 'Monday',
 
-      dateFormat: '{monthName} {day#}, {year} {era}',
+      dateFormat:
+        '{monthName} {day#}, {year} {era}',
+
       timeFormat: '12-hour',
     },
   ],
@@ -141,16 +195,19 @@ const DATE_FORMAT_FIELDS: {
   },
 ];
 
-const DATE_FORMAT_PREVIEW: Record<DateFormatField, string> = {
-  monthName: 'October',
-  monthNumber: '10th',
-  weekday: 'Wednesday',
-  dayNumber: '6th',
-  era: 'CE',
-  year: '1993',
-};
+const DATE_FORMAT_PREVIEW:
+  Record<DateFormatField, string> = {
+    monthName: 'October',
+    monthNumber: '10th',
+    weekDay: 'Wednesday',
+    dayNumber: '6th',
+    era: 'CE',
+    year: '1993',
+  };
 
-function formatDatePreview(format: string): string
+function formatDatePreview(
+  format: string
+): string
 {
   return DATE_FORMAT_FIELDS.reduce(
     (result, field) =>
@@ -162,13 +219,39 @@ function formatDatePreview(format: string): string
   );
 }
 
+export type SimClockOverlayController =
+  ReturnType<typeof useSimClockOverlay>;
+
 export function useSimClockOverlay()
 {
+    const [committedTime, setCommittedTime] =
+    useState<SimulationTime>(
+      simulationClockService.getTime()
+    );
+
+  const [pendingTime, setPendingTime] =
+    useState<SimulationTime>(
+      simulationClockService.getTime()
+    );
+
+  useEffect(() =>
+  {
+    return simulationClockService.subscribe(
+      (time) =>
+      {
+        setCommittedTime(time);
+        setPendingTime(time);
+      }
+    );
+  }, []);
+
   const [settingsOpen, setSettingsOpen] =
     useState(false);
 
   const [settings, setSettings] =
-    useState<SimClockSettings>(DEFAULT_SETTINGS);
+    useState<SimClockSettings>(
+      DEFAULT_SETTINGS
+    );
 
   const activeEra =
     settings.eras.find(
@@ -197,13 +280,24 @@ export function useSimClockOverlay()
     }));
   };
 
-  return {
+  const commitPendingTime = () =>
+  {
+    simulationClockService.setTime(
+      pendingTime
+    );
+  };
+
+    return {
     settingsOpen,
     setSettingsOpen,
     settings,
     setSettings,
     activeEra,
     updateActiveEra,
+    committedTime,
+    pendingTime,
+    setPendingTime,
+    commitPendingTime,
   };
 }
 
@@ -213,7 +307,7 @@ export type SimClockOverlayController =
 interface SimClockOverlayProps
 {
   controller: SimClockOverlayController;
-  placement: OverlayPlacement;
+  placement?: OverlayPlacement;
 }
 
 export function SimClockOverlay({
@@ -222,14 +316,17 @@ export function SimClockOverlay({
 }: SimClockOverlayProps)
 {
   const activeEra = controller.activeEra;
-  if (!activeEra)
-    return null;
 
   const [dateFormatField, setDateFormatField] =
-    useState<DateFormatField>('monthName');
+    useState<DateFormatField>(
+      'monthName'
+    );
 
   const dateFormatInputRef =
     useRef<HTMLInputElement>(null);
+
+  if (!activeEra)
+    return null;
 
   const addDateFormatField = () =>
   {
@@ -241,9 +338,11 @@ export function SimClockOverlay({
     if (!field)
       return;
 
-    const input = dateFormatInputRef.current;
+    const input =
+      dateFormatInputRef.current;
+
     const currentFormat =
-      controller.settings.dateFormat;
+      activeEra.dateFormat;
 
     const start =
       input?.selectionStart ??
@@ -258,16 +357,19 @@ export function SimClockOverlay({
       field.token +
       currentFormat.slice(end);
 
-    controller.setSettings((current) => ({
-      ...current,
-      dateFormat,
-    }));
+    controller.updateActiveEra(
+      (current) => ({
+        ...current,
+        dateFormat,
+      })
+    );
 
     requestAnimationFrame(() => {
       const nextPosition =
         start + field.token.length;
 
       input?.focus();
+
       input?.setSelectionRange(
         nextPosition,
         nextPosition
@@ -277,9 +379,12 @@ export function SimClockOverlay({
 
   return (
     <>
-      <SimClockSurface
-        placement={placement}
-      />
+      {placement && (
+        <SimClockSurface
+            placement={placement}
+            controller={controller}
+        />
+      )}
 
       {controller.settingsOpen && (
         <div className="dialog-backdrop">
@@ -296,47 +401,56 @@ export function SimClockOverlay({
                 <div className="sim-clock-settings-column">
                   <div className="sim-clock-basic-settings">
                     <label>
-  <span>Seconds per Minute</span>
-
-  <input
-    type="number"
-    min="1"
-    value={
-      controller.settings.secondsPerMinute
-    }
-    onChange={(event) => {
-      const secondsPerMinute =
-        Math.max(
-          1,
-          Number(event.target.value)
-        );
-
-      controller.setSettings(
-        (current) => ({
-          ...current,
-          secondsPerMinute,
-        })
-      );
-    }}
-  />
-</label>
-                    <label>
-                      <span>Minutes per Hour</span>
+                      <span>
+                        Seconds per Minute
+                      </span>
 
                       <input
                         type="number"
                         min="1"
                         value={
-                          controller.settings.minutesPerHour
+                          activeEra.secondsPerMinute
+                        }
+                        onChange={(event) => {
+                          const secondsPerMinute =
+                            Math.max(
+                              1,
+                              Number(
+                                event.target.value
+                              )
+                            );
+
+                          controller.updateActiveEra(
+                            (current) => ({
+                              ...current,
+                              secondsPerMinute,
+                            })
+                          );
+                        }}
+                      />
+                    </label>
+
+                    <label>
+                      <span>
+                        Minutes per Hour
+                      </span>
+
+                      <input
+                        type="number"
+                        min="1"
+                        value={
+                          activeEra.minutesPerHour
                         }
                         onChange={(event) => {
                           const minutesPerHour =
                             Math.max(
                               1,
-                              Number(event.target.value)
+                              Number(
+                                event.target.value
+                              )
                             );
 
-                          controller.setSettings(
+                          controller.updateActiveEra(
                             (current) => ({
                               ...current,
                               minutesPerHour,
@@ -347,22 +461,26 @@ export function SimClockOverlay({
                     </label>
 
                     <label>
-                      <span>Hours per Day</span>
+                      <span>
+                        Hours per Day
+                      </span>
 
                       <input
                         type="number"
                         min="1"
                         value={
-                          controller.settings.hoursPerDay
+                          activeEra.hoursPerDay
                         }
                         onChange={(event) => {
                           const hoursPerDay =
                             Math.max(
                               1,
-                              Number(event.target.value)
+                              Number(
+                                event.target.value
+                              )
                             );
 
-                          controller.setSettings(
+                          controller.updateActiveEra(
                             (current) => ({
                               ...current,
                               hoursPerDay,
@@ -378,24 +496,33 @@ export function SimClockOverlay({
                       <input
                         type="checkbox"
                         checked={
-                          controller.settings.leapRule !==
+                          activeEra.leapRule !==
                           undefined
                         }
                         onChange={(event) => {
                           const enabled =
                             event.target.checked;
 
-                          controller.setSettings(
+                          controller.updateActiveEra(
                             (current) => ({
                               ...current,
+
                               leapRule: enabled
                                 ? {
                                     interval: 4,
+
                                     monthId:
-                                      current.months[0].id,
+                                      current
+                                        .months[0]
+                                        .id,
+
                                     afterDay:
-                                      current.months[0].days,
-                                    additionalDays: 1,
+                                      current
+                                        .months[0]
+                                        .days,
+
+                                    additionalDays:
+                                      1,
                                   }
                                 : undefined,
                             })
@@ -403,10 +530,12 @@ export function SimClockOverlay({
                         }}
                       />
 
-                      <strong>Leap Day</strong>
+                      <strong>
+                        Leap Day
+                      </strong>
                     </label>
 
-                    {controller.settings.leapRule && (
+                    {activeEra.leapRule && (
                       <div className="sim-clock-leap-settings">
                         <label>
                           <span>Every</span>
@@ -416,25 +545,35 @@ export function SimClockOverlay({
                               type="number"
                               min="1"
                               value={
-                                controller.settings
-                                  .leapRule.interval
+                                activeEra
+                                  .leapRule
+                                  .interval
                               }
-                              onChange={(event) => {
+                              onChange={(
+                                event
+                              ) => {
                                 const interval =
                                   Math.max(
                                     1,
                                     Number(
-                                      event.target.value
+                                      event
+                                        .target
+                                        .value
                                     )
                                   );
 
-                                controller.setSettings(
-                                  (current) => ({
+                                controller.updateActiveEra(
+                                  (
+                                    current
+                                  ) => ({
                                     ...current,
+
                                     leapRule:
-                                      current.leapRule
+                                      current
+                                        .leapRule
                                         ? {
-                                            ...current.leapRule,
+                                            ...current
+                                              .leapRule,
                                             interval,
                                           }
                                         : undefined,
@@ -443,7 +582,9 @@ export function SimClockOverlay({
                               }}
                             />
 
-                            <span>years</span>
+                            <span>
+                              years
+                            </span>
                           </div>
                         </label>
 
@@ -452,20 +593,30 @@ export function SimClockOverlay({
 
                           <select
                             value={
-                              controller.settings
-                                .leapRule.monthId
+                              activeEra
+                                .leapRule
+                                .monthId
                             }
-                            onChange={(event) => {
+                            onChange={(
+                              event
+                            ) => {
                               const monthId =
-                                event.target.value;
+                                event
+                                  .target
+                                  .value;
 
-                              controller.setSettings(
-                                (current) => ({
+                              controller.updateActiveEra(
+                                (
+                                  current
+                                ) => ({
                                   ...current,
+
                                   leapRule:
-                                    current.leapRule
+                                    current
+                                      .leapRule
                                       ? {
-                                          ...current.leapRule,
+                                          ...current
+                                            .leapRule,
                                           monthId,
                                         }
                                       : undefined,
@@ -473,13 +624,19 @@ export function SimClockOverlay({
                               );
                             }}
                           >
-                            {controller.settings.months.map(
+                            {activeEra.months.map(
                               (month) => (
                                 <option
-                                  key={month.id}
-                                  value={month.id}
+                                  key={
+                                    month.id
+                                  }
+                                  value={
+                                    month.id
+                                  }
                                 >
-                                  {month.name}
+                                  {
+                                    month.name
+                                  }
                                 </option>
                               )
                             )}
@@ -487,31 +644,43 @@ export function SimClockOverlay({
                         </label>
 
                         <label>
-                          <span>After Day</span>
+                          <span>
+                            After Day
+                          </span>
 
                           <input
                             type="number"
                             min="1"
                             value={
-                              controller.settings
-                                .leapRule.afterDay
+                              activeEra
+                                .leapRule
+                                .afterDay
                             }
-                            onChange={(event) => {
+                            onChange={(
+                              event
+                            ) => {
                               const afterDay =
                                 Math.max(
                                   1,
                                   Number(
-                                    event.target.value
+                                    event
+                                      .target
+                                      .value
                                   )
                                 );
 
-                              controller.setSettings(
-                                (current) => ({
+                              controller.updateActiveEra(
+                                (
+                                  current
+                                ) => ({
                                   ...current,
+
                                   leapRule:
-                                    current.leapRule
+                                    current
+                                      .leapRule
                                       ? {
-                                          ...current.leapRule,
+                                          ...current
+                                            .leapRule,
                                           afterDay,
                                         }
                                       : undefined,
@@ -522,31 +691,43 @@ export function SimClockOverlay({
                         </label>
 
                         <label>
-                          <span>Additional Days</span>
+                          <span>
+                            Additional Days
+                          </span>
 
                           <input
                             type="number"
                             min="1"
                             value={
-                              controller.settings
-                                .leapRule.additionalDays
+                              activeEra
+                                .leapRule
+                                .additionalDays
                             }
-                            onChange={(event) => {
+                            onChange={(
+                              event
+                            ) => {
                               const additionalDays =
                                 Math.max(
                                   1,
                                   Number(
-                                    event.target.value
+                                    event
+                                      .target
+                                      .value
                                   )
                                 );
 
-                              controller.setSettings(
-                                (current) => ({
+                              controller.updateActiveEra(
+                                (
+                                  current
+                                ) => ({
                                   ...current,
+
                                   leapRule:
-                                    current.leapRule
+                                    current
+                                      .leapRule
                                       ? {
-                                          ...current.leapRule,
+                                          ...current
+                                            .leapRule,
                                           additionalDays,
                                         }
                                       : undefined,
@@ -570,13 +751,17 @@ export function SimClockOverlay({
                       <button
                         type="button"
                         onClick={() =>
-                          controller.setSettings(
+                          controller.updateActiveEra(
                             (current) => ({
                               ...current,
+
                               dayNames: [
                                 ...current.dayNames,
+
                                 `Day ${
-                                  current.dayNames.length + 1
+                                  current
+                                    .dayNames
+                                    .length + 1
                                 }`,
                               ],
                             })
@@ -588,33 +773,47 @@ export function SimClockOverlay({
                     </div>
 
                     <div className="sim-clock-day-list">
-                      {controller.settings.dayNames.map(
-                        (dayName, index) => (
+                      {activeEra.dayNames.map(
+                        (
+                          dayName,
+                          index
+                        ) => (
                           <div
                             key={index}
                             className="sim-clock-settings-row"
                           >
                             <input
                               type="text"
-                              value={dayName}
-                              onChange={(event) => {
+                              value={
+                                dayName
+                              }
+                              onChange={(
+                                event
+                              ) => {
                                 const name =
-                                  event.target.value;
+                                  event
+                                    .target
+                                    .value;
 
-                                controller.setSettings(
-                                  (current) => ({
+                                controller.updateActiveEra(
+                                  (
+                                    current
+                                  ) => ({
                                     ...current,
+
                                     dayNames:
-                                      current.dayNames.map(
-                                        (
-                                          currentName,
-                                          currentIndex
-                                        ) =>
-                                          currentIndex ===
-                                          index
-                                            ? name
-                                            : currentName
-                                      ),
+                                      current
+                                        .dayNames
+                                        .map(
+                                          (
+                                            currentName,
+                                            currentIndex
+                                          ) =>
+                                            currentIndex ===
+                                            index
+                                              ? name
+                                              : currentName
+                                        ),
                                   })
                                 );
                               }}
@@ -623,23 +822,42 @@ export function SimClockOverlay({
                             <button
                               type="button"
                               disabled={
-                                controller.settings
-                                  .dayNames.length <= 1
+                                activeEra
+                                  .dayNames
+                                  .length <= 1
                               }
                               onClick={() =>
-                                controller.setSettings(
-                                  (current) => ({
-                                    ...current,
-                                    dayNames:
-                                      current.dayNames.filter(
-                                        (
-                                          _,
-                                          currentIndex
-                                        ) =>
-                                          currentIndex !==
-                                          index
-                                      ),
-                                  })
+                                controller.updateActiveEra(
+                                  (
+                                    current
+                                  ) => {
+                                    const dayNames =
+                                      current
+                                        .dayNames
+                                        .filter(
+                                          (
+                                            _,
+                                            currentIndex
+                                          ) =>
+                                            currentIndex !==
+                                            index
+                                        );
+
+                                    const startingWeekday =
+                                      dayNames.includes(
+                                        current
+                                          .startingWeekday
+                                      )
+                                        ? current
+                                            .startingWeekday
+                                        : dayNames[0];
+
+                                    return {
+                                      ...current,
+                                      dayNames,
+                                      startingWeekday,
+                                    };
+                                  }
                                 )
                               }
                             >
@@ -657,24 +875,32 @@ export function SimClockOverlay({
                 <div className="sim-clock-settings-column">
                   <div className="sim-clock-settings-list">
                     <div className="sim-clock-list-header">
-                      <strong>Months</strong>
+                      <strong>
+                        Months
+                      </strong>
 
                       <button
                         type="button"
                         onClick={() =>
-                          controller.setSettings(
+                          controller.updateActiveEra(
                             (current) => ({
                               ...current,
+
                               months: [
                                 ...current.months,
+
                                 {
                                   id:
                                     crypto.randomUUID(),
+
                                   name:
                                     `Month ${
-                                      current.months.length +
+                                      current
+                                        .months
+                                        .length +
                                       1
                                     }`,
+
                                   days: 30,
                                 },
                               ],
@@ -687,7 +913,7 @@ export function SimClockOverlay({
                     </div>
 
                     <div className="sim-clock-month-list">
-                      {controller.settings.months.map(
+                      {activeEra.months.map(
                         (month) => (
                           <div
                             key={month.id}
@@ -695,25 +921,39 @@ export function SimClockOverlay({
                           >
                             <input
                               type="text"
-                              value={month.name}
-                              onChange={(event) => {
+                              value={
+                                month.name
+                              }
+                              onChange={(
+                                event
+                              ) => {
                                 const name =
-                                  event.target.value;
+                                  event
+                                    .target
+                                    .value;
 
-                                controller.setSettings(
-                                  (current) => ({
+                                controller.updateActiveEra(
+                                  (
+                                    current
+                                  ) => ({
                                     ...current,
+
                                     months:
-                                      current.months.map(
-                                        (currentMonth) =>
-                                          currentMonth.id ===
-                                          month.id
-                                            ? {
-                                                ...currentMonth,
-                                                name,
-                                              }
-                                            : currentMonth
-                                      ),
+                                      current
+                                        .months
+                                        .map(
+                                          (
+                                            currentMonth
+                                          ) =>
+                                            currentMonth
+                                              .id ===
+                                            month.id
+                                              ? {
+                                                  ...currentMonth,
+                                                  name,
+                                                }
+                                              : currentMonth
+                                        ),
                                   })
                                 );
                               }}
@@ -723,30 +963,44 @@ export function SimClockOverlay({
                               type="number"
                               min="1"
                               title="Days"
-                              value={month.days}
-                              onChange={(event) => {
+                              value={
+                                month.days
+                              }
+                              onChange={(
+                                event
+                              ) => {
                                 const days =
                                   Math.max(
                                     1,
                                     Number(
-                                      event.target.value
+                                      event
+                                        .target
+                                        .value
                                     )
                                   );
 
-                                controller.setSettings(
-                                  (current) => ({
+                                controller.updateActiveEra(
+                                  (
+                                    current
+                                  ) => ({
                                     ...current,
+
                                     months:
-                                      current.months.map(
-                                        (currentMonth) =>
-                                          currentMonth.id ===
-                                          month.id
-                                            ? {
-                                                ...currentMonth,
-                                                days,
-                                              }
-                                            : currentMonth
-                                      ),
+                                      current
+                                        .months
+                                        .map(
+                                          (
+                                            currentMonth
+                                          ) =>
+                                            currentMonth
+                                              .id ===
+                                            month.id
+                                              ? {
+                                                  ...currentMonth,
+                                                  days,
+                                                }
+                                              : currentMonth
+                                        ),
                                   })
                                 );
                               }}
@@ -755,25 +1009,37 @@ export function SimClockOverlay({
                             <button
                               type="button"
                               disabled={
-                                controller.settings
-                                  .months.length <= 1
+                                activeEra
+                                  .months
+                                  .length <= 1
                               }
                               onClick={() =>
-                                controller.setSettings(
-                                  (current) => ({
+                                controller.updateActiveEra(
+                                  (
+                                    current
+                                  ) => ({
                                     ...current,
+
                                     months:
-                                      current.months.filter(
-                                        (currentMonth) =>
-                                          currentMonth.id !==
-                                          month.id
-                                      ),
+                                      current
+                                        .months
+                                        .filter(
+                                          (
+                                            currentMonth
+                                          ) =>
+                                            currentMonth
+                                              .id !==
+                                            month.id
+                                        ),
+
                                     leapRule:
-                                      current.leapRule
+                                      current
+                                        .leapRule
                                         ?.monthId ===
                                       month.id
                                         ? undefined
-                                        : current.leapRule,
+                                        : current
+                                            .leapRule,
                                   })
                                 )
                               }
@@ -789,11 +1055,11 @@ export function SimClockOverlay({
               </div>
             </div>
 
-            {/* RECKONING / DISPLAY */}
+            {/* ERA / DISPLAY */}
 
             <div className="sim-clock-settings-secondary">
               <div className="sim-clock-settings-column">
-                <h3>Reckoning</h3>
+                <h3>Era</h3>
 
                 <div className="sim-clock-reckoning-settings">
                   <label>
@@ -802,20 +1068,18 @@ export function SimClockOverlay({
                     <input
                       type="text"
                       value={
-                        controller.settings
-                          .reckoning.name
+                        activeEra.name
                       }
-                      onChange={(event) => {
+                      onChange={(
+                        event
+                      ) => {
                         const name =
                           event.target.value;
 
-                        controller.setSettings(
+                        controller.updateActiveEra(
                           (current) => ({
                             ...current,
-                            reckoning: {
-                              ...current.reckoning,
-                              name,
-                            },
+                            name,
                           })
                         );
                       }}
@@ -823,25 +1087,25 @@ export function SimClockOverlay({
                   </label>
 
                   <label>
-                    <span>Abbreviation</span>
+                    <span>
+                      Abbreviation
+                    </span>
 
                     <input
                       type="text"
                       value={
-                        controller.settings
-                          .reckoning.abbreviation
+                        activeEra.abbreviation
                       }
-                      onChange={(event) => {
+                      onChange={(
+                        event
+                      ) => {
                         const abbreviation =
                           event.target.value;
 
-                        controller.setSettings(
+                        controller.updateActiveEra(
                           (current) => ({
                             ...current,
-                            reckoning: {
-                              ...current.reckoning,
-                              abbreviation,
-                            },
+                            abbreviation,
                           })
                         );
                       }}
@@ -849,31 +1113,39 @@ export function SimClockOverlay({
                   </label>
 
                   <label>
-                    <span>Year Offset</span>
+                    <span>
+                      Starting Weekday
+                    </span>
 
-                    <input
-                      type="number"
+                    <select
                       value={
-                        controller.settings
-                          .reckoning.yearOffset
+                        activeEra.startingWeekday
                       }
-                      onChange={(event) => {
-                        const yearOffset =
-                          Number(
-                            event.target.value
-                          );
+                      onChange={(
+                        event
+                      ) => {
+                        const startingWeekday =
+                          event.target.value;
 
-                        controller.setSettings(
+                        controller.updateActiveEra(
                           (current) => ({
                             ...current,
-                            reckoning: {
-                              ...current.reckoning,
-                              yearOffset,
-                            },
+                            startingWeekday,
                           })
                         );
                       }}
-                    />
+                    >
+                      {activeEra.dayNames.map(
+                        (dayName) => (
+                          <option
+                            key={dayName}
+                            value={dayName}
+                          >
+                            {dayName}
+                          </option>
+                        )
+                      )}
+                    </select>
                   </label>
                 </div>
               </div>
@@ -882,96 +1154,128 @@ export function SimClockOverlay({
                 <h3>Display</h3>
 
                 <div className="sim-clock-display-settings">
-  <div className="sim-clock-date-format-settings">
-    <label>
-      <span>Date Format</span>
+                  <div className="sim-clock-date-format-settings">
+                    <label>
+                      <span>
+                        Date Format
+                      </span>
 
-      <input
-        ref={dateFormatInputRef}
-        type="text"
-        value={
-          controller.settings.dateFormat
-        }
-        onChange={(event) => {
-          const dateFormat =
-            event.target.value;
+                      <input
+                        ref={
+                          dateFormatInputRef
+                        }
+                        type="text"
+                        value={
+                          activeEra.dateFormat
+                        }
+                        onChange={(
+                          event
+                        ) => {
+                          const dateFormat =
+                            event
+                              .target
+                              .value;
 
-          controller.setSettings(
-            (current) => ({
-              ...current,
-              dateFormat,
-            })
-          );
-        }}
-      />
-    </label>
+                          controller.updateActiveEra(
+                            (
+                              current
+                            ) => ({
+                              ...current,
+                              dateFormat,
+                            })
+                          );
+                        }}
+                      />
+                    </label>
 
-    <div className="sim-clock-format-builder">
-      <select
-        value={dateFormatField}
-        onChange={(event) =>
-          setDateFormatField(
-            event.target.value as
-              DateFormatField
-          )
-        }
-      >
-        {DATE_FORMAT_FIELDS.map((field) => (
-          <option
-            key={field.value}
-            value={field.value}
-          >
-            {field.label}
-          </option>
-        ))}
-      </select>
+                    <div className="sim-clock-format-builder">
+                      <select
+                        value={
+                          dateFormatField
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setDateFormatField(
+                            event
+                              .target
+                              .value as
+                              DateFormatField
+                          )
+                        }
+                      >
+                        {DATE_FORMAT_FIELDS.map(
+                          (field) => (
+                            <option
+                              key={
+                                field.value
+                              }
+                              value={
+                                field.value
+                              }
+                            >
+                              {
+                                field.label
+                              }
+                            </option>
+                          )
+                        )}
+                      </select>
 
-      <button
-        type="button"
-        onClick={addDateFormatField}
-      >
-        Add
-        </button>
+                      <button
+                        type="button"
+                        onClick={
+                          addDateFormatField
+                        }
+                      >
+                        Add
+                      </button>
 
-  <div className="sim-clock-format-preview">
-    {formatDatePreview(
-      controller.settings.dateFormat
-    )}
-  </div>
-</div>
-  </div>
+                      <div className="sim-clock-format-preview">
+                        {formatDatePreview(
+                          activeEra.dateFormat
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-  <label>
-    <span>Time Format</span>
+                  <label>
+                    <span>
+                      Time Format
+                    </span>
 
-    <select
-      value={
-        controller.settings.timeFormat
-      }
-      onChange={(event) => {
-        const timeFormat =
-          event.target.value as
-            | '12-hour'
-            | '24-hour';
+                    <select
+                      value={
+                        activeEra.timeFormat
+                      }
+                      onChange={(
+                        event
+                      ) => {
+                        const timeFormat =
+                          event
+                            .target
+                            .value as
+                            | '12-hour'
+                            | '24-hour';
 
-        controller.setSettings(
-          (current) => ({
-            ...current,
-            timeFormat,
-          })
-        );
-      }}
-    >
-      <option value="12-hour">
-        12-hour
-      </option>
+                        controller.updateActiveEra(
+                          (current) => ({
+                            ...current,
+                            timeFormat,
+                          })
+                        );
+                      }}
+                    >
+                      <option value="12-hour">
+                        12-hour
+                      </option>
 
-      <option value="24-hour">
-        24-hour
-      </option>
-    </select>
-  </label>
-</div>
+                      <option value="24-hour">
+                        24-hour
+                      </option>
+                    </select>
+                  </label>
+                </div>
               </div>
             </div>
 
