@@ -1,12 +1,94 @@
-import type {
-  RulesetDefinition,
-} from '../../RulesetDefinition';
+import type { RulesetDefinition } from '../../RulesetDefinition';
 
-export const SRD_521_RULESET_ID =
-  'srd-5.2.1';
+interface TravelTimeInput
+{
+  distance: {
+    value: number;
+    unit:
+      | 'feet'
+      | 'miles'
+      | 'meters'
+      | 'kilometers';
+  };
+  pace:
+    | 'slow'
+    | 'medium'
+    | 'fast';
+  movementSpeed?: number;
+}
 
-export const SRD_521_RULESET_VERSION =
-  '0.1.0';
+interface TravelTimeOutput
+{
+  duration: number;
+  speedMph: number;
+}
+
+export const SRD_521_RULESET_ID = 'srd-5.2.1';
+
+function distanceToMiles(
+  value: number,
+  unit: TravelTimeInput['distance']['unit']
+): number
+{
+  switch (unit)
+  {
+    case 'feet':
+      return value / 5280;
+
+    case 'miles':
+      return value;
+
+    case 'meters':
+      return value / 1609.344;
+
+    case 'kilometers':
+      return value / 1.609344;
+  }
+}
+
+function calculateTravelTime(
+  input: TravelTimeInput
+): TravelTimeOutput
+{
+  const movementSpeed =
+    input.movementSpeed ?? 30;
+
+  const normalSpeedMph =
+    movementSpeed / 10;
+
+  const paceMultiplier =
+    input.pace === 'slow'
+      ? 2 / 3
+      : input.pace === 'fast'
+        ? 4 / 3
+        : 1;
+
+  const speedMph =
+    normalSpeedMph * paceMultiplier;
+
+  const distanceMiles =
+    distanceToMiles(
+      input.distance.value,
+      input.distance.unit
+    );
+
+  const duration =
+    Math.max(
+      0,
+      Math.round(
+        (distanceMiles / speedMph) *
+        60 *
+        60
+      )
+    );
+
+  return {
+    duration,
+    speedMph,
+  };
+}
+
+export const SRD_521_RULESET_VERSION = '0.1.0';
 
 export const srd521Ruleset:
   RulesetDefinition = {
@@ -23,6 +105,36 @@ export const srd521Ruleset:
       'SettingForge rules implementation based on SRD 5.2.1.',
 
     requirements: [],
+
+    functions: [
+  {
+    id: 'TravelTime',
+
+    handler: (context) =>
+    {
+      const input =
+        context.input as
+          TravelTimeInput;
+
+      if (
+        !input?.distance ||
+        !Number.isFinite(
+          input.distance.value
+        ) ||
+        input.distance.value < 0
+      )
+      {
+        throw new Error(
+          'TravelTime requires a valid distance.'
+        );
+      }
+
+      return calculateTravelTime(
+        input
+      );
+    },
+  },
+],
 
     interactions: [
     {
