@@ -32,14 +32,76 @@ export interface SimClockEra
   dateFormat: string;
 }
 
+export type SimClockProgressUnit =
+  | 'minutes'
+  | 'hours'
+  | 'days'
+  | 'weeks'
+  | 'months'
+  | 'years';
+
+export type SimClockMarker =
+  | 'sunrise'
+  | 'noon'
+  | 'sunset'
+  | 'midnight';
+
+export interface SimClockProgressPreset
+{
+  name: string;
+  amount: number;
+  unit: SimClockProgressUnit;
+}
+
+export interface SimClockMarkers
+{
+  sunriseHour: number;
+  noonHour: number;
+  sunsetHour: number;
+  midnightHour: number;
+}
+
 export interface SimClockSettings
 {
   eras: SimClockEra[];
   activeEraId: string;
+
+  progressPresets: SimClockProgressPreset[];
+  markers: SimClockMarkers;
 }
 
 export const DEFAULT_SIM_CLOCK_SETTINGS: SimClockSettings = {
   activeEraId: 'common-era',
+
+  progressPresets: [
+    {
+      name: 'Custom',
+      amount: 1,
+      unit: 'minutes',
+    },
+    {
+      name: 'Custom',
+      amount: 1,
+      unit: 'minutes',
+    },
+    {
+      name: 'Custom',
+      amount: 1,
+      unit: 'minutes',
+    },
+    {
+      name: 'Custom',
+      amount: 1,
+      unit: 'minutes',
+    },
+  ],
+
+  markers: {
+    sunriseHour: 7,
+    noonHour: 12,
+    sunsetHour: 19,
+    midnightHour: 0,
+  },
 
   eras: [
     {

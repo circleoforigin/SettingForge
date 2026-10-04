@@ -1003,8 +1003,18 @@ body,
   order: 2;
 }
 
+.sim-clock-surface[data-edge='top']
+.sim-clock-progression {
+  order: 1;
+}
+
 .sim-clock-surface[data-edge='bottom']
 .sim-clock-weekday {
+  order: -2;
+}
+
+.sim-clock-surface[data-edge='bottom']
+.sim-clock-progression {
   order: -1;
 }
 

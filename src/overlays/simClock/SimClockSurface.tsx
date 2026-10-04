@@ -3,6 +3,10 @@ import type { OverlaySurfaceProps } from '../OverlayDefinition';
 import { SimClockValueControl } from './SimClockValueControl';
 import { OVERLAY_PLACEMENTS } from '../OverlayPlacement';
 import type { SimClockOverlayController } from './SimClockOverlay';
+import type {
+  SimClockMarker,
+  SimClockProgressUnit,
+} from '../../simulation/SimClockSettings';
 import {
   formatSimulationDate,
   formatSimulationTime,
@@ -16,49 +20,6 @@ interface SimClockSurfaceProps
 }
 
 type SimClockStage = 'collapsed' | 'go-to' | 'progression';
-type SimClockProgressUnit =
-  | 'minutes'
-  | 'hours'
-  | 'days'
-  | 'weeks'
-  | 'months'
-  | 'years';
-
-type SimClockMarker =
-  | 'sunrise'
-  | 'noon'
-  | 'sunset'
-  | 'midnight';
-
-interface SimClockProgressPreset
-{
-  name: string;
-  amount: number;
-  unit: SimClockProgressUnit;
-}
-
-const DEFAULT_PROGRESS_PRESETS: SimClockProgressPreset[] = [
-  {
-    name: 'Custom',
-    amount: 1,
-    unit: 'minutes',
-  },
-  {
-    name: 'Custom',
-    amount: 1,
-    unit: 'minutes',
-  },
-  {
-    name: 'Custom',
-    amount: 1,
-    unit: 'minutes',
-  },
-  {
-    name: 'Custom',
-    amount: 1,
-    unit: 'minutes',
-  },
-];
 
 export function SimClockSurface({
   placement,
@@ -69,32 +30,7 @@ export function SimClockSurface({
 const [progressPresetIndex, setProgressPresetIndex] =
   useState(0);
 
-const [progressPresets, setProgressPresets] =
-  useState<SimClockProgressPreset[]>(
-    () => structuredClone(DEFAULT_PROGRESS_PRESETS)
-  );
-
-const [marker, setMarker] =
-  useState<SimClockMarker>('sunrise');
-
-const progressPreset =
-  progressPresets[progressPresetIndex];
-
-const updateProgressPreset = (
-  update: Partial<SimClockProgressPreset>
-) =>
-{
-  setProgressPresets((current) =>
-    current.map((preset, index) =>
-      index === progressPresetIndex
-        ? {
-            ...preset,
-            ...update,
-          }
-        : preset
-    )
-  );
-};
+const [marker, setMarker] = useState<SimClockMarker>('sunrise');
 
 const stepProgressPreset = (
   direction: 1 | -1
@@ -104,13 +40,19 @@ const stepProgressPreset = (
     (
       current +
       direction +
-      progressPresets.length
-    ) % progressPresets.length
+      controller!.settings.progressPresets.length
+    ) %
+    controller!.settings.progressPresets.length
   );
 };
 
   if (!controller)
     return null;
+
+  const progressPreset =
+  controller?.settings.progressPresets[
+    progressPresetIndex
+  ];
 
   const calendar =
     simulationTimeToCalendar(
@@ -183,6 +125,15 @@ const stepProgressPreset = (
   const resolvedPlacement =
     OVERLAY_PLACEMENTS[placement.index];
 
+  const stageHandleGlyph =
+    resolvedPlacement.edge === 'top'
+        ? stage === 'progression'
+            ? '▲'
+            : '▼'
+        : stage === 'progression'
+            ? '▼'
+            : '▲';
+
   return (
     <div
       className="sim-clock-surface"
@@ -213,7 +164,7 @@ const stepProgressPreset = (
       className="sim-clock-stage-handle sim-clock-stage-handle-left"
       onClick={() => setStage(stage === 'progression' ? 'go-to' : 'progression')}
     >
-      {stage === 'progression' ? '▲' : '▼'}
+      {stageHandleGlyph}
     </button>
 
     {clockFields.map((field) => (
@@ -272,7 +223,7 @@ const stepProgressPreset = (
   className="sim-clock-stage-handle sim-clock-stage-handle-right"
   onClick={() => setStage(stage === 'progression' ? 'go-to' : 'progression')}
 >
-  {stage === 'progression' ? '▲' : '▼'}
+  {stageHandleGlyph}
 </button>
 
 <button
@@ -291,7 +242,9 @@ const stepProgressPreset = (
           className="sim-clock-progress-name"
           value={progressPreset.name}
           onChange={(event) =>
-            updateProgressPreset({
+            controller.updateProgressPreset(
+            progressPresetIndex,
+            {
               name: event.target.value,
             })
           }
@@ -332,7 +285,9 @@ const stepProgressPreset = (
           max="999"
           value={progressPreset.amount}
           onChange={(event) =>
-            updateProgressPreset({
+            controller.updateProgressPreset(
+                progressPresetIndex,
+                {
               amount: Math.max(
                 1,
                 Math.min(
@@ -347,7 +302,9 @@ const stepProgressPreset = (
         <select
           value={progressPreset.unit}
           onChange={(event) =>
-            updateProgressPreset({
+            controller.updateProgressPreset(
+                progressPresetIndex,
+                {
               unit:
                 event.target.value as
                 SimClockProgressUnit,
