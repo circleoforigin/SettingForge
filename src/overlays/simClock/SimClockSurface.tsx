@@ -16,6 +16,49 @@ interface SimClockSurfaceProps
 }
 
 type SimClockStage = 'collapsed' | 'go-to' | 'progression';
+type SimClockProgressUnit =
+  | 'minutes'
+  | 'hours'
+  | 'days'
+  | 'weeks'
+  | 'months'
+  | 'years';
+
+type SimClockMarker =
+  | 'sunrise'
+  | 'noon'
+  | 'sunset'
+  | 'midnight';
+
+interface SimClockProgressPreset
+{
+  name: string;
+  amount: number;
+  unit: SimClockProgressUnit;
+}
+
+const DEFAULT_PROGRESS_PRESETS: SimClockProgressPreset[] = [
+  {
+    name: 'Custom',
+    amount: 1,
+    unit: 'minutes',
+  },
+  {
+    name: 'Custom',
+    amount: 1,
+    unit: 'minutes',
+  },
+  {
+    name: 'Custom',
+    amount: 1,
+    unit: 'minutes',
+  },
+  {
+    name: 'Custom',
+    amount: 1,
+    unit: 'minutes',
+  },
+];
 
 export function SimClockSurface({
   placement,
@@ -23,6 +66,48 @@ export function SimClockSurface({
 }: SimClockSurfaceProps)
 {
   const [stage, setStage] = useState<SimClockStage>('collapsed');
+const [progressPresetIndex, setProgressPresetIndex] =
+  useState(0);
+
+const [progressPresets, setProgressPresets] =
+  useState<SimClockProgressPreset[]>(
+    () => structuredClone(DEFAULT_PROGRESS_PRESETS)
+  );
+
+const [marker, setMarker] =
+  useState<SimClockMarker>('sunrise');
+
+const progressPreset =
+  progressPresets[progressPresetIndex];
+
+const updateProgressPreset = (
+  update: Partial<SimClockProgressPreset>
+) =>
+{
+  setProgressPresets((current) =>
+    current.map((preset, index) =>
+      index === progressPresetIndex
+        ? {
+            ...preset,
+            ...update,
+          }
+        : preset
+    )
+  );
+};
+
+const stepProgressPreset = (
+  direction: 1 | -1
+) =>
+{
+  setProgressPresetIndex((current) =>
+    (
+      current +
+      direction +
+      progressPresets.length
+    ) % progressPresets.length
+  );
+};
 
   if (!controller)
     return null;
@@ -197,6 +282,120 @@ export function SimClockSurface({
           >
             {calendar.weekDay}
           </button>
+          {stage === 'progression' && (
+  <div className="sim-clock-progression">
+    <div className="sim-clock-progression-column">
+      <div className="sim-clock-progress-header">
+        <input
+          type="text"
+          className="sim-clock-progress-name"
+          value={progressPreset.name}
+          onChange={(event) =>
+            updateProgressPreset({
+              name: event.target.value,
+            })
+          }
+        />
+
+        <button
+          type="button"
+          className="sim-clock-progress-button"
+        >
+          Progress
+        </button>
+
+        <div className="sim-clock-progress-preset-arrows">
+          <button
+            type="button"
+            onClick={() =>
+              stepProgressPreset(1)
+            }
+          >
+            ▲
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              stepProgressPreset(-1)
+            }
+          >
+            ▼
+          </button>
+        </div>
+      </div>
+
+      <div className="sim-clock-progress-value">
+        <input
+          type="number"
+          min="1"
+          max="999"
+          value={progressPreset.amount}
+          onChange={(event) =>
+            updateProgressPreset({
+              amount: Math.max(
+                1,
+                Math.min(
+                  999,
+                  Number(event.target.value)
+                )
+              ),
+            })
+          }
+        />
+
+        <select
+          value={progressPreset.unit}
+          onChange={(event) =>
+            updateProgressPreset({
+              unit:
+                event.target.value as
+                SimClockProgressUnit,
+            })
+          }
+        >
+          <option value="minutes">Minutes</option>
+          <option value="hours">Hours</option>
+          <option value="days">Days</option>
+          <option value="weeks">Weeks</option>
+          <option value="months">Months</option>
+          <option value="years">Years</option>
+        </select>
+      </div>
+    </div>
+
+    <div className="sim-clock-progression-column">
+      <button type="button">
+        To Marker
+      </button>
+
+      <select
+        value={marker}
+        onChange={(event) =>
+          setMarker(
+            event.target.value as
+              SimClockMarker
+          )
+        }
+      >
+        <option value="sunrise">Sunrise</option>
+        <option value="noon">Noon</option>
+        <option value="sunset">Sunset</option>
+        <option value="midnight">Midnight</option>
+      </select>
+    </div>
+
+    <div className="sim-clock-progression-column sim-clock-progression-actions">
+      <button type="button">
+        Travel
+      </button>
+
+      <button type="button">
+        Real Time
+      </button>
+    </div>
+  </div>
+)}
         </div>
       )}
     </div>

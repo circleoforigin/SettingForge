@@ -106,22 +106,6 @@ interface SaveAllResult {
 type CloseTarget = 'world' | 'application';
 
 const TRANSIENT_NOTICE_DURATION_MS = 8000;
-const DROPDOWN_DISMISS_DISTANCE_PX = 36;
-
-function isPointerWithinGraceArea(
-  element: HTMLElement,
-  clientX: number,
-  clientY: number
-): boolean {
-  const rect = element.getBoundingClientRect();
-
-  return (
-    clientX >= rect.left - DROPDOWN_DISMISS_DISTANCE_PX &&
-    clientX <= rect.right + DROPDOWN_DISMISS_DISTANCE_PX &&
-    clientY >= rect.top - DROPDOWN_DISMISS_DISTANCE_PX &&
-    clientY <= rect.bottom + DROPDOWN_DISMISS_DISTANCE_PX
-  );
-}
 
 function App()
 {
@@ -373,102 +357,11 @@ loadQueueRef.current?.completeModule(
 };
 }, []);
   
-  const [fileMenuOpen, setFileMenuOpen] =
-    useState(false);
-
-  const [settingsMenuOpen, setSettingsMenuOpen] =
-    useState(false);
-
-  useEffect(() => {
-  if (!fileMenuOpen && !settingsMenuOpen) {
-    return;
-  }
-
-  const handlePointerMove = (
-    event: PointerEvent
-  ) => {
-    const openMenu =
-      fileMenuOpen
-        ? {
-            selector:
-              '[data-menu-group="file"]',
-
-            close: () =>
-              setFileMenuOpen(false),
-          }
-        : {
-            selector:
-              '[data-menu-group="settings"]',
-
-            close: () =>
-              setSettingsMenuOpen(false),
-          };
-
-    const menuGroup =
-      document.querySelector(
-        openMenu.selector
-      );
-
-    const dropdowns =
-      menuGroup?.querySelectorAll(
-        '.dropdown-menu'
-      );
-
-    if (
-      !(menuGroup instanceof HTMLElement) ||
-      !dropdowns
-    ) {
-      return;
-    }
-
-    const pointerIsNearButton =
-      isPointerWithinGraceArea(
-        menuGroup,
-        event.clientX,
-        event.clientY
-      );
-
-    const pointerIsNearDropdown =
-      Array.from(dropdowns).some(
-        (dropdown) =>
-          dropdown instanceof HTMLElement &&
-          isPointerWithinGraceArea(
-            dropdown,
-            event.clientX,
-            event.clientY
-          )
-      );
-
-    if (
-      !pointerIsNearButton &&
-      !pointerIsNearDropdown
-    ) {
-      openMenu.close();
-    }
-  };
-
-  window.addEventListener(
-    'pointermove',
-    handlePointerMove
-  );
-
-  return () => {
-    window.removeEventListener(
-      'pointermove',
-      handlePointerMove
-    );
-  };
-}, [
-  fileMenuOpen,
-  settingsMenuOpen,
-]);
-
+const [fileMenuOpen, setFileMenuOpen] = useState(false);
+const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
 const [activeWorld, setActiveWorld] = useState<World | null>(null);
-
 const [worldRuntimeDirty, setWorldRuntimeDirty] = useState(false);
-
 activeWorldRef.current = activeWorld;
-
 const availableRulesets = rulesetRegistry.getAll();
 
 const handleSelectRuleset = async (
@@ -3428,6 +3321,9 @@ async function removeModuleFromWorld(
         <div
           className="menu-group"
           data-menu-group="file"
+          onMouseLeave={() =>
+            setFileMenuOpen(false)
+          }
         >
           <button
             className="menu-item"
@@ -3512,10 +3408,12 @@ async function removeModuleFromWorld(
             </div>
           )}
         </div>
-
-        <div
+<div
   className="menu-group"
   data-menu-group="settings"
+  onMouseLeave={() =>
+    setSettingsMenuOpen(false)
+  }
 >
   <button
     className="menu-item"

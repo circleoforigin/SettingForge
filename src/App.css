@@ -1317,6 +1317,161 @@ body,
   font-size: 12px;
 }
 
+.sim-clock-progression {
+  flex: 0 0 100%;
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns: 190px 100px 76px;
+  justify-content: center;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 3px 18px 5px;
+}
+
+.sim-clock-progression-column {
+  min-width: 0;
+
+  display: grid;
+  grid-template-rows: 20px 20px;
+
+  gap: 3px;
+}
+
+.sim-clock-progress-header {
+  min-width: 0;
+
+  display: grid;
+  grid-template-columns: 70px 1fr 10px;
+
+  gap: 3px;
+}
+
+.sim-clock-progress-name,
+.sim-clock-progress-value input,
+.sim-clock-progress-value select,
+.sim-clock-progression-column > select {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 20px;
+
+  margin: 0;
+  padding: 0 4px;
+
+  background: transparent;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+}
+
+.sim-clock-progress-name {
+  width: 70px;
+}
+
+.sim-clock-progress-value {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+
+  gap: 3px;
+}
+
+.sim-clock-progress-value input {
+  width: 38px;
+  text-align: right;
+}
+
+.sim-clock-progress-button,
+.sim-clock-progression-column > button {
+  box-sizing: border-box;
+  height: 20px;
+
+  margin: 0;
+  padding: 0 8px;
+
+  background: #3a3c41;
+  color: #d8d8d8;
+
+  border: 1px solid #50535b;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.sim-clock-progress-button:hover,
+.sim-clock-progression-column > button:hover {
+  background: #50535b;
+  color: #ffffff;
+  border-color: #666a73;
+}
+
+.sim-clock-progress-button:active,
+.sim-clock-progression-column > button:active {
+  background: #2b2d31;
+}
+
+.sim-clock-progress-preset-arrows {
+  box-sizing: border-box;
+
+  width: 10px;
+  height: 20px;
+
+  display: flex;
+  flex-direction: column;
+
+  border-left: 1px solid #45474e;
+}
+
+.sim-clock-progress-preset-arrows button {
+  box-sizing: border-box;
+
+  width: 10px;
+  min-width: 0;
+  height: 10px;
+
+  margin: 0;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: none;
+
+  font: inherit;
+  font-size: 5px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.sim-clock-progress-preset-arrows button:last-child {
+  border-top: 1px solid #45474e;
+}
+
+.sim-clock-progress-preset-arrows button:hover {
+  background: #3a3c41;
+  color: #ffffff;
+}
+
+.sim-clock-progression-actions {
+  grid-template-rows: 20px 20px;
+}
+
 /* ---------- DROPDOWN MENUS ---------- */
 
 .menu-group {
