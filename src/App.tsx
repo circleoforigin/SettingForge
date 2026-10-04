@@ -155,9 +155,12 @@ function App()
       overlayManager.disable(overlayId);
     }
 
-    setActiveOverlays(
-      overlayManager.getAllActive()
-    );
+    setActiveOverlays(overlayManager.getAllActive());
+
+    if (activeWorldRef.current)
+    {
+      setWorldRuntimeDirty(true);
+    }
   };
 
 const setOverlayPlacement = (
@@ -165,8 +168,7 @@ const setOverlayPlacement = (
   placementIndex: OverlayPlacementIndex
 ) =>
 {
-  const result =
-    overlayManager.setPlacement(
+  const result = overlayManager.setPlacement(
       overlayId,
       placementIndex
     );
@@ -176,9 +178,12 @@ const setOverlayPlacement = (
     return false;
   }
 
-  setActiveOverlays(
-    overlayManager.getAllActive()
-  );
+  setActiveOverlays(overlayManager.getAllActive());
+
+  if (activeWorldRef.current)
+  {
+    setWorldRuntimeDirty(true);
+  }
 
   return true;
 };
@@ -459,7 +464,11 @@ loadQueueRef.current?.completeModule(
 ]);
 
 const [activeWorld, setActiveWorld] = useState<World | null>(null);
+
+const [worldRuntimeDirty, setWorldRuntimeDirty] = useState(false);
+
 activeWorldRef.current = activeWorld;
+
 const availableRulesets = rulesetRegistry.getAll();
 
 const handleSelectRuleset = async (
@@ -1082,9 +1091,9 @@ if (!loadQueueRef.current) {
         void worldRepository
           .saveWorld(world)
           .then(() => {
-            setActiveWorld(
-              world
-            );
+            setActiveWorld(world);
+
+            setWorldRuntimeDirty(false);
 
             setActiveModuleId(
               world.modules[0]
@@ -1983,34 +1992,15 @@ async function handleDeleteWorld() {
      * If the deleted World was active, completely
      * clear its active runtime state.
      */
-    if (
-      activeWorld?.id ===
-      world.id
-    ) {
-      worldLoadGenerationRef.current +=
-        1;
-
+    if (activeWorld?.id === world.id)
+    {
+      worldLoadGenerationRef.current += 1;
       loadQueueRef.current?.clear();
-
-      setActiveWorld(
-        null
-      );
-
-      setShowCloseWorldDialog(
-        false
-      );
-
-      setCloseWorldProjects(
-        []
-      );
-
-      setWorldLoadError(
-        null
-      );
-
-      setActiveModuleId(
-        null
-      );
+      setActiveWorld(null);
+      setShowCloseWorldDialog(false);
+      setCloseWorldProjects([]);
+      setWorldLoadError(null);
+      setActiveModuleId(null);
     }
 
     /*
@@ -2203,17 +2193,11 @@ async function handleLoadWorld(worldId: string) {
       );
     }
 
-    setActiveOverlays(
-      overlayManager.getAllActive()
-    );
+    setActiveOverlays(overlayManager.getAllActive());
 
-    setActiveWorld(
-      world
-    );
-
-    setShowLoadWorldDialog(
-      false
-    );
+    setActiveWorld(world);
+    setWorldRuntimeDirty(false);
+    setShowLoadWorldDialog(false);
 
    const missingModules = world.modules.filter(
   (reference) =>
@@ -2537,18 +2521,13 @@ async function saveAllProjectsAndWorld(
       world
     );
 
-  const updatedWorld =
-    captureWorldRuntimeState(
-      world
-    );
+  const updatedWorld = captureWorldRuntimeState(world);
 
-  await worldRepository.saveWorld(
-    updatedWorld
-  );
+  await worldRepository.saveWorld(updatedWorld);
 
-  setActiveWorld(
-    updatedWorld
-  );
+  setActiveWorld(updatedWorld);
+
+  setWorldRuntimeDirty(false);
 
   return result;
 }
@@ -2726,6 +2705,7 @@ async function finishClose(
   }
 
   setActiveWorld(null);
+  setWorldRuntimeDirty(false);
   simClock.restoreWorldState(
     0,
     createDefaultSimClockSettings()
@@ -3380,18 +3360,12 @@ async function removeModuleFromWorld(
         ),
     });
 
-    await worldRepository.saveWorld(
-      updatedWorld
-    );
+    await worldRepository.saveWorld(updatedWorld);
 
-    setActiveWorld(
-      updatedWorld
-    );
-
+    setActiveWorld(updatedWorld);
+    setWorldRuntimeDirty(false);
     modulePresenceService
-      .removeModule(
-        moduleId
-      );
+      .removeModule(moduleId);
 
     setReadyModuleIds(
       (current) =>
