@@ -74,6 +74,42 @@ export class OverlayManager
     return activeOverlay;
   }
 
+    restore(
+    overlayId: string,
+    placementIndex: number
+  ): ActiveOverlay | undefined
+  {
+    if (!isValidPlacementIndex(placementIndex))
+    {
+      return undefined;
+    }
+
+    const occupied =
+      this.getAllActive().some(
+        (overlay) =>
+          overlay.placementIndex ===
+          placementIndex
+      );
+
+    if (occupied)
+    {
+      return undefined;
+    }
+
+    const active: ActiveOverlay = {
+      overlayId,
+      placementIndex,
+    };
+
+    this.activeOverlays.set(
+      overlayId,
+      active
+    );
+
+    return active;
+  }
+
+
   setPlacement(
     overlayId: string,
     placementIndex: OverlayPlacementIndex
@@ -116,6 +152,12 @@ export class OverlayManager
 
     return updatedOverlay;
   }
+
+  clear(): void
+  {
+    this.activeOverlays.clear();
+  }
+
 
   disable(overlayId: string): void
   {

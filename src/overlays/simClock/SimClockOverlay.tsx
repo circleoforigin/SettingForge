@@ -249,6 +249,24 @@ export function useSimClockOverlay()
     );
   };
 
+  const restoreWorldState = (
+  time: SimulationTime,
+  settings: SimClockSettings
+) =>
+{
+  setSettings(
+    structuredClone(settings)
+  );
+
+  simulationClockService.setTime(
+    time
+  );
+
+  setPendingTime(
+    time
+  );
+};
+
     return {
     settingsOpen,
     setSettingsOpen,
@@ -260,6 +278,7 @@ export function useSimClockOverlay()
     pendingTime,
     setPendingTime,
     commitPendingTime,
+    restoreWorldState,
   };
 }
 

@@ -23,6 +23,7 @@ import {
   useSimClockOverlay,
 } from './overlays/simClock/SimClockOverlay';
 import { simulationClockService } from './simulation/SimulationClockService';
+import { createDefaultSimClockSettings } from './simulation/SimClockSettings';
 import {
   registerCapabilityHostService,
   sendCapabilityCatalogTo,
@@ -944,23 +945,17 @@ if (!loadQueueRef.current) {
             return;
           }
 
-          const updatedWorld:
-            World = {
-            ...addOperation.world,
+          const updatedWorld =
+            captureWorldRuntimeState({
+              ...addOperation.world,
 
-            modules: [
-              ...addOperation.world.modules,
-              reference,
-            ],
+              modules: [
+                ...addOperation.world.modules,
+                reference,
+              ],
+          });
 
-            updatedAt:
-              new Date(),
-          };
-
-          void worldRepository
-            .saveWorld(
-              updatedWorld
-            )
+          void worldRepository.saveWorld(updatedWorld)
             .then(() => {
               setActiveWorld(
                 updatedWorld
@@ -1060,21 +1055,29 @@ if (!loadQueueRef.current) {
         }
 
         const world: World = {
-          id:
-            operation.worldId,
+          id: operation.worldId,
+          name: operation.worldName,
+          modules: operation.projectReferences,
 
-          name:
-            operation.worldName,
+          simulation: {
+            time: 0,
+            simClockSettings:
+              createDefaultSimClockSettings(),
+          },
 
-          modules:
-            operation.projectReferences,
+          overlays: [],
 
-          createdAt:
-            operation.createdAt,
-
-          updatedAt:
-            operation.createdAt,
+          createdAt: operation.createdAt,
+          updatedAt: operation.createdAt,
         };
+
+        simClock.restoreWorldState(
+          0,
+          createDefaultSimClockSettings()
+        );
+
+        overlayManager.clear();
+        setActiveOverlays(overlayManager.getAllActive());
 
         void worldRepository
           .saveWorld(world)
@@ -2161,12 +2164,56 @@ async function handleLoadWorld(worldId: string) {
     const world = await worldRepository.loadWorld(worldId);
     if (generation !== worldLoadGenerationRef.current) return;
 
-    if (!world) {
-      throw new Error('The selected World could not be found.');
+        if (!world)
+    {
+      throw new Error(
+        'The selected World could not be found.'
+      );
     }
 
-    setActiveWorld(world);
-    setShowLoadWorldDialog(false);
+    const simulation =
+      world.simulation;
+
+    simClock.restoreWorldState(
+      simulation?.time ?? 0,
+      simulation?.simClockSettings ??
+        createDefaultSimClockSettings()
+    );
+
+    overlayManager.clear();
+
+    for (const overlay of world.overlays ?? [])
+    {
+      if (
+        overlay.placementIndex ===
+        undefined
+      )
+      {
+        continue;
+      }
+
+      if (!overlayRegistry.get(overlay.overlayId))
+      {
+        continue;
+      }
+
+      overlayManager.restore(
+        overlay.overlayId,
+        overlay.placementIndex
+      );
+    }
+
+    setActiveOverlays(
+      overlayManager.getAllActive()
+    );
+
+    setActiveWorld(
+      world
+    );
+
+    setShowLoadWorldDialog(
+      false
+    );
 
    const missingModules = world.modules.filter(
   (reference) =>
@@ -2483,10 +2530,27 @@ async function saveWorldProjects(
 
 async function saveAllProjectsAndWorld(
   world: World
-): Promise<SaveAllResult> {
-  return saveWorldProjects(
-    world
+): Promise<SaveAllResult>
+{
+  const result =
+    await saveWorldProjects(
+      world
+    );
+
+  const updatedWorld =
+    captureWorldRuntimeState(
+      world
+    );
+
+  await worldRepository.saveWorld(
+    updatedWorld
   );
+
+  setActiveWorld(
+    updatedWorld
+  );
+
+  return result;
 }
 
 function getSaveAllFailures(
@@ -2589,17 +2653,11 @@ async function closeOpenProjects(
 async function finishClose(
   target: CloseTarget
 ): Promise<void> {
-  setShowCloseWorldDialog(
-    false
-  );
+  setShowCloseWorldDialog(false);
+  setCloseWorldProjects([]);
 
-  setCloseWorldProjects(
-    []
-  );
-
-  if (
-    target === 'application'
-  ) {
+  if (target === 'application')
+  {
     const closing =
       await window.settingForge.window
         .closeApp();
@@ -2667,13 +2725,15 @@ async function finishClose(
     }
   }
 
-  setActiveWorld(
-    null
+  setActiveWorld(null);
+  simClock.restoreWorldState(
+    0,
+    createDefaultSimClockSettings()
   );
 
-  worldLoadGenerationRef.current +=
-    1;
-
+  overlayManager.clear();
+  setActiveOverlays(overlayManager.getAllActive());
+  worldLoadGenerationRef.current += 1;
   loadQueueRef.current?.clear();
 
   setWorldSaveNotice({
@@ -2763,16 +2823,11 @@ async function handleSaveAllAndClose() {
     return;
   }
 
-  const world =
-    activeWorld;
+  const world = activeWorld;
 
-  setWorldClosing(
-    true
-  );
+  setWorldClosing(true);
 
-  setWorldSaveNotice(
-    null
-  );
+  setWorldSaveNotice(null);
 
   try {
     if (!world) {
@@ -3313,8 +3368,8 @@ async function removeModuleFromWorld(
       );
     }
 
-    const updatedWorld:
-      World = {
+    const updatedWorld =
+      captureWorldRuntimeState({
       ...activeWorld,
 
       modules:
@@ -3323,10 +3378,7 @@ async function removeModuleFromWorld(
             candidate.moduleId !==
             moduleId
         ),
-
-      updatedAt:
-        new Date(),
-    };
+    });
 
     await worldRepository.saveWorld(
       updatedWorld
