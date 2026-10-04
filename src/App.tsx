@@ -13,9 +13,7 @@ import { overlayRegistry } from './overlays/registry';
 import { OverlayManager } from './overlays/OverlayManager';
 import type { OverlayPlacementIndex } from './overlays/OverlayPlacement';
 import { rulesetRegistry } from './rules/RulesetRegistry';
-import {
-  registerRulesHostService,
-} from './rules/RulesHostService';
+import { registerRulesHostService } from './rules/RulesHostService';
 import {
   MessengerOverlay,
   useMessengerOverlay,
@@ -24,7 +22,7 @@ import {
   SimClockOverlay,
   useSimClockOverlay,
 } from './overlays/simClock/SimClockOverlay';
-
+import { simulationClockService } from './simulation/SimulationClockService';
 import {
   registerCapabilityHostService,
   sendCapabilityCatalogTo,
@@ -187,6 +185,47 @@ const setOverlayPlacement = (
   const messenger = useMessengerOverlay();
   const simClock = useSimClockOverlay();
   
+const captureWorldRuntimeState = (
+  world: World
+): World =>
+{
+  return {
+    ...world,
+
+    simulation: {
+      time:
+        simulationClockService.getTime(),
+
+      simClockSettings:
+        structuredClone(
+          simClock.settings
+        ),
+    },
+
+    overlays:
+      overlayRegistry
+        .getAll()
+        .map((overlay) =>
+        {
+          const active =
+            overlayManager.getActive(
+              overlay.id
+            );
+
+          return {
+            overlayId:
+              overlay.id,
+
+            placementIndex:
+              active?.placementIndex,
+          };
+        }),
+
+    updatedAt:
+      new Date(),
+  };
+};
+
   const loadQueueRef =
     useRef<LoadQueueService | null>(null);
 

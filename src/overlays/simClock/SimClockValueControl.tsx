@@ -21,14 +21,11 @@ export function SimClockValueControl({
   onStep,
 }: SimClockValueControlProps)
 {
-  const timeoutRef =
-    useRef<number | null>(null);
+  const timeoutRef = useRef<number | null>(null);
 
-  const intervalRef =
-    useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
-  const accelerationRef =
-    useRef<number | null>(null);
+  const accelerationRef = useRef<number | null>(null);
 
   const clearRepeat = () =>
   {
@@ -51,9 +48,7 @@ export function SimClockValueControl({
     }
   };
 
-  const beginRepeat = (
-    direction: 1 | -1
-  ) =>
+  const beginRepeat = (direction: 1 | -1) =>
   {
     clearRepeat();
 
@@ -73,9 +68,7 @@ export function SimClockValueControl({
           {
             if (intervalRef.current !== null)
             {
-              window.clearInterval(
-                intervalRef.current
-              );
+              window.clearInterval(intervalRef.current);
             }
 
             intervalRef.current =

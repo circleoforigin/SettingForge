@@ -1,3 +1,5 @@
+import type { SimClockSettings } from '../simulation/SimClockSettings';
+
 export interface WorldModuleReference {
   moduleId: string;
   projectId: string;
@@ -17,7 +19,7 @@ export interface WorldOverlayState
 export interface WorldSimulationState
 {
   time: number;
-  simClockSettings?: unknown;
+  simClockSettings: SimClockSettings;
 }
 
 export interface World {

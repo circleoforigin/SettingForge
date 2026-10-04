@@ -4,7 +4,7 @@ import {
   type SimulationTime,
 } from '../../simulation/SimulationClockService';
 import {
-  DEFAULT_SIM_CLOCK_SETTINGS,
+  createDefaultSimClockSettings,
   type SimClockEra,
   type SimClockSettings,
 } from '../../simulation/SimClockSettings';
@@ -212,7 +212,7 @@ export function useSimClockOverlay()
 
   const [settings, setSettings] =
     useState<SimClockSettings>(
-        DEFAULT_SIM_CLOCK_SETTINGS
+        createDefaultSimClockSettings
     );
 
   const activeEra =

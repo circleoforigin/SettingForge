@@ -1,6 +1,4 @@
-import type {
-  EventDefinition,
-} from '../events/EventDefinition';
+import type { EventDefinition } from '../events/EventDefinition';
 
 export interface ModuleDefinition {
   id: string;

@@ -89,3 +89,10 @@ export const DEFAULT_SIM_CLOCK_SETTINGS: SimClockSettings = {
     },
   ],
 };
+
+export function createDefaultSimClockSettings(): SimClockSettings
+{
+  return structuredClone(
+    DEFAULT_SIM_CLOCK_SETTINGS
+  );
+}
