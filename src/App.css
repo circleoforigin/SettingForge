@@ -507,10 +507,10 @@ body,
 
 .messenger-tabs {
   display: flex;
-  gap: 2px;
+  gap: 0;
 
-  width: 390px;
-  max-width: 390px;
+  width: 380px;
+  max-width: 380px;
 
   overflow: hidden;
 }
@@ -549,7 +549,7 @@ body,
 }
 
 .messenger-tab {
-  flex: 0 0 96px;
+  flex: 0 0 95px;
 
   padding: 3px 6px;
 
