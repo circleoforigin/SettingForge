@@ -3,48 +3,13 @@ import {
   simulationClockService,
   type SimulationTime,
 } from '../../simulation/SimulationClockService';
+import {
+  DEFAULT_SIM_CLOCK_SETTINGS,
+  type SimClockEra,
+  type SimClockSettings,
+} from '../../simulation/SimClockSettings';
 import type { OverlayPlacement } from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
-
-export interface SimClockMonth
-{
-  id: string;
-  name: string;
-  days: number;
-}
-
-export interface SimClockLeapRule
-{
-  interval: number;
-  monthId: string;
-  afterDay: number;
-  additionalDays: number;
-}
-
-export interface SimClockEra
-{
-  id: string;
-  name: string;
-  abbreviation: string;
-
-  secondsPerMinute: number;
-  minutesPerHour: number;
-  hoursPerDay: number;
-
-  dayNames: string[];
-  months: SimClockMonth[];
-  leapRule?: SimClockLeapRule;
-
-  startingWeekday: string;
-
-  dateFormat: string;
-}
-
-export interface SimClockSettings
-{
-  eras: SimClockEra[];
-  activeEraId: string;
-}
 
 const DEFAULT_SETTINGS: SimClockSettings = {
   activeEraId: 'common-era',
@@ -247,7 +212,7 @@ export function useSimClockOverlay()
 
   const [settings, setSettings] =
     useState<SimClockSettings>(
-      DEFAULT_SETTINGS
+        DEFAULT_SIM_CLOCK_SETTINGS
     );
 
   const activeEra =

@@ -1,4 +1,7 @@
-import type { OverlayPlacementIndex } from './OverlayPlacement';
+import {
+  OVERLAY_PLACEMENTS,
+  type OverlayPlacementIndex,
+} from './OverlayPlacement';
 
 export interface ActiveOverlay
 {
@@ -6,14 +9,19 @@ export interface ActiveOverlay
   placementIndex: OverlayPlacementIndex;
 }
 
-const OVERLAY_PLACEMENT_INDEXES: OverlayPlacementIndex[] = [
-  0,
-  1,
-  2,
-  3,
-  4,
-  5,
-];
+function getAvailablePlacementIndexes(): OverlayPlacementIndex[]
+{
+  return Object.keys(OVERLAY_PLACEMENTS)
+    .map(Number)
+    .filter((index) => index in OVERLAY_PLACEMENTS) as OverlayPlacementIndex[];
+}
+
+function isValidPlacementIndex(
+  placementIndex: number
+): placementIndex is OverlayPlacementIndex
+{
+  return placementIndex in OVERLAY_PLACEMENTS;
+}
 
 export class OverlayManager
 {
@@ -47,8 +55,8 @@ export class OverlayManager
       this.getAllActive().map((overlay) => overlay.placementIndex)
     );
 
-    const placementIndex = OVERLAY_PLACEMENT_INDEXES.find(
-      (index) => !occupiedIndexes.has(index)
+    const placementIndex = getAvailablePlacementIndexes().find(
+        (index) => !occupiedIndexes.has(index)
     );
 
     if (placementIndex === undefined)
@@ -67,42 +75,47 @@ export class OverlayManager
   }
 
   setPlacement(
-  overlayId: string,
-  placementIndex: OverlayPlacementIndex
-): ActiveOverlay | undefined
-{
-  const activeOverlay =
-    this.activeOverlays.get(overlayId);
-
-  if (!activeOverlay)
+    overlayId: string,
+    placementIndex: OverlayPlacementIndex
+  ): ActiveOverlay | undefined
   {
-    return undefined;
-  }
+    if (!isValidPlacementIndex(placementIndex))
+    {
+        return undefined;
+    }
+    
+    const activeOverlay =
+        this.activeOverlays.get(overlayId);
 
-  const occupied =
-    this.getAllActive().some(
-      (overlay) =>
-        overlay.overlayId !== overlayId &&
-        overlay.placementIndex === placementIndex
+    if (!activeOverlay)
+    {
+        return undefined;
+    }
+
+    const occupied =
+        this.getAllActive().some(
+        (overlay) =>
+            overlay.overlayId !== overlayId &&
+            overlay.placementIndex === placementIndex
+        );
+
+    if (occupied)
+    {
+        return undefined;
+    }
+
+    const updatedOverlay: ActiveOverlay = {
+        ...activeOverlay,
+        placementIndex,
+    };
+
+    this.activeOverlays.set(
+        overlayId,
+        updatedOverlay
     );
 
-  if (occupied)
-  {
-    return undefined;
+    return updatedOverlay;
   }
-
-  const updatedOverlay: ActiveOverlay = {
-    ...activeOverlay,
-    placementIndex,
-  };
-
-  this.activeOverlays.set(
-    overlayId,
-    updatedOverlay
-  );
-
-  return updatedOverlay;
-}
 
   disable(overlayId: string): void
   {

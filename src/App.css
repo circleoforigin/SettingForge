@@ -698,6 +698,7 @@ body,
 }
 
 .sim-clock-go-to {
+  position: relative;
   box-sizing: border-box;
   width: 100%;
 
@@ -706,8 +707,6 @@ body,
   align-items: flex-end;
   justify-content: center;
   gap: 0;
-
-  padding: 3px 7px 0;
 
   background: #2b2d31;
 
@@ -719,10 +718,11 @@ body,
 }
 
 .sim-clock-stage-handle {
-  flex: 1 1 0;
-  align-self: stretch;
+  position: absolute;
+  top: 0;
+  bottom: 0;
 
-  min-width: 20px;
+  width: 18px;
   margin: 0;
   padding: 0;
 
@@ -738,9 +738,22 @@ body,
   cursor: pointer;
 }
 
+.sim-clock-stage-handle:first-child {
+  left: 0;
+}
+
+.sim-clock-stage-handle:nth-last-child(2) {
+  right: 0;
+}
+
 .sim-clock-stage-handle:hover {
   background: #3a3c41;
   color: #ffffff;
+}
+
+.sim-clock-set-time {
+  white-space: nowrap;
+  margin-right: 20px;
 }
 
 .sim-clock-weekday {
@@ -795,16 +808,25 @@ body,
 }
 
 .sim-clock-field-year {
-  flex: 0 1 54px;
+  flex: 0 0 42px;
 }
 
 .sim-clock-field-era {
-  flex: 0 1 42px;
+  flex: 0 0 30px;
+}
+
+.sim-clock-field-year .sim-clock-field-value,
+.sim-clock-field-era .sim-clock-field-value {
+  justify-content: flex-end;
 }
 
 .sim-clock-field-month {
-  flex: 1 1 86px;
-  width: 86px;
+  flex: 0 0 64px;
+  width: 64px;
+}
+
+.sim-clock-field-month .sim-clock-field-value {
+  justify-content: flex-end;
 }
 
 .sim-clock-field-day {

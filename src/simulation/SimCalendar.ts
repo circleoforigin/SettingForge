@@ -1,7 +1,7 @@
 import type {
   SimClockEra,
   SimClockMonth,
-} from '../overlays/simClock/SimClockOverlay';
+} from './SimClockSettings';
 import type {
   SimulationTime,
 } from './SimulationClockService';
