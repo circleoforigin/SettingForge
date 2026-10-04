@@ -966,29 +966,13 @@ if (!loadQueueRef.current) {
 
           void worldRepository.saveWorld(updatedWorld)
             .then(() => {
-              setActiveWorld(
-                updatedWorld
-              );              
-
-              setActiveModuleId(
-                reference.moduleId
-              );
-
-              setModuleManagerOpen(
-                false
-              );
-
-              setAddWorldModuleId(
-                null
-              );
-
-              setAddWorldModuleProjects(
-                []
-              );
-
-              setAddWorldModuleImportedProjectId(
-                ''
-              );
+              setActiveWorld(updatedWorld);
+              setWorldRuntimeDirty(false);
+              setActiveModuleId(reference.moduleId);
+              setModuleManagerOpen(false);
+              setAddWorldModuleId(null);
+              setAddWorldModuleProjects([]);
+              setAddWorldModuleImportedProjectId('');
 
               setWorldSaveNotice({
                 kind:
@@ -1014,9 +998,7 @@ if (!loadQueueRef.current) {
                 error
               );
 
-              setAddWorldModuleError(
-                message
-              );
+              setAddWorldModuleError(message);
             })
             .finally(() => {
               setAddWorldModuleLoading(
@@ -1996,7 +1978,18 @@ async function handleDeleteWorld() {
     {
       worldLoadGenerationRef.current += 1;
       loadQueueRef.current?.clear();
+
       setActiveWorld(null);
+      setWorldRuntimeDirty(false);
+
+      simClock.restoreWorldState(
+        0,
+        createDefaultSimClockSettings()
+      );
+
+      overlayManager.clear();
+      setActiveOverlays(overlayManager.getAllActive());
+
       setShowCloseWorldDialog(false);
       setCloseWorldProjects([]);
       setWorldLoadError(null);
@@ -2770,7 +2763,11 @@ async function handleCloseRequest(target: CloseTarget) {
 
     setCloseWorldProjects(scan.projects);
 
-    if (scan.projects.some((project) => project.dirty)) {
+    if (
+      worldRuntimeDirty ||
+      scan.projects.some((project) => project.dirty)
+    ) 
+    {
       setShowCloseWorldDialog(true);
       return;
     }

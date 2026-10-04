@@ -7,8 +7,6 @@ import {
   formatSimulationDate,
   formatSimulationTime,
   simulationTimeToCalendar,
-  stepSimulationTime,
-  type SimCalendarField,
 } from '../../simulation/SimCalendar';
 
 interface SimClockSurfaceProps
@@ -145,18 +143,14 @@ export function SimClockSurface({
   label={field.label}
   value={field.value}
   onStep={
-    field.key === 'era'
-      ? undefined
-      : (direction) =>
-          controller.setPendingTime(
-            stepSimulationTime(
-              controller.pendingTime,
-              field.key as SimCalendarField,
-              direction,
-              controller.activeEra
-            )
-          )
-  }
+  field.key === 'era'
+    ? undefined
+    : (direction) =>
+        controller.stepPendingTime(
+          field.key,
+          direction
+        )
+}
 />
   </div>
 

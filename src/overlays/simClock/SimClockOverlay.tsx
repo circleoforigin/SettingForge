@@ -10,6 +10,10 @@ import {
 } from '../../simulation/SimClockSettings';
 import type { OverlayPlacement } from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
+import {
+  stepSimulationTime,
+  type SimCalendarField,
+} from '../../simulation/SimCalendar';
 
 const DEFAULT_SETTINGS: SimClockSettings = {
   activeEraId: 'common-era',
@@ -186,7 +190,7 @@ export type SimClockOverlayController =
 
 export function useSimClockOverlay()
 {
-    const [committedTime, setCommittedTime] =
+  const [committedTime, setCommittedTime] =
     useState<SimulationTime>(
       simulationClockService.getTime()
     );
@@ -249,25 +253,37 @@ export function useSimClockOverlay()
     );
   };
 
+  const stepPendingTime = (
+    field: SimCalendarField,
+    direction: 1 | -1
+  ) =>
+  {
+    if (!activeEra)
+    {
+        return;
+    }
+
+    setPendingTime((current) =>
+        stepSimulationTime(
+            current,
+            field,
+            direction,
+            activeEra
+        )
+    );
+  };  
+
   const restoreWorldState = (
-  time: SimulationTime,
-  settings: SimClockSettings
-) =>
-{
-  setSettings(
-    structuredClone(settings)
-  );
+    time: SimulationTime,
+    settings: SimClockSettings
+  ) =>
+  {
+    setSettings(structuredClone(settings));
+    simulationClockService.setTime(time);
+    setPendingTime(time);
+  };
 
-  simulationClockService.setTime(
-    time
-  );
-
-  setPendingTime(
-    time
-  );
-};
-
-    return {
+  return {
     settingsOpen,
     setSettingsOpen,
     settings,
@@ -277,6 +293,7 @@ export function useSimClockOverlay()
     committedTime,
     pendingTime,
     setPendingTime,
+    stepPendingTime,
     commitPendingTime,
     restoreWorldState,
   };

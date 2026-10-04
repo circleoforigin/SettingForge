@@ -8,24 +8,23 @@ interface SimClockValueControlProps
   label: string;
   value: string;
   onStep?: (direction: 1 | -1) => void;
+  onValueChange?: (value: string) => void;
 }
 
 const INITIAL_REPEAT_DELAY = 400;
 const REPEAT_INTERVAL = 100;
-const FAST_REPEAT_INTERVAL = 40;
-const ACCELERATION_DELAY = 1200;
 
 export function SimClockValueControl({
   label,
   value,
   onStep,
+  onValueChange,
 }: SimClockValueControlProps)
 {
   const timeoutRef = useRef<number | null>(null);
-
+  const onStepRef = useRef(onStep);
+  onStepRef.current = onStep;
   const intervalRef = useRef<number | null>(null);
-
-  const accelerationRef = useRef<number | null>(null);
 
   const clearRepeat = () =>
   {
@@ -40,56 +39,46 @@ export function SimClockValueControl({
       window.clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-
-    if (accelerationRef.current !== null)
-    {
-      window.clearTimeout(accelerationRef.current);
-      accelerationRef.current = null;
-    }
   };
 
   const beginRepeat = (direction: 1 | -1) =>
-  {
-    clearRepeat();
-
-    onStep?.(direction);
-
-    timeoutRef.current =
-      window.setTimeout(() =>
-      {
-        intervalRef.current =
-          window.setInterval(
-            () => onStep?.(direction),
-            REPEAT_INTERVAL
-          );
-
-        accelerationRef.current =
-          window.setTimeout(() =>
-          {
-            if (intervalRef.current !== null)
-            {
-              window.clearInterval(intervalRef.current);
-            }
-
-            intervalRef.current =
-              window.setInterval(
-                () => onStep?.(direction),
-                FAST_REPEAT_INTERVAL
-              );
-          }, ACCELERATION_DELAY);
-      }, INITIAL_REPEAT_DELAY);
+{
+  clearRepeat();
+  onStep?.(direction);
+  timeoutRef.current = window.setTimeout(() =>
+{
+  intervalRef.current = window.setInterval(
+    () => onStep?.(direction),
+    REPEAT_INTERVAL
+  );
+}, INITIAL_REPEAT_DELAY);
   };
 
   useEffect(() =>
+{
+  return () =>
   {
-    return clearRepeat;
-  }, []);
+    clearRepeat();
+  };
+}, []);
 
   return (
     <div className="sim-clock-field-control">
-      <div className="sim-clock-field-value">
-        {value}
-      </div>
+      {onValueChange ? (
+  <input
+    type="number"
+    className="sim-clock-field-value sim-clock-field-value-input"
+    aria-label={label}
+    value={value}
+    onChange={(event) =>
+      onValueChange(event.target.value)
+    }
+  />
+) : (
+  <div className="sim-clock-field-value">
+    {value}
+  </div>
+)}
 
       <div className="sim-clock-field-arrows">
         <button
