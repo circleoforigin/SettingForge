@@ -1,6 +1,9 @@
 import type {
   SimClockEra,
+  SimClockMarker,
+  SimClockMarkers,
   SimClockMonth,
+  SimClockProgressUnit,
 } from './SimClockSettings';
 import type {
   SimulationTime,
@@ -456,12 +459,150 @@ export function stepSimulationTime(
   );
 }
 
-function ordinal(
-  value: number
-): string
+export function progressSimulationTime(
+  time: SimulationTime,
+  amount: number,
+  unit: SimClockProgressUnit,
+  era: SimClockEra
+): SimulationTime
 {
-  const remainder100 =
-    Math.abs(value) % 100;
+  const safeAmount =
+    Math.max(0, Math.trunc(amount));
+
+  if (safeAmount === 0)
+  {
+    return time;
+  }
+
+  const secondsPerMinute =
+    era.secondsPerMinute;
+
+  const secondsPerHour =
+    secondsPerMinute *
+    era.minutesPerHour;
+
+  const secondsPerDay =
+    secondsPerHour *
+    era.hoursPerDay;
+  
+  if (unit === 'seconds')
+  {
+    return time + safeAmount;
+  }
+  if (unit === 'minutes')
+  {
+    return (
+      time + safeAmount * secondsPerMinute
+    );
+  }
+
+  if (unit === 'hours')
+  {
+    return (
+      time + safeAmount * secondsPerHour
+    );
+  }
+
+  if (unit === 'days')
+  {
+    return (
+      time + safeAmount * secondsPerDay
+    );
+  }
+
+  if (unit === 'weeks')
+  {
+    return (
+      time +
+      safeAmount *
+      era.dayNames.length *
+      secondsPerDay
+    );
+  }
+
+  let result = time;
+
+  const field: SimCalendarField =
+    unit === 'months'
+      ? 'month'
+      : 'year';
+
+  for (
+    let index = 0;
+    index < safeAmount;
+    index += 1
+  )
+  {
+    result =
+      stepSimulationTime(
+        result,
+        field,
+        1,
+        era
+      );
+  }
+
+  return result;
+}
+
+export function advanceSimulationTimeToMarker(
+  time: SimulationTime,
+  marker: SimClockMarker,
+  markers: SimClockMarkers,
+  era: SimClockEra
+): SimulationTime
+{
+  const calendar =
+    simulationTimeToCalendar(
+      time,
+      era
+    );
+
+  const markerHour =
+    marker === 'sunrise'
+      ? markers.sunriseHour
+      : marker === 'noon'
+        ? markers.noonHour
+        : marker === 'sunset'
+          ? markers.sunsetHour
+          : markers.midnightHour;
+
+  const safeMarkerHour =
+    Math.max(
+      0,
+      Math.min(
+        era.hoursPerDay - 1,
+        Math.trunc(markerHour)
+      )
+    );
+
+  let targetTime =
+    calendarToSimulationTime(
+      {
+        year: calendar.year,
+        monthId: calendar.monthId,
+        day: calendar.day,
+        hour: safeMarkerHour,
+        minute: 0,
+        second: 0,
+      },
+      era
+    );
+
+  if (targetTime <= time)
+  {
+    targetTime +=
+      era.secondsPerMinute *
+      era.minutesPerHour *
+      era.hoursPerDay;
+  }
+
+  return targetTime;
+}
+
+function ordinal(value: number): string
+{
+  const remainder100 = Math.abs(value) % 100;
 
   if (
     remainder100 >= 11 &&
@@ -503,9 +644,7 @@ export function formatSimulationDate(
       calendar.monthName,
 
     '{month#}':
-      ordinal(
-        calendar.monthIndex + 1
-      ),
+      ordinal(calendar.monthIndex + 1),
 
     '{weekDay}':
       calendar.weekDay,

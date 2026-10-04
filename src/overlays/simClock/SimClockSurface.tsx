@@ -50,7 +50,7 @@ const stepProgressPreset = (
     return null;
 
   const progressPreset =
-  controller?.settings.progressPresets[
+  controller.settings.progressPresets[
     progressPresetIndex
   ];
 
@@ -212,8 +212,21 @@ const stepProgressPreset = (
 ))}
 <button
   type="button"
-  className="sim-clock-set-time"
-  onClick={controller.commitPendingTime}
+  className={
+    controller.pendingTime !==
+    controller.committedTime
+      ? 'sim-clock-set-time sim-clock-set-time-pending'
+      : 'sim-clock-set-time'
+  }
+  onClick={() =>
+  {
+    controller.stopRealTime();
+    controller.commitPendingTime();
+  }}
+  disabled={
+    controller.pendingTime ===
+    controller.committedTime
+  }
 >
   Set Time
 </button>
@@ -251,10 +264,15 @@ const stepProgressPreset = (
         />
 
         <button
-          type="button"
-          className="sim-clock-progress-button"
+            type="button"
+            className="sim-clock-progress-button"
+            onClick={() =>
+            {
+                controller.stopRealTime();
+                controller.progressTime(progressPreset);
+            }}
         >
-          Progress
+            Progress
         </button>
 
         <div className="sim-clock-progress-preset-arrows">
@@ -311,18 +329,26 @@ const stepProgressPreset = (
             })
           }
         >
+          <option value="seconds">Seconds</option>
           <option value="minutes">Minutes</option>
           <option value="hours">Hours</option>
           <option value="days">Days</option>
           <option value="weeks">Weeks</option>
-          <option value="months">Months</option>
+          <option value="months">Months</option>          
           <option value="years">Years</option>
         </select>
       </div>
     </div>
 
     <div className="sim-clock-progression-column">
-      <button type="button">
+      <button
+        type="button"
+        onClick={() =>
+        {
+            controller.stopRealTime();
+            controller.progressToMarker(marker);
+        }}
+      >
         To Marker
       </button>
 
@@ -347,8 +373,15 @@ const stepProgressPreset = (
         Travel
       </button>
 
-      <button type="button">
-        Real Time
+      <button
+        type="button"
+        onClick={
+            controller.toggleRealTime
+        }
+        >
+        {controller.realTimeActive
+            ? 'Stop'
+            : 'Real Time'}
       </button>
     </div>
   </div>

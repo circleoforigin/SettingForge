@@ -6,13 +6,16 @@ import {
 import {
   createDefaultSimClockSettings,
   type SimClockEra,
+  type SimClockMarker,
   type SimClockProgressPreset,
   type SimClockSettings,
 } from '../../simulation/SimClockSettings';
 import type { OverlayPlacement } from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
 import {
+  advanceSimulationTimeToMarker,
   calendarToSimulationTime,
+  progressSimulationTime,
   simulationTimeToCalendar,
   stepSimulationTime,
   type SimCalendarField,
@@ -102,6 +105,9 @@ export function useSimClockOverlay()
       simulationClockService.getTime()
     );
 
+  const [realTimeActive, setRealTimeActive] =
+    useState(false);
+
   useEffect(() =>
   {
     return simulationClockService.subscribe(
@@ -112,6 +118,52 @@ export function useSimClockOverlay()
       }
     );
   }, []);
+
+  useEffect(() =>
+{
+  if (!realTimeActive)
+  {
+    return;
+  }
+
+  let previousTime = performance.now();
+  let accumulatedMilliseconds = 0;
+
+  const interval =
+    window.setInterval(() =>
+    {
+      const currentTime =
+        performance.now();
+
+      accumulatedMilliseconds +=
+        currentTime - previousTime;
+
+      previousTime = currentTime;
+
+      const elapsedSeconds =
+        Math.floor(
+          accumulatedMilliseconds / 1000
+        );
+
+      if (elapsedSeconds < 1)
+      {
+        return;
+      }
+
+      accumulatedMilliseconds -=
+        elapsedSeconds * 1000;
+
+      simulationClockService.setTime(
+        simulationClockService.getTime() +
+        elapsedSeconds
+      );
+    }, 100);
+
+  return () =>
+  {
+    window.clearInterval(interval);
+  };
+}, [realTimeActive]);
 
   const [settingsOpen, setSettingsOpen] =
     useState(false);
@@ -169,12 +221,56 @@ const updateProgressPreset = (
   }));
 };
 
-  const commitPendingTime = () =>
+const commitPendingTime = () =>
   {
     simulationClockService.setTime(
       pendingTime
     );
   };
+
+const progressTime = (
+  preset: SimClockProgressPreset
+) =>
+{
+  if (!activeEra)
+  {
+    return;
+  }
+
+  const targetTime =
+    progressSimulationTime(
+      committedTime,
+      preset.amount,
+      preset.unit,
+      activeEra
+    );
+
+  simulationClockService.setTime(
+    targetTime
+  );
+};
+
+const progressToMarker = (
+  marker: SimClockMarker
+) =>
+{
+  if (!activeEra)
+  {
+    return;
+  }
+
+  const targetTime =
+    advanceSimulationTimeToMarker(
+      committedTime,
+      marker,
+      settings.markers,
+      activeEra
+    );
+
+  simulationClockService.setTime(
+    targetTime
+  );
+};
 
   const stepPendingTime = (
     field: SimCalendarField,
@@ -255,15 +351,52 @@ const updateProgressPreset = (
     });
   };
 
-  const restoreWorldState = (
-    time: SimulationTime,
-    settings: SimClockSettings
-  ) =>
-  {
-    setSettings(structuredClone(settings));
-    simulationClockService.setTime(time);
-    setPendingTime(time);
+const toggleRealTime = () =>
+{
+  setRealTimeActive(
+    (current) => !current
+  );
+};
+
+const stopRealTime = () =>
+{
+  setRealTimeActive(false);
+};
+
+const restoreWorldState = (
+  time: SimulationTime,
+  settings: SimClockSettings
+) =>
+{
+  const defaults =
+    createDefaultSimClockSettings();
+
+  const restoredSettings: SimClockSettings = {
+    ...defaults,
+    ...structuredClone(settings),
+
+    progressPresets:
+      settings.progressPresets
+        ? structuredClone(
+            settings.progressPresets
+          )
+        : defaults.progressPresets,
+
+    markers:
+      settings.markers
+        ? {
+            ...defaults.markers,
+            ...structuredClone(
+              settings.markers
+            ),
+          }
+        : defaults.markers,
   };
+
+  setSettings(restoredSettings);
+  simulationClockService.setTime(time);
+  setPendingTime(time);
+};
 
   return {
     settingsOpen,
@@ -279,6 +412,11 @@ const updateProgressPreset = (
     stepPendingTime,
     setPendingYear,
     commitPendingTime,
+    progressTime,
+    progressToMarker,
+    realTimeActive,
+    toggleRealTime,
+    stopRealTime,
     restoreWorldState,
   };
 }

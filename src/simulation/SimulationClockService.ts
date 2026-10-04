@@ -16,20 +16,23 @@ export class SimulationClockService
   }
 
   setTime(time: SimulationTime): void
+{
+  if (!Number.isFinite(time))
+    return;
+
+  const normalizedTime =
+    Math.trunc(time);
+
+  if (this.time === normalizedTime)
+    return;
+
+  this.time = normalizedTime;
+
+  for (const listener of this.listeners)
   {
-    if (!Number.isFinite(time))
-      return;
-
-    if (this.time === time)
-      return;
-
-    this.time = time;
-
-    for (const listener of this.listeners)
-    {
-      listener(this.time);
-    }
+    listener(this.time);
   }
+}
 
   subscribe(
     listener: SimulationClockListener

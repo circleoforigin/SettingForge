@@ -33,6 +33,7 @@ export interface SimClockEra
 }
 
 export type SimClockProgressUnit =
+  | 'seconds'
   | 'minutes'
   | 'hours'
   | 'days'

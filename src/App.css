@@ -754,6 +754,29 @@ body,
 .sim-clock-set-time {
   white-space: nowrap;
   margin-right: 6px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.sim-clock-set-time-pending {
+  opacity: 1;
+  pointer-events: auto;
+  animation: sim-clock-set-time-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sim-clock-set-time-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    background: #3a3c41;
+    border-color: #50535b;
+  }
+
+  50% {
+    opacity: 1;
+    background: #60636b;
+    border-color: #8a8e98;
+  }
 }
 
 .sim-clock-weekday {
@@ -1370,7 +1393,7 @@ body,
   margin: 0;
   padding: 0 4px;
 
-  background: transparent;
+  background: #2b2d31;
   color: #d8d8d8;
 
   border: 1px solid #45474e;
