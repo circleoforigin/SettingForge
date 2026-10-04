@@ -139,9 +139,22 @@ export function SimClockSurface({
   <div
     className={`sim-clock-field sim-clock-field-${field.key}`}
   >
-    <SimClockValueControl
+<SimClockValueControl
   label={field.label}
   value={field.value}
+  onValueChange={
+    field.key === 'year'
+      ? (value) =>
+      {
+        const year = Number(value);
+
+        if (Number.isFinite(year))
+        {
+          controller.setPendingYear(year);
+        }
+      }
+      : undefined
+  }
   onStep={
   field.key === 'era'
     ? undefined

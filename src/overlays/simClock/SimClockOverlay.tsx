@@ -11,6 +11,8 @@ import {
 import type { OverlayPlacement } from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
 import {
+  calendarToSimulationTime,
+  simulationTimeToCalendar,
   stepSimulationTime,
   type SimCalendarField,
 } from '../../simulation/SimCalendar';
@@ -271,7 +273,66 @@ export function useSimClockOverlay()
             activeEra
         )
     );
-  };  
+  };
+
+  const setPendingYear = (year: number) =>
+  {
+    if (!activeEra || !Number.isFinite(year))
+    {
+        return;
+    }
+
+    setPendingTime((current) =>
+    {
+        const calendar = simulationTimeToCalendar(
+            current,
+            activeEra
+        );
+
+        const month = activeEra.months[calendar.monthIndex];
+
+        const firstOfMonth = calendarToSimulationTime(
+        {
+            year: Math.trunc(year),
+            monthId: month.id,
+            day: 1,
+            hour: calendar.hour,
+            minute: calendar.minute,
+            second: calendar.second,
+        },
+        activeEra
+        );
+
+        const resolvedMonth = simulationTimeToCalendar(
+            firstOfMonth,
+            activeEra
+        );
+
+        const maximumDay = simulationTimeToCalendar(
+            stepSimulationTime(
+                firstOfMonth,
+                'month',
+                1,
+                activeEra
+            ) - activeEra.secondsPerMinute *
+            activeEra.minutesPerHour *
+            activeEra.hoursPerDay,
+            activeEra
+        ).day;
+
+        return calendarToSimulationTime(
+        {
+            year: resolvedMonth.year,
+            monthId: resolvedMonth.monthId,
+            day: Math.min(calendar.day, maximumDay),
+            hour: calendar.hour,
+            minute: calendar.minute,
+            second: calendar.second,
+        },
+        activeEra
+        );
+    });
+  };
 
   const restoreWorldState = (
     time: SimulationTime,
@@ -294,6 +355,7 @@ export function useSimClockOverlay()
     pendingTime,
     setPendingTime,
     stepPendingTime,
+    setPendingYear,
     commitPendingTime,
     restoreWorldState,
   };

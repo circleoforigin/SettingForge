@@ -753,7 +753,7 @@ body,
 
 .sim-clock-set-time {
   white-space: nowrap;
-  margin-right: 20px;
+  margin-right: 6px;
 }
 
 .sim-clock-weekday {
@@ -868,6 +868,29 @@ body,
   line-height: 1;
 
   white-space: nowrap;
+  cursor: default;
+}
+
+.sim-clock-field-value-input {
+  appearance: textfield;
+
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  outline: none;
+
+  background: transparent;
+  box-shadow: none;
+
+  text-align: right;
+
+  cursor: text;
+}
+
+.sim-clock-field-value-input::-webkit-inner-spin-button,
+.sim-clock-field-value-input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
 }
 
 .sim-clock-field-arrows {
