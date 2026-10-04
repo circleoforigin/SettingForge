@@ -210,7 +210,7 @@ const stepProgressPreset = (
   <div className="sim-clock-go-to">
     <button
       type="button"
-      className="sim-clock-stage-handle"
+      className="sim-clock-stage-handle sim-clock-stage-handle-left"
       onClick={() => setStage(stage === 'progression' ? 'go-to' : 'progression')}
     >
       {stage === 'progression' ? '▲' : '▼'}
@@ -269,7 +269,7 @@ const stepProgressPreset = (
 
 <button
   type="button"
-  className="sim-clock-stage-handle"
+  className="sim-clock-stage-handle sim-clock-stage-handle-right"
   onClick={() => setStage(stage === 'progression' ? 'go-to' : 'progression')}
 >
   {stage === 'progression' ? '▲' : '▼'}
