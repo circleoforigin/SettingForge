@@ -367,14 +367,23 @@ const requestTravel = () =>
 {
   stopRealTime();
 
-  hostEventBroker.broadcast(
-    'Simulation.TravelRequested',
+  void hostEventBroker
+    .requestModule(
+      'regions',
+      'Regions.Travel',
+      {
+        startTime:
+          simulationClockService.getTime(),
+        pace: 'medium',
+      }
+    )
+    .catch((error: unknown) =>
     {
-      startTime:
-        simulationClockService.getTime(),
-      pace: 'medium',
-    }
-  );
+      console.error(
+        '[Simulation] Unable to begin Travel.',
+        error
+      );
+    });
 };
 
 const restoreWorldState = (
