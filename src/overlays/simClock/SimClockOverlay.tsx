@@ -3,6 +3,7 @@ import {
   simulationClockService,
   type SimulationTime,
 } from '../../simulation/SimulationClockService';
+import { hostEventBroker } from '../../events/HostEventBroker';
 import {
   createDefaultSimClockSettings,
   type SimClockEra,
@@ -90,8 +91,7 @@ function formatDatePreview(
   );
 }
 
-export type SimClockOverlayController =
-  ReturnType<typeof useSimClockOverlay>;
+export type SimClockOverlayController = ReturnType<typeof useSimClockOverlay>;
 
 export function useSimClockOverlay()
 {
@@ -363,6 +363,20 @@ const stopRealTime = () =>
   setRealTimeActive(false);
 };
 
+const requestTravel = () =>
+{
+  stopRealTime();
+
+  hostEventBroker.broadcast(
+    'Simulation.TravelRequested',
+    {
+      startTime:
+        simulationClockService.getTime(),
+      pace: 'medium',
+    }
+  );
+};
+
 const restoreWorldState = (
   time: SimulationTime,
   settings: SimClockSettings
@@ -416,6 +430,7 @@ const restoreWorldState = (
     progressToMarker,
     realTimeActive,
     toggleRealTime,
+    requestTravel,
     stopRealTime,
     restoreWorldState,
   };

@@ -634,6 +634,7 @@ body,
 
 .sim-clock-surface[data-edge='bottom'] {
   bottom: 0;
+  flex-direction: column-reverse;
 }
 
 .sim-clock-surface[data-edge='top'] {
@@ -686,10 +687,6 @@ body,
   color: white;
 }
 
-.sim-clock-surface[data-edge='top'] {
-  flex-direction: column-reverse;
-}
-
 .sim-clock-surface[data-edge='top']
 .sim-clock-summary {
   border-top: none;
@@ -715,40 +712,6 @@ body,
   border-radius: 5px 5px 0 0;
 
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.25);
-}
-
-.sim-clock-stage-handle {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-
-  width: 18px;
-  margin: 0;
-  padding: 0;
-
-  background: transparent;
-  color: #aeb0b6;
-
-  border: none;
-
-  font: inherit;
-  font-size: 8px;
-  line-height: 1;
-
-  cursor: pointer;
-}
-
-.sim-clock-stage-handle-left {
-  left: 0;
-}
-
-.sim-clock-stage-handle-right {
-  right: 0;
-}
-
-.sim-clock-stage-handle:hover {
-  background: #3a3c41;
-  color: #ffffff;
 }
 
 .sim-clock-set-time {
@@ -787,10 +750,10 @@ body,
   margin: 0;
   padding: 0;
 
-  background: transparent;
+  background: #2b2d31;
   color: #aeb0b6;
 
-  border: none;
+  border: 1px solid #45474e;
 
   font: inherit;
   font-size: 12px;
@@ -1012,33 +975,39 @@ body,
 }
 
 .sim-clock-surface[data-edge='top']
+.sim-clock-progression {
+  border-top: 1px solid #45474e;
+  border-radius: 0;
+}
+
+.sim-clock-surface[data-edge='top']
 .sim-clock-go-to {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sim-clock-surface[data-edge='top']
+.sim-clock-weekday {
   border-top: none;
-  border-bottom: 1px solid #45474e;
   border-radius: 0 0 5px 5px;
-
-  box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-.sim-clock-surface[data-edge='top']
-.sim-clock-weekday {
-  order: 2;
-}
-
-.sim-clock-surface[data-edge='top']
-.sim-clock-progression {
-  order: 1;
 }
 
 .sim-clock-surface[data-edge='bottom']
 .sim-clock-weekday {
-  order: -2;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+}
+
+.sim-clock-surface[data-edge='bottom']
+.sim-clock-go-to {
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .sim-clock-surface[data-edge='bottom']
 .sim-clock-progression {
-  order: -1;
+  border-bottom: 1px solid #45474e;
+  border-radius: 0;
 }
 
 .dialog.sim-clock-settings-dialog {
@@ -1351,8 +1320,9 @@ body,
 }
 
 .sim-clock-progression {
-  flex: 0 0 100%;
+  flex: 0 0 auto;
   box-sizing: border-box;
+  width: 100%;
 
   display: grid;
   grid-template-columns: 176px 100px 76px;
@@ -1360,9 +1330,13 @@ body,
   align-items: center;
 
   gap: 8px;
-
   padding: 3px 18px 5px;
+
+  background: #2b2d31;
+  border-left: 1px solid #45474e;
+  border-right: 1px solid #45474e;
 }
+
 
 .sim-clock-progression-column {
   min-width: 0;
@@ -1526,7 +1500,7 @@ body,
   box-shadow:
     0 8px 20px rgba(0, 0, 0, 0.35);
 
-  z-index: 100;
+  z-index: 10000;
 }
 
 .dropdown-item {

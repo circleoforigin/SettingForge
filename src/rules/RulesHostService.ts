@@ -1,14 +1,6 @@
-import type {
-  HostRequestMessage,
-} from '@settingforge/module-sdk';
-
-import type {
-  World,
-} from '../models/World';
-
-import {
-  rulesService,
-} from './RulesService';
+import type { HostRequestMessage } from '@settingforge/module-sdk';
+import type { World } from '../models/World';
+import { rulesService } from './RulesService';
 
 type RegisterRequestHandler = (
   type: string,
@@ -17,8 +9,15 @@ type RegisterRequestHandler = (
   ) => Promise<unknown>
 ) => () => void;
 
-interface RulesetInteractionRequest {
+interface RulesetInteractionRequest 
+{
   target: string;
+}
+
+interface RulesetFunctionRequest
+{
+  functionId: string;
+  input?: unknown;
 }
 
 export function registerRulesHostService(
@@ -26,9 +25,11 @@ export function registerRulesHostService(
     RegisterRequestHandler,
   getActiveWorld:
     () => World | null
-): () => void {
-  return registerRequestHandler(
-    'rules.getInteraction',
+): () => void 
+{
+  const unregisterInteraction =
+    registerRequestHandler(
+        'rules.getInteraction',
     async (request) => {
       const payload =
         request.payload as
@@ -46,10 +47,10 @@ export function registerRulesHostService(
         );
       }
 
-      const world =
-        getActiveWorld();
+      const world = getActiveWorld();
 
-      if (!world) {
+      if (!world) 
+      {
         return null;
       }
 
@@ -59,29 +60,68 @@ export function registerRulesHostService(
           payload.target
         );
 
-      if (!interaction) {
+      if (!interaction) 
+      {
         return null;
       }
 
-      const activeRuleset =
-        rulesService.getActiveRuleset(
-          world
-        );
+      const activeRuleset = rulesService.getActiveRuleset(world);
 
-      if (!activeRuleset) {
+      if (!activeRuleset)
+      {
         return null;
       }
 
       return {
-        rulesetId:
-          activeRuleset.definition.id,
-
-        rulesetVersion:
-          activeRuleset.definition
-            .version,
-
+        rulesetId: activeRuleset.definition.id,
+        rulesetVersion: activeRuleset.definition.version,
         interaction,
       };
     }
   );
+
+  const unregisterFunction =
+  registerRequestHandler(
+    'rules.executeFunction',
+    async (request) =>
+    {
+      const payload =
+        request.payload as
+          | RulesetFunctionRequest
+          | undefined;
+
+      if (
+        !payload ||
+        typeof payload.functionId !== 'string' ||
+        !payload.functionId.trim()
+      )
+      {
+        throw new Error(
+          'Ruleset function ID is required.'
+        );
+      }
+
+      const world =
+        getActiveWorld();
+
+      if (!world)
+      {
+        throw new Error(
+          'No World is active.'
+        );
+      }
+
+      return rulesService.executeFunction(
+        world,
+        payload.functionId,
+        payload.input
+      );
+    }
+  );
+
+return () =>
+{
+  unregisterInteraction();
+  unregisterFunction();
+};
 }

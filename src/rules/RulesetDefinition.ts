@@ -1,27 +1,40 @@
-import type {
-  RulesetInteractionDefinition,
-} from '@settingforge/module-sdk';
+import type { RulesetInteractionDefinition } from '@settingforge/module-sdk';
 
 export type RulesetRequirementKind =
   | 'event'
   | 'command'
   | 'query';
 
-export interface RulesetRequirement {
+export interface RulesetRequirement
+{
   id: string;
   kind: RulesetRequirementKind;
   required?: boolean;
   description?: string;
 }
 
-export interface RulesetDefinition {
+export interface RulesetDefinition
+{
   id: string;
   name: string;
   version: string;
   description?: string;
 
   requirements: RulesetRequirement[];
+  functions?: RulesetFunctionDefinition[];
 
-  interactions?:
-    RulesetInteractionDefinition[];
+  interactions?: RulesetInteractionDefinition[];
+}
+
+export interface RulesetFunctionContext
+{
+  input: unknown;
+}
+
+export type RulesetFunctionHandler = (context: RulesetFunctionContext) => unknown;
+
+export interface RulesetFunctionDefinition
+{
+  id: string;
+  handler: RulesetFunctionHandler;
 }

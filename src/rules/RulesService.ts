@@ -83,6 +83,42 @@ export class RulesService {
   );
 }
 
+executeFunction(
+  world: World,
+  functionId: string,
+  input: unknown
+): unknown
+{
+  const activeRuleset =
+    this.getActiveRuleset(world);
+
+  if (!activeRuleset)
+  {
+    throw new Error(
+      'No active Ruleset is available.'
+    );
+  }
+
+  const ruleFunction =
+    activeRuleset.definition
+      .functions
+      ?.find(
+        (candidate) =>
+          candidate.id === functionId
+      );
+
+  if (!ruleFunction)
+  {
+    throw new Error(
+      `Ruleset function "${functionId}" is not supported.`
+    );
+  }
+
+  return ruleFunction.handler({
+    input,
+  });
+}
+
   getResolution(
     world: World
   ): RulesetResolution | null {
