@@ -40,17 +40,41 @@ function insertOccurrence(
   );
 }
 
+function removeOccurrences(
+  queue: Occurrence[],
+  predicate: (occurrence: Occurrence) => boolean
+): number
+{
+  let removed = 0;
+
+  for (
+    let index = queue.length - 1;
+    index >= 0;
+    index -= 1
+  )
+  {
+    if (!predicate(queue[index]))
+    {
+      continue;
+    }
+
+    queue.splice(
+      index,
+      1
+    );
+
+    removed += 1;
+  }
+
+  return removed;
+}
+
 export class OccurrenceService
 {
-  private readonly globalQueue:
-    Occurrence[] = [];
+  private readonly globalQueue: Occurrence[] = [];
+  private readonly pieceQueues = new Map<string, Occurrence[]>();
 
-  private readonly pieceQueues =
-    new Map<string, Occurrence[]>();
-
-  add(
-    occurrence: Occurrence
-  ): void
+  add(occurrence: Occurrence): void
   {
     if (!occurrence.pieceId)
     {
@@ -62,10 +86,7 @@ export class OccurrenceService
       return;
     }
 
-    let queue =
-      this.pieceQueues.get(
-        occurrence.pieceId
-      );
+    let queue = this.pieceQueues.get(occurrence.pieceId);
 
     if (!queue)
     {
@@ -83,9 +104,7 @@ export class OccurrenceService
     );
   }
 
-  addMany(
-    occurrences: readonly Occurrence[]
-  ): void
+  addMany(occurrences: readonly Occurrence[]): void
   {
     for (const occurrence of occurrences)
     {
@@ -93,9 +112,111 @@ export class OccurrenceService
     }
   }
 
-  getNext(
-    maximum: number
-  ): Occurrence[]
+  remove(occurrenceId: string): boolean
+  {
+    const globalRemoved =
+      removeOccurrences(
+        this.globalQueue,
+        (occurrence) =>
+          occurrence.id === occurrenceId
+      );
+
+    if (globalRemoved > 0)
+    {
+      return true;
+    }
+
+    for (
+      const [
+        pieceId,
+        queue,
+      ] of this.pieceQueues
+    )
+    {
+      const removed =
+        removeOccurrences(
+          queue,
+          (occurrence) =>
+            occurrence.id === occurrenceId
+        );
+
+      if (queue.length === 0)
+      {
+        this.pieceQueues.delete(pieceId);
+      }
+
+      if (removed > 0)
+      {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  removeProspect(prospectId: string): number
+  {
+    let removed =
+      removeOccurrences(
+        this.globalQueue,
+        (occurrence) =>
+          occurrence.prospectId ===
+          prospectId
+      );
+
+    for (
+      const [
+        pieceId,
+        queue,
+      ] of this.pieceQueues
+    )
+    {
+      removed +=
+        removeOccurrences(
+          queue,
+          (occurrence) =>
+            occurrence.prospectId ===
+            prospectId
+        );
+
+      if (queue.length === 0)
+      {
+        this.pieceQueues.delete(pieceId);
+      }
+    }
+
+    return removed;
+  }
+
+  truncatePiece(
+    pieceId: string,
+    simulationTime: number
+  ): number
+  {
+    const queue = this.pieceQueues.get(pieceId);
+
+    if (!queue)
+    {
+      return 0;
+    }
+
+    const removed =
+      removeOccurrences(
+        queue,
+        (occurrence) =>
+          occurrence.simulationTime >
+          simulationTime
+      );
+
+    if (queue.length === 0)
+    {
+      this.pieceQueues.delete(pieceId);
+    }
+
+    return removed;
+  }
+
+  getNext(maximum: number): Occurrence[]
   {
     const limit =
       Math.max(
@@ -113,16 +234,14 @@ export class OccurrenceService
       ...this.pieceQueues.values(),
     ];
 
-    const indexes =
-      queues.map(() => 0);
+    const indexes = queues.map(() => 0);
 
     const result: Occurrence[] = [];
 
     while (result.length < limit)
     {
       let selectedQueue = -1;
-      let selectedOccurrence:
-        Occurrence | undefined;
+      let selectedOccurrence: Occurrence | undefined;
 
       for (
         let index = 0;
@@ -136,7 +255,7 @@ export class OccurrenceService
           ];
 
         if (
-          !occurrence ||
+            !occurrence ||
           (
             selectedOccurrence &&
             compareOccurrences(
@@ -150,8 +269,7 @@ export class OccurrenceService
         }
 
         selectedQueue = index;
-        selectedOccurrence =
-          occurrence;
+        selectedOccurrence = occurrence;
       }
 
       if (
@@ -162,9 +280,7 @@ export class OccurrenceService
         break;
       }
 
-      result.push(
-        selectedOccurrence
-      );
+      result.push(selectedOccurrence);
 
       indexes[selectedQueue] += 1;
     }
@@ -179,9 +295,7 @@ export class OccurrenceService
     ];
   }
 
-  getPieceQueue(
-    pieceId: string
-  ): Occurrence[]
+  getPieceQueue(pieceId: string): Occurrence[]
   {
     return [
       ...(
@@ -195,9 +309,7 @@ export class OccurrenceService
 
   getPieceIds(): string[]
   {
-    return Array.from(
-      this.pieceQueues.keys()
-    );
+    return Array.from(this.pieceQueues.keys());
   }
 
   clear(): void
@@ -207,5 +319,4 @@ export class OccurrenceService
   }
 }
 
-export const occurrenceService =
-  new OccurrenceService();
+export const occurrenceService = new OccurrenceService();

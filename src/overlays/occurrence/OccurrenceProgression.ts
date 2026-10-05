@@ -21,24 +21,16 @@ export type OccurrenceReaction =
     keyof typeof OccurrenceReactions
   ];
 
-  export function combineOccurrenceReactions(
+export function combineOccurrenceReactions(
   reactions: readonly OccurrenceReaction[]
 ): OccurrenceReaction
 {
-  if (
-    reactions.includes(
-      OccurrenceReactions.Interrupt
-    )
-  )
+  if (reactions.includes(OccurrenceReactions.Interrupt))
   {
     return OccurrenceReactions.Interrupt;
   }
 
-  if (
-    reactions.includes(
-      OccurrenceReactions.Recalculate
-    )
-  )
+  if (reactions.includes(OccurrenceReactions.Recalculate))
   {
     return OccurrenceReactions.Recalculate;
   }
