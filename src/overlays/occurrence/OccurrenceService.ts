@@ -214,6 +214,11 @@ export class OccurrenceService
     }
 
     return removed;
+  }  
+  
+  peek(): Occurrence | null
+  {
+    return this.getNext(1)[0] ?? null;
   }
 
   getNext(maximum: number): Occurrence[]
