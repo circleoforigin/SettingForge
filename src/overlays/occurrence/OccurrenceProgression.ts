@@ -20,3 +20,28 @@ export type OccurrenceReaction =
   typeof OccurrenceReactions[
     keyof typeof OccurrenceReactions
   ];
+
+  export function combineOccurrenceReactions(
+  reactions: readonly OccurrenceReaction[]
+): OccurrenceReaction
+{
+  if (
+    reactions.includes(
+      OccurrenceReactions.Interrupt
+    )
+  )
+  {
+    return OccurrenceReactions.Interrupt;
+  }
+
+  if (
+    reactions.includes(
+      OccurrenceReactions.Recalculate
+    )
+  )
+  {
+    return OccurrenceReactions.Recalculate;
+  }
+
+  return OccurrenceReactions.Notify;
+}
