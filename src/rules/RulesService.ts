@@ -2,26 +2,14 @@ import type {
   World,
   WorldRulesetReference,
 } from '../models/World';
-
-import type {
-  RulesetInteractionDefinition,
-} from '@settingforge/module-sdk';
-
+import type { RulesetInteractionDefinition } from '@settingforge/module-sdk';
 import type {
   RulesetDefinition,
+  RulesetOccurrenceTagDefinition,
 } from './RulesetDefinition';
-
-import type {
-  RulesetResolution,
-} from './RulesetRequirementResolver';
-
-import {
-  rulesetRegistry,
-} from './RulesetRegistry';
-
-import {
-  rulesetRequirementResolver,
-} from './RulesetRequirementResolver';
+import type { RulesetResolution } from './RulesetRequirementResolver';
+import { rulesetRegistry } from './RulesetRegistry';
+import { rulesetRequirementResolver } from './RulesetRequirementResolver';
 
 export interface ActiveRuleset {
   definition: RulesetDefinition;
@@ -83,14 +71,42 @@ export class RulesService {
   );
 }
 
+  getOccurrenceTags(
+    world: World
+  ): RulesetOccurrenceTagDefinition[]
+  {
+    const activeRuleset = this.getActiveRuleset(world);
+
+    return (
+      activeRuleset
+        ?.definition
+        .occurrenceTags ??
+      []
+    );
+  }
+
+  getOccurrenceTag(
+    world: World,
+    tagId: string
+  ): RulesetOccurrenceTagDefinition | null
+  {
+    return (
+      this.getOccurrenceTags(world)
+        .find(
+          (tag) =>
+            tag.id === tagId
+        ) ??
+      null
+    );
+  }
+
 executeFunction(
   world: World,
   functionId: string,
   input: unknown
 ): unknown
 {
-  const activeRuleset =
-    this.getActiveRuleset(world);
+  const activeRuleset = this.getActiveRuleset(world);
 
   if (!activeRuleset)
   {

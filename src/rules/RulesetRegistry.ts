@@ -18,10 +18,20 @@ function cloneRuleset(
   return {
     ...ruleset,
 
-    requirements:
+        requirements:
       ruleset.requirements.map(
         (requirement) => ({
           ...requirement,
+        })
+      ),
+
+    occurrenceTags:
+      ruleset.occurrenceTags?.map(
+        (tag) => ({
+          ...tag,
+          reactions: {
+            ...tag.reactions,
+          },
         })
       ),
   };
