@@ -13,6 +13,13 @@ export interface RulesetRequirement
   description?: string;
 }
 
+export interface RulesetOccurrenceTagDefinition
+{
+  id: string;
+  label: string;
+  description?: string;
+}
+
 export interface RulesetDefinition
 {
   id: string;
@@ -22,7 +29,7 @@ export interface RulesetDefinition
 
   requirements: RulesetRequirement[];
   functions?: RulesetFunctionDefinition[];
-
+  occurrenceTags?: RulesetOccurrenceTagDefinition[];
   interactions?: RulesetInteractionDefinition[];
 }
 

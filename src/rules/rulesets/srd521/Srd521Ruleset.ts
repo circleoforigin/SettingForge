@@ -104,7 +104,34 @@ export const srd521Ruleset:
     description:
       'SettingForge rules implementation based on SRD 5.2.1.',
 
-    requirements: [],
+        requirements: [],
+
+    occurrenceTags: [
+      {
+        id: 'Movement',
+        label: 'Movement',
+        description:
+          'The occurrence may affect movement or travel.',
+      },
+      {
+        id: 'VehicleMovement',
+        label: 'Vehicle Movement',
+        description:
+          'The occurrence may affect movement while traveling by vehicle.',
+      },
+      {
+        id: 'Visibility',
+        label: 'Visibility',
+        description:
+          'The occurrence may affect visibility.',
+      },
+      {
+        id: 'Encounter',
+        label: 'Encounter',
+        description:
+          'The occurrence represents an encounter.',
+      },
+    ],
 
     functions: [
   {
