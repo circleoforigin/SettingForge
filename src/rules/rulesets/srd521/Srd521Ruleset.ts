@@ -92,17 +92,10 @@ export const SRD_521_RULESET_VERSION = '0.1.0';
 
 export const srd521Ruleset:
   RulesetDefinition = {
-    id:
-      SRD_521_RULESET_ID,
-
-    name:
-      'SRD 5.2.1',
-
-    version:
-      SRD_521_RULESET_VERSION,
-
-    description:
-      'SettingForge rules implementation based on SRD 5.2.1.',
+    id: SRD_521_RULESET_ID,
+    name: 'SRD 5.2.1',
+    version: SRD_521_RULESET_VERSION,
+    description: 'SettingForge rules implementation based on SRD 5.2.1.',
 
         requirements: [],
 
@@ -110,26 +103,22 @@ export const srd521Ruleset:
       {
         id: 'Movement',
         label: 'Movement',
-        description:
-          'The occurrence may affect movement or travel.',
+        description: 'The occurrence may affect movement or travel.',
       },
       {
         id: 'VehicleMovement',
         label: 'Vehicle Movement',
-        description:
-          'The occurrence may affect movement while traveling by vehicle.',
+        description: 'The occurrence may affect movement while traveling by vehicle.',
       },
       {
         id: 'Visibility',
         label: 'Visibility',
-        description:
-          'The occurrence may affect visibility.',
+        description: 'The occurrence may affect visibility.',
       },
       {
         id: 'Encounter',
         label: 'Encounter',
-        description:
-          'The occurrence represents an encounter.',
+        description: 'The occurrence represents an encounter.',
       },
     ],
 
@@ -151,14 +140,10 @@ export const srd521Ruleset:
         input.distance.value < 0
       )
       {
-        throw new Error(
-          'TravelTime requires a valid distance.'
-        );
+        throw new Error('TravelTime requires a valid distance.');
       }
 
-      return calculateTravelTime(
-        input
-      );
+      return calculateTravelTime(input);
     },
   },
 ],
@@ -166,17 +151,14 @@ export const srd521Ruleset:
     interactions: [
     {
         target: 'Regions.Section',
-        schemaId:
-            'srd521.regions.section',
+        schemaId: 'srd521.regions.section',
         fields: [
             {
             id: 'difficultTerrain',
-            label:
-                'Difficult Terrain',
+            label: 'Difficult Terrain',
             type: 'boolean',
             defaultValue: false,
-            description:
-            'Movement through Difficult Terrain costs 1 extra foot for every foot moved.',
+            description: 'Movement through Difficult Terrain costs 1 extra foot for every foot moved.',
         },
       ],
     },
