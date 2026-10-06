@@ -27,7 +27,185 @@ interface TravelTimeOutput
   speedMph: number;
 }
 
+interface AreaPropertiesInput
+{
+  values: {
+    terrain?: string | null;
+    difficultTerrain?: boolean | null;
+  };
+}
+
+interface EncounterDistance
+{
+  dice: {
+    count: number;
+    sides: number;
+  };
+  multiplier: number;
+  unit: 'feet';
+}
+
+interface AreaProperties
+{
+  maximumPace: 'slow' | 'medium' | 'fast';
+  encounterDistance: EncounterDistance;
+  foragingDC: number;
+  navigationDC: number;
+  searchDC: number;
+}
+
+interface TerrainDefinition extends AreaProperties
+{
+  label: string;
+}
+
 export const SRD_521_RULESET_ID = 'srd-5.2.1';
+
+const TERRAIN_DEFINITIONS:
+  Record<string, TerrainDefinition> = {
+    arctic: {
+      label: 'Arctic',
+      maximumPace: 'medium',
+      encounterDistance: {
+        dice: { count: 6, sides: 6 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 20,
+      navigationDC: 10,
+      searchDC: 10,
+    },
+
+    coastal: {
+      label: 'Coastal',
+      maximumPace: 'medium',
+      encounterDistance: {
+        dice: { count: 2, sides: 10 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 10,
+      navigationDC: 10,
+      searchDC: 10,
+    },
+
+    desert: {
+      label: 'Desert',
+      maximumPace: 'fast',
+      encounterDistance: {
+        dice: { count: 6, sides: 6 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 20,
+      navigationDC: 10,
+      searchDC: 10,
+    },
+
+    forest: {
+      label: 'Forest',
+      maximumPace: 'medium',
+      encounterDistance: {
+        dice: { count: 2, sides: 8 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 10,
+      navigationDC: 15,
+      searchDC: 15,
+    },
+
+    grassland: {
+      label: 'Grassland',
+      maximumPace: 'fast',
+      encounterDistance: {
+        dice: { count: 6, sides: 6 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 10,
+      navigationDC: 10,
+      searchDC: 10,
+    },
+
+    hill: {
+      label: 'Hill',
+      maximumPace: 'medium',
+      encounterDistance: {
+        dice: { count: 2, sides: 10 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 10,
+      navigationDC: 10,
+      searchDC: 10,
+    },
+
+    mountain: {
+      label: 'Mountain',
+      maximumPace: 'slow',
+      encounterDistance: {
+        dice: { count: 4, sides: 10 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 20,
+      navigationDC: 15,
+      searchDC: 20,
+    },
+
+    swamp: {
+      label: 'Swamp',
+      maximumPace: 'slow',
+      encounterDistance: {
+        dice: { count: 2, sides: 8 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 10,
+      navigationDC: 15,
+      searchDC: 20,
+    },
+
+    underdark: {
+      label: 'Underdark',
+      maximumPace: 'medium',
+      encounterDistance: {
+        dice: { count: 2, sides: 6 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 20,
+      navigationDC: 15,
+      searchDC: 20,
+    },
+
+    urban: {
+      label: 'Urban',
+      maximumPace: 'medium',
+      encounterDistance: {
+        dice: { count: 2, sides: 8 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 20,
+      navigationDC: 10,
+      searchDC: 15,
+    },
+
+    waterborne: {
+      label: 'Waterborne',
+      maximumPace: 'fast',
+      encounterDistance: {
+        dice: { count: 6, sides: 6 },
+        multiplier: 10,
+        unit: 'feet',
+      },
+      foragingDC: 10,
+      navigationDC: 10,
+      searchDC: 10,
+    },
+  };
 
 function distanceToMiles(
   value: number,
@@ -93,6 +271,52 @@ function calculateTravelTime(
 }
 
 export const SRD_521_RULESET_VERSION = '0.1.0';
+
+function deriveAreaProperties(
+  input: AreaPropertiesInput
+)
+{
+  const terrainId =
+    typeof input.values.terrain === 'string'
+      ? input.values.terrain
+      : 'grassland';
+
+  const terrain =
+    TERRAIN_DEFINITIONS[terrainId] ??
+    TERRAIN_DEFINITIONS.grassland;
+
+  const maximumPaceLabel =
+    terrain.maximumPace === 'slow'
+      ? 'Slow'
+      : terrain.maximumPace === 'fast'
+        ? 'Fast'
+        : 'Normal';
+
+  const encounterDistance =
+    terrain.encounterDistance;
+
+  return {
+    values: {
+      maximumPace: maximumPaceLabel,
+      encounterDistance:
+        `${encounterDistance.dice.count}d${encounterDistance.dice.sides} × ${encounterDistance.multiplier} ft`,
+      foragingDC: terrain.foragingDC,
+      navigationDC: terrain.navigationDC,
+      searchDC: terrain.searchDC,
+    },
+
+    data: {
+      terrain: terrainId,
+      difficultTerrain:
+        input.values.difficultTerrain === true,
+      maximumPace: terrain.maximumPace,
+      encounterDistance,
+      foragingDC: terrain.foragingDC,
+      navigationDC: terrain.navigationDC,
+      searchDC: terrain.searchDC,
+    },
+  };
+}
 
 export const srd521Ruleset:
   RulesetDefinition = {
@@ -169,28 +393,40 @@ export const srd521Ruleset:
     ],
 
     functions: [
-  {
-    id: 'TravelTime',
-
-    handler: (context) =>
-    {
-      const input = context.input as TravelTimeInput;
-
-      if (
-        !input?.distance ||
-        !Number.isFinite(
-          input.distance.value
-        ) ||
-        input.distance.value < 0
-      )
       {
-        throw new Error('TravelTime requires a valid distance.');
-      }
+        id: 'TravelTime',
 
-      return calculateTravelTime(input);
-    },
-  },
-],
+        handler: (context) =>
+        {
+          const input = context.input as TravelTimeInput;
+
+          if (
+            !input?.distance ||
+            !Number.isFinite(
+              input.distance.value
+            ) ||
+            input.distance.value < 0
+          )
+          {
+            throw new Error(
+              'TravelTime requires a valid distance.'
+            );
+          }
+
+          return calculateTravelTime(input);
+        },
+      },
+      {
+        id: 'AreaProperties',
+
+        handler: (context) =>
+        {
+          return deriveAreaProperties(
+            context.input as AreaPropertiesInput
+          );
+        },
+      },
+    ],
 
       interactions: [
       {
