@@ -463,6 +463,7 @@ export const srd521Ruleset:
             label: 'Terrain',
             type: 'select',
             defaultValue: 'grassland',
+            required: true,
             options: Object.entries(
               TERRAIN_DEFINITIONS
             ).map(
