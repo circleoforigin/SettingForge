@@ -14,6 +14,12 @@ interface RulesetInteractionRequest
   target: string;
 }
 
+interface RulesetInteractionDerivedRequest
+{
+  target: string;
+  values: Record<string, unknown>;
+}
+
 interface RulesetFunctionRequest
 {
   functionId: string;
@@ -80,6 +86,56 @@ export function registerRulesHostService(
     }
   );
 
+    const unregisterDerivedInteraction =
+    registerRequestHandler(
+      'rules.deriveInteraction',
+      async (request) =>
+      {
+        const payload =
+          request.payload as
+            | RulesetInteractionDerivedRequest
+            | undefined;
+
+        if (
+          !payload ||
+          typeof payload.target !== 'string' ||
+          !payload.target.trim()
+        )
+        {
+          throw new Error(
+            'Ruleset interaction target is required.'
+          );
+        }
+
+        const world =
+          getActiveWorld();
+
+        if (!world)
+        {
+          return null;
+        }
+
+        const interaction =
+          rulesService.getInteraction(
+            world,
+            payload.target
+          );
+
+        if (!interaction?.derived)
+        {
+          return null;
+        }
+
+        return rulesService.executeFunction(
+          world,
+          interaction.derived.functionId,
+          {
+            values: payload.values,
+          }
+        );
+      }
+    );
+
   const unregisterFunction =
   registerRequestHandler(
     'rules.executeFunction',
@@ -122,6 +178,7 @@ export function registerRulesHostService(
 return () =>
 {
   unregisterInteraction();
+  unregisterDerivedInteraction();
   unregisterFunction();
 };
 }
