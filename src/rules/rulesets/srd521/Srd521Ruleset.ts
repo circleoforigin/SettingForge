@@ -279,11 +279,36 @@ function deriveAreaProperties(
   const terrainId =
     typeof input.values.terrain === 'string'
       ? input.values.terrain
-      : 'grassland';
+      : null;
 
   const terrain =
-    TERRAIN_DEFINITIONS[terrainId] ??
-    TERRAIN_DEFINITIONS.grassland;
+    terrainId
+      ? TERRAIN_DEFINITIONS[terrainId]
+      : undefined;
+
+  if (!terrain)
+  {
+    return {
+      values: {
+        maximumPace: null,
+        encounterDistance: null,
+        foragingDC: null,
+        navigationDC: null,
+        searchDC: null,
+      },
+
+      data: {
+        terrain: null,
+        difficultTerrain:
+          input.values.difficultTerrain === true,
+        maximumPace: null,
+        encounterDistance: null,
+        foragingDC: null,
+        navigationDC: null,
+        searchDC: null,
+      },
+    };
+  }
 
   const maximumPaceLabel =
     terrain.maximumPace === 'slow'
@@ -434,6 +459,20 @@ export const srd521Ruleset:
         schemaId: 'srd521.regions.section',
         fields: [
           {
+            id: 'terrain',
+            label: 'Terrain',
+            type: 'select',
+            defaultValue: 'grassland',
+            options: Object.entries(
+              TERRAIN_DEFINITIONS
+            ).map(
+              ([value, terrain]) => ({
+                value,
+                label: terrain.label,
+              })
+            ),
+          },
+          {
             id: 'difficultTerrain',
             label: 'Difficult Terrain',
             type: 'boolean',
@@ -442,6 +481,33 @@ export const srd521Ruleset:
               'Movement through Difficult Terrain costs 1 extra foot for every foot moved.',
           },
         ],
+
+        derived: {
+          functionId: 'AreaProperties',
+
+          fields: [
+            {
+              id: 'maximumPace',
+              label: 'Maximum Pace',
+            },
+            {
+              id: 'encounterDistance',
+              label: 'Encounter Distance',
+            },
+            {
+              id: 'foragingDC',
+              label: 'Foraging DC',
+            },
+            {
+              id: 'navigationDC',
+              label: 'Navigation DC',
+            },
+            {
+              id: 'searchDC',
+              label: 'Search DC',
+            },
+          ],
+        },
       },
       {
         target: 'Regions.Piece',
