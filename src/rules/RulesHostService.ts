@@ -80,6 +80,7 @@ export function registerRulesHostService(
 
       return {
         rulesetId: activeRuleset.definition.id,
+        rulesetName: activeRuleset.definition.name,
         rulesetVersion: activeRuleset.definition.version,
         interaction,
       };

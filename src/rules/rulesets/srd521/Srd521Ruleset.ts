@@ -47,7 +47,7 @@ interface EncounterDistance
 
 interface AreaProperties
 {
-  maximumPace: 'slow' | 'medium' | 'fast';
+  maximumPace: 'slow' | 'medium' | 'fast' | 'special';
   encounterDistance: EncounterDistance;
   foragingDC: number;
   navigationDC: number;
@@ -65,7 +65,7 @@ const TERRAIN_DEFINITIONS:
   Record<string, TerrainDefinition> = {
     arctic: {
       label: 'Arctic',
-      maximumPace: 'medium',
+      maximumPace: 'fast',
       encounterDistance: {
         dice: { count: 6, sides: 6 },
         multiplier: 10,
@@ -85,13 +85,13 @@ const TERRAIN_DEFINITIONS:
         unit: 'feet',
       },
       foragingDC: 10,
-      navigationDC: 10,
-      searchDC: 10,
+      navigationDC: 5,
+      searchDC: 15,
     },
 
     desert: {
       label: 'Desert',
-      maximumPace: 'fast',
+      maximumPace: 'medium',
       encounterDistance: {
         dice: { count: 6, sides: 6 },
         multiplier: 10,
@@ -123,9 +123,9 @@ const TERRAIN_DEFINITIONS:
         multiplier: 10,
         unit: 'feet',
       },
-      foragingDC: 10,
-      navigationDC: 10,
-      searchDC: 10,
+      foragingDC: 15,
+      navigationDC: 5,
+      searchDC: 15,
     },
 
     hill: {
@@ -136,9 +136,9 @@ const TERRAIN_DEFINITIONS:
         multiplier: 10,
         unit: 'feet',
       },
-      foragingDC: 10,
+      foragingDC: 15,
       navigationDC: 10,
-      searchDC: 10,
+      searchDC: 15,
     },
 
     mountain: {
@@ -176,7 +176,7 @@ const TERRAIN_DEFINITIONS:
         unit: 'feet',
       },
       foragingDC: 20,
-      navigationDC: 15,
+      navigationDC: 10,
       searchDC: 20,
     },
 
@@ -184,26 +184,26 @@ const TERRAIN_DEFINITIONS:
       label: 'Urban',
       maximumPace: 'medium',
       encounterDistance: {
-        dice: { count: 2, sides: 8 },
+        dice: { count: 2, sides: 6 },
         multiplier: 10,
         unit: 'feet',
       },
       foragingDC: 20,
-      navigationDC: 10,
+      navigationDC: 15,
       searchDC: 15,
     },
 
     waterborne: {
       label: 'Waterborne',
-      maximumPace: 'fast',
+      maximumPace: 'special',
       encounterDistance: {
         dice: { count: 6, sides: 6 },
         multiplier: 10,
         unit: 'feet',
       },
-      foragingDC: 10,
+      foragingDC: 15,
       navigationDC: 10,
-      searchDC: 10,
+      searchDC: 15,
     },
   };
 
@@ -310,11 +310,13 @@ function deriveAreaProperties(
     };
   }
 
-  const maximumPaceLabel =
-    terrain.maximumPace === 'slow'
-      ? 'Slow'
-      : terrain.maximumPace === 'fast'
-        ? 'Fast'
+const maximumPaceLabel =
+  terrain.maximumPace === 'slow'
+    ? 'Slow'
+    : terrain.maximumPace === 'fast'
+      ? 'Fast'
+      : terrain.maximumPace === 'special'
+        ? 'Special'
         : 'Normal';
 
   const encounterDistance =
