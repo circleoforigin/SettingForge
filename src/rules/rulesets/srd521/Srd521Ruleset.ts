@@ -513,6 +513,29 @@ export const srd521Ruleset:
         },
       },
       {
+  target: 'Regions.PathSegment',
+  schemaId: 'srd521.regions.pathSegment',
+
+  fields: [
+    {
+      id: 'goodRoad',
+      label: 'Good Road',
+      type: 'boolean',
+      defaultValue: false,
+      description:
+        'Increases the maximum travel pace by one step, to a maximum of Fast.',
+    },
+    {
+      id: 'overrideDifficultTerrain',
+      label: 'Veto Diff. Terrain',
+      type: 'boolean',
+      defaultValue: false,
+      description:
+        'Ignores Difficult Terrain imposed by the Area while traveling along this Path.',
+    },
+  ],
+},
+      {
         target: 'Regions.Piece',
         schemaId: 'srd521.regions.piece',
         fields: [
