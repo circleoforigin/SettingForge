@@ -376,9 +376,7 @@ const requestTravel = () =>
       'Regions.Travel',
       {
         prospectId,
-        startTime:
-          simulationClockService.getTime(),
-        pace: 'medium',
+        startTime: simulationClockService.getTime(),
       }
     )
     .catch((error: unknown) =>
