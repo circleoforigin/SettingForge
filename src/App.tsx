@@ -174,6 +174,15 @@ const setOverlayPlacement = (
 
   const messenger = useMessengerOverlay();
   const simClock = useSimClockOverlay();
+  overlays:
+  overlayRegistry
+    .getAll()
+    .filter(
+      (overlay) =>
+        overlay.layout ===
+        'positioned'
+    )
+    .map((overlay) =>
   
 const captureWorldRuntimeState = (
   world: World
@@ -192,10 +201,15 @@ const captureWorldRuntimeState = (
         ),
     },
 
-    overlays:
-      overlayRegistry
-        .getAll()
-        .map((overlay) =>
+overlays:
+  overlayRegistry
+    .getAll()
+    .filter(
+      (overlay) =>
+        overlay.layout ===
+        'positioned'
+    )
+    .map((overlay) =>
         {
           const active =
             overlayManager.getActive(
@@ -3554,7 +3568,46 @@ async function removeModuleFromWorld(
 
     <div className="dropdown-separator" />
 
-    {overlayRegistry.getAll().map((overlay) => (
+{overlayRegistry.getAll().map((overlay) =>
+{
+  if (overlay.layout === 'fixed')
+  {
+    return (
+      <div
+        key={overlay.id}
+        className="overlay-menu-entry"
+      >
+        <div className="dropdown-item overlay-menu-label">
+          {overlay.name}
+          <span>›</span>
+        </div>
+
+        <div className="dropdown-menu overlay-submenu">
+          <button
+            type="button"
+            className="dropdown-item"
+            onClick={() =>
+            {
+              if (overlay.id === 'occurrences')
+              {
+                setOccurrencesVisible(
+                  (current) => !current
+                );
+              }
+            }}
+          >
+            {overlay.id === 'occurrences' &&
+              occurrencesVisible
+              ? '✓ '
+              : ''}
+            Visible
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
       <div
         key={overlay.id}
         className="overlay-menu-entry"
@@ -3678,7 +3731,8 @@ async function removeModuleFromWorld(
           </button>
         </div>
       </div>
-    ))}
+      );
+})}
   </div>
 </div>
     </div>
