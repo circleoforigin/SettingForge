@@ -1,5 +1,10 @@
 import type { Occurrence } from '@settingforge/module-sdk';
 
+export const OCCURRENCE_BACKLOG = 50;
+export const OCCURRENCE_REFRESH_LIMIT = 30;
+
+type OccurrenceListener = () => void;
+
 function compareOccurrences(
   left: Occurrence,
   right: Occurrence
@@ -73,44 +78,72 @@ export class OccurrenceService
 {
   private readonly globalQueue: Occurrence[] = [];
   private readonly pieceQueues = new Map<string, Occurrence[]>();
+  private readonly listeners = new Set<OccurrenceListener>();
 
-  add(occurrence: Occurrence): void
+subscribe(listener: OccurrenceListener): () => void
+{
+  this.listeners.add(listener);
+
+  return () =>
   {
-    if (!occurrence.pieceId)
-    {
-      insertOccurrence(
-        this.globalQueue,
-        occurrence
-      );
+    this.listeners.delete(listener);
+  };
+}
 
-      return;
-    }
+private notify(): void
+{
+  for (const listener of this.listeners)
+  {
+    listener();
+  }
+}
+  
+add(occurrence: Occurrence): void
+{
+  this.insert(occurrence);
+  this.notify();
+}
 
-    let queue = this.pieceQueues.get(occurrence.pieceId);
-
-    if (!queue)
-    {
-      queue = [];
-
-      this.pieceQueues.set(
-        occurrence.pieceId,
-        queue
-      );
-    }
-
+private insert(occurrence: Occurrence): void
+{
+  if (!occurrence.pieceId)
+  {
     insertOccurrence(
-      queue,
+      this.globalQueue,
       occurrence
     );
+
+    return;
   }
 
-  addMany(occurrences: readonly Occurrence[]): void
+  let queue = this.pieceQueues.get(occurrence.pieceId);
+
+  if (!queue)
   {
-    for (const occurrence of occurrences)
-    {
-      this.add(occurrence);
-    }
+    queue = [];
+    this.pieceQueues.set(occurrence.pieceId, queue);
   }
+
+  insertOccurrence(
+    queue,
+    occurrence
+  );
+}
+
+addMany(occurrences: readonly Occurrence[]): void
+{
+  if (occurrences.length === 0)
+  {
+    return;
+  }
+
+  for (const occurrence of occurrences)
+  {
+    this.insert(occurrence);
+  }
+
+  this.notify();
+}
 
   remove(occurrenceId: string): boolean
   {
@@ -121,10 +154,12 @@ export class OccurrenceService
           occurrence.id === occurrenceId
       );
 
-    if (globalRemoved > 0)
-    {
-      return true;
-    }
+if (globalRemoved > 0)
+{
+  this.notify();
+
+  return true;
+}
 
     for (
       const [
@@ -145,10 +180,12 @@ export class OccurrenceService
         this.pieceQueues.delete(pieceId);
       }
 
-      if (removed > 0)
-      {
-        return true;
-      }
+if (removed > 0)
+{
+  this.notify();
+
+  return true;
+}
     }
 
     return false;
@@ -185,6 +222,11 @@ export class OccurrenceService
       }
     }
 
+    if (removed > 0)
+{
+  this.notify();
+}
+
     return removed;
   }
 
@@ -212,6 +254,11 @@ export class OccurrenceService
     {
       this.pieceQueues.delete(pieceId);
     }
+
+    if (removed > 0)
+{
+  this.notify();
+}
 
     return removed;
   }  
@@ -317,11 +364,20 @@ export class OccurrenceService
     return Array.from(this.pieceQueues.keys());
   }
 
-  clear(): void
+clear(): void
+{
+  const hadOccurrences =
+    this.globalQueue.length > 0 ||
+    this.pieceQueues.size > 0;
+
+  this.globalQueue.length = 0;
+  this.pieceQueues.clear();
+
+  if (hadOccurrences)
   {
-    this.globalQueue.length = 0;
-    this.pieceQueues.clear();
+    this.notify();
   }
+}
 }
 
 export const occurrenceService = new OccurrenceService();

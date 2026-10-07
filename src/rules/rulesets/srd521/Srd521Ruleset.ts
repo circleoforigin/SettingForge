@@ -4,6 +4,14 @@ import {
   OccurrenceReactions,
 } from '../../../overlays/occurrence/OccurrenceProgression';
 
+interface TravelRulesetData
+{
+  values: Record<
+    string,
+    string | number | boolean | null | string[] | number[]
+  >;
+}
+
 interface TravelTimeInput
 {
   distance: {
@@ -19,6 +27,15 @@ interface TravelTimeInput
     | 'medium'
     | 'fast';
   entityIds: string[];
+
+  area: {
+    rulesetData: TravelRulesetData | null;
+  } | null;
+
+  path: {
+    type: string;
+    rulesetData: TravelRulesetData | null;
+  } | null;
 }
 
 interface MovementFact
@@ -233,29 +250,136 @@ function distanceToMiles(
   }
 }
 
+type TravelPace =
+  | 'slow'
+  | 'medium'
+  | 'fast';
+
+const TRAVEL_PACES: TravelPace[] = [
+  'slow',
+  'medium',
+  'fast',
+];
+
+function getMaximumPace(
+  input: TravelTimeInput
+): TravelPace | null
+{
+  const terrainId =
+    input.area?.rulesetData?.values.terrain;
+
+  if (typeof terrainId !== 'string')
+  {
+    return null;
+  }
+
+  const terrain =
+    TERRAIN_DEFINITIONS[terrainId];
+
+  if (
+    !terrain ||
+    terrain.maximumPace === 'special'
+  )
+  {
+    return null;
+  }
+
+  let maximumPace =
+    terrain.maximumPace;
+
+  const goodRoad =
+    input.path?.rulesetData?.values.goodRoad === true;
+
+  if (goodRoad)
+  {
+    const index =
+      TRAVEL_PACES.indexOf(
+        maximumPace
+      );
+
+    maximumPace =
+      TRAVEL_PACES[
+        Math.min(
+          index + 1,
+          TRAVEL_PACES.length - 1
+        )
+      ];
+  }
+
+  return maximumPace;
+}
+
+function getEffectivePace(
+  input: TravelTimeInput
+): TravelPace
+{
+  const maximumPace =
+    getMaximumPace(input);
+
+  if (!maximumPace)
+  {
+    return input.pace;
+  }
+
+  const selectedIndex =
+    TRAVEL_PACES.indexOf(
+      input.pace
+    );
+
+  const maximumIndex =
+    TRAVEL_PACES.indexOf(
+      maximumPace
+    );
+
+  return TRAVEL_PACES[
+    Math.min(
+      selectedIndex,
+      maximumIndex
+    )
+  ];
+}
+
 function calculateTravelTime(
   input: TravelTimeInput,
   movementSpeed: number
 ): TravelTimeOutput
 {
-  const normalSpeedMph =
-    movementSpeed / 10;
+  const normalSpeedMph = movementSpeed / 10;
+
+  const effectivePace = getEffectivePace(input);
 
   const paceMultiplier =
-    input.pace === 'slow'
-      ? 2 / 3
-      : input.pace === 'fast'
+    effectivePace === 'slow'
+        ? 2 / 3
+      : effectivePace === 'fast'
         ? 4 / 3
         : 1;
 
-  const speedMph =
-    normalSpeedMph * paceMultiplier;
+  const speedMph = normalSpeedMph * paceMultiplier;
+
+  const difficultTerrain =
+    input.area
+        ?.rulesetData
+        ?.values
+        .difficultTerrain === true;
+
+  const vetoDifficultTerrain =
+    input.path
+        ?.rulesetData
+        ?.values
+        .overrideDifficultTerrain === true;
+
+  const distanceMultiplier =
+    difficultTerrain &&
+    !vetoDifficultTerrain
+        ? 2
+        : 1;
 
   const distanceMiles =
     distanceToMiles(
-      input.distance.value,
-      input.distance.unit
-    );
+        input.distance.value,
+        input.distance.unit
+    ) * distanceMultiplier;
 
   const duration =
     Math.max(

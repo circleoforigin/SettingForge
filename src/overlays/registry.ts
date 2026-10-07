@@ -12,6 +12,7 @@ const messengerOverlay: OverlayDefinition = {
   description:
     'Persistent communications interface for host and player messaging.',
   version: '0.1.0',
+  layout: 'positioned',
   Surface: MessengerSurface,
 };
 
@@ -21,7 +22,17 @@ const simClockOverlay: OverlayDefinition = {
   description:
     'Persistent simulation time and calendar interface.',
   version: '0.1.0',
+  layout: 'positioned',
   Surface: SimClockSurface,
+};
+
+const occurrenceOverlay: OverlayDefinition = {
+  id: 'occurrences',
+  name: 'Occurrences',
+  description:
+    'Persistent interface for prospective simulation occurrences.',
+  version: '0.1.0',
+  layout: 'fixed',
 };
 
 overlayRegistry.register(
@@ -30,4 +41,8 @@ overlayRegistry.register(
 
 overlayRegistry.register(
   simClockOverlay
+);
+
+overlayRegistry.register(
+  occurrenceOverlay
 );

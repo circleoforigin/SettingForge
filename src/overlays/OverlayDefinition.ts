@@ -1,9 +1,12 @@
 import type { ComponentType } from 'react';
-import type {
-  OverlayPlacement,
-} from './OverlayPlacement';
+import type { OverlayPlacement } from './OverlayPlacement';
 
-export interface OverlaySurfaceProps {
+export type OverlayLayout =
+  | 'positioned'
+  | 'fixed';
+
+export interface OverlaySurfaceProps
+{
   placement: OverlayPlacement;
   tabs?: {
     id: string;
@@ -12,11 +15,12 @@ export interface OverlaySurfaceProps {
   }[];
 }
 
-export interface OverlayDefinition {
+export interface OverlayDefinition
+{
   id: string;
   name: string;
   description: string;
   version: string;
-
-  Surface: ComponentType<OverlaySurfaceProps>;
+  layout: OverlayLayout;
+  Surface?: ComponentType<OverlaySurfaceProps>;
 }
