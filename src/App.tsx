@@ -172,17 +172,17 @@ const setOverlayPlacement = (
   return true;
 };
 
-  const messenger = useMessengerOverlay();
-  const simClock = useSimClockOverlay();
-  overlays:
-  overlayRegistry
-    .getAll()
-    .filter(
-      (overlay) =>
-        overlay.layout ===
-        'positioned'
-    )
-    .map((overlay) =>
+const messenger = useMessengerOverlay();
+const simClock = useSimClockOverlay();
+
+const [
+  occurrencesVisible,
+  setOccurrencesVisible,
+] = useState(true);
+
+const captureWorldRuntimeState = (
+  world: World
+): World =>
   
 const captureWorldRuntimeState = (
   world: World
@@ -3886,12 +3886,17 @@ if (overlay.id === 'sim-clock')
 
 const Surface = overlay.Surface;
 
-    return (
-      <Surface
-        key={overlay.id}
-        placement={placement}
-      />
-    );
+if (!Surface)
+{
+  return null;
+}
+
+return (
+  <Surface
+    key={overlay.id}
+    placement={placement}
+  />
+);
   })}
 </div>
 </main>
