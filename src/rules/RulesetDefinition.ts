@@ -42,12 +42,26 @@ export interface RulesetDefinition
   interactions?: RulesetInteractionDefinition[];
 }
 
+export interface RulesetEntityFact<T = unknown>
+{
+  entityId: string;
+  value: T;
+}
+
 export interface RulesetFunctionContext
 {
   input: unknown;
+
+  requestEntityFacts<T = unknown>(
+    entityIds: readonly string[],
+    fact: string
+  ): Promise<RulesetEntityFact<T>[]>;
 }
 
-export type RulesetFunctionHandler = (context: RulesetFunctionContext) => unknown;
+export type RulesetFunctionHandler =
+  (
+    context: RulesetFunctionContext
+  ) => unknown | Promise<unknown>;
 
 export interface RulesetFunctionDefinition
 {

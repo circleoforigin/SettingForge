@@ -10,6 +10,7 @@ import type {
 import type { RulesetResolution } from './RulesetRequirementResolver';
 import { rulesetRegistry } from './RulesetRegistry';
 import { rulesetRequirementResolver } from './RulesetRequirementResolver';
+import { entityFactService } from './EntityFactService';
 
 export interface ActiveRuleset {
   definition: RulesetDefinition;
@@ -100,13 +101,14 @@ export class RulesService {
     );
   }
 
-executeFunction(
+async executeFunction(
   world: World,
   functionId: string,
   input: unknown
-): unknown
+): Promise<unknown>
 {
-  const activeRuleset = this.getActiveRuleset(world);
+  const activeRuleset =
+    this.getActiveRuleset(world);
 
   if (!activeRuleset)
   {
@@ -130,8 +132,18 @@ executeFunction(
     );
   }
 
-  return ruleFunction.handler({
+  return await ruleFunction.handler({
     input,
+
+    requestEntityFacts:
+      <T = unknown>(
+        entityIds: readonly string[],
+        fact: string
+      ) =>
+        entityFactService.request<T>(
+          entityIds,
+          fact
+        ),
   });
 }
 
