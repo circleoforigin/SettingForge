@@ -22,6 +22,7 @@ import {
   SimClockOverlay,
   useSimClockOverlay,
 } from './overlays/simClock/SimClockOverlay';
+import { useOccurrenceOverlay } from './overlays/occurrence/OccurrenceOverlay';
 import { simulationClockService } from './simulation/SimulationClockService';
 import { createDefaultSimClockSettings } from './simulation/SimClockSettings';
 import {
@@ -174,6 +175,7 @@ const setOverlayPlacement = (
 
 const messenger = useMessengerOverlay();
 const simClock = useSimClockOverlay();
+const occurrences = useOccurrenceOverlay();
 
 const [
   occurrencesVisible,
