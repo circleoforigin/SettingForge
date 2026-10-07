@@ -18,7 +18,12 @@ interface TravelTimeInput
     | 'slow'
     | 'medium'
     | 'fast';
-  movementSpeed?: number;
+  entityIds: string[];
+}
+
+interface MovementFact
+{
+  speed: number;
 }
 
 interface TravelTimeOutput
@@ -229,12 +234,10 @@ function distanceToMiles(
 }
 
 function calculateTravelTime(
-  input: TravelTimeInput
+  input: TravelTimeInput,
+  movementSpeed: number
 ): TravelTimeOutput
 {
-  const movementSpeed =
-    input.movementSpeed ?? 30;
-
   const normalSpeedMph =
     movementSpeed / 10;
 
@@ -420,29 +423,74 @@ export const srd521Ruleset:
     ],
 
     functions: [
-      {
-        id: 'TravelTime',
+{
+  id: 'TravelTime',
 
-        handler: (context) =>
-        {
-          const input = context.input as TravelTimeInput;
+  handler: async (context) =>
+  {
+    const input =
+      context.input as TravelTimeInput;
 
-          if (
-            !input?.distance ||
-            !Number.isFinite(
-              input.distance.value
-            ) ||
-            input.distance.value < 0
-          )
-          {
-            throw new Error(
-              'TravelTime requires a valid distance.'
-            );
-          }
+    if (
+      !input?.distance ||
+      !Number.isFinite(
+        input.distance.value
+      ) ||
+      input.distance.value < 0
+    )
+    {
+      throw new Error(
+        'TravelTime requires a valid distance.'
+      );
+    }
 
-          return calculateTravelTime(input);
-        },
-      },
+    if (
+      !Array.isArray(input.entityIds) ||
+      input.entityIds.length === 0
+    )
+    {
+      throw new Error(
+        'TravelTime requires at least one entity.'
+      );
+    }
+
+    const movementFacts =
+      await context.requestEntityFacts<MovementFact>(
+        input.entityIds,
+        'movement'
+      );
+
+    const movementSpeeds =
+      movementFacts
+        .map(
+          (fact) =>
+            fact.value.speed
+        )
+        .filter(
+          (speed) =>
+            Number.isFinite(speed) &&
+            speed > 0
+        );
+
+    if (
+      movementSpeeds.length !==
+      input.entityIds.length
+    )
+    {
+      throw new Error(
+        'TravelTime could not resolve movement for every entity.'
+      );
+    }
+
+    const movementSpeed =
+      Math.min(...movementSpeeds);
+
+    return calculateTravelTime(
+      input,
+      movementSpeed
+    );
+  },
+},
       {
         id: 'AreaProperties',
 
