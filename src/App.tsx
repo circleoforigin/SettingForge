@@ -183,10 +183,6 @@ const [
 const captureWorldRuntimeState = (
   world: World
 ): World =>
-  
-const captureWorldRuntimeState = (
-  world: World
-): World =>
 {
   return {
     ...world,
@@ -200,6 +196,7 @@ const captureWorldRuntimeState = (
           simClock.settings
         ),
     },
+  
 
 overlays:
   overlayRegistry
