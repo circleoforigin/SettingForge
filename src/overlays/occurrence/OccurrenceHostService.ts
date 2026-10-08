@@ -2,6 +2,7 @@ import type {
   OccurrenceSubmission,
   HostRequestMessage,
 } from '@settingforge/module-sdk';
+import { occurrenceCoordinator } from './OccurrenceCoordinator';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
 import { occurrenceService } from './OccurrenceService';
 
@@ -86,8 +87,24 @@ export function registerOccurrenceHostService(
           }
         }
 
+        const completion = occurrences.find(
+          (occurrence) =>
+            occurrence.reaction === 'none'
+        );
+
+        if (completion)
+        {
+          occurrenceCoordinator.completeProducer(
+            submission.prospectId,
+            message.sourceModuleId
+          );
+        }
+
         occurrenceService.addMany(
-          occurrences
+          occurrences.filter(
+            (occurrence) =>
+              occurrence.reaction !== 'none'
+          )
         );
 
         return {
