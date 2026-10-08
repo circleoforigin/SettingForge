@@ -3,6 +3,17 @@ import type {
   OccurrenceReaction,
 } from '@settingforge/module-sdk';
 
+export interface TravelRecalculationPayload
+{
+  routeLegId: string;
+  remainingDistance: number;
+}
+
+export interface TravelNextLegPayload
+{
+  routeLegId: string;
+}
+
 export interface OccurrenceProcessingResult
 {
   occurrence: Occurrence;
