@@ -1,8 +1,4 @@
 import type { RulesetInteractionDefinition } from '@settingforge/module-sdk';
-import type {
-  OccurrenceProgressionMode,
-  OccurrenceReaction,
-} from '../overlays/occurrence/OccurrenceProgression';
 
 export type RulesetRequirementKind =
   | 'event'
@@ -17,18 +13,6 @@ export interface RulesetRequirement
   description?: string;
 }
 
-export interface RulesetOccurrenceTagDefinition
-{
-  id: string;
-  label: string;
-  description?: string;
-
-  reactions: Record<
-    OccurrenceProgressionMode,
-    OccurrenceReaction
-  >;
-}
-
 export interface RulesetDefinition
 {
   id: string;
@@ -38,7 +22,6 @@ export interface RulesetDefinition
 
   requirements: RulesetRequirement[];
   functions?: RulesetFunctionDefinition[];
-  occurrenceTags?: RulesetOccurrenceTagDefinition[];
   interactions?: RulesetInteractionDefinition[];
 }
 

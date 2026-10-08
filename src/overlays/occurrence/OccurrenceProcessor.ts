@@ -1,15 +1,9 @@
-import type { World } from '../../models/World';
 import { occurrenceService } from './OccurrenceService';
-import { resolveOccurrenceReaction } from './OccurrenceReactionResolver';
-import type { OccurrenceProgressionMode } from './OccurrenceProgression';
 import type { OccurrenceProcessingResult } from './OccurrenceProcessing';
 
 export class OccurrenceProcessor
 {
-  peek(
-    world: World,
-    mode: OccurrenceProgressionMode
-  ): OccurrenceProcessingResult | null
+  peek(): OccurrenceProcessingResult | null
   {
     const occurrence = occurrenceService.peek();
 
@@ -18,16 +12,9 @@ export class OccurrenceProcessor
       return null;
     }
 
-    const reaction =
-      resolveOccurrenceReaction(
-        world,
-        occurrence.reaction,
-        mode
-      );
-
     return {
       occurrence,
-      reaction,
+      reaction: occurrence.reaction,
     };
   }
 }

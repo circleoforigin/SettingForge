@@ -3,10 +3,7 @@ import type {
   WorldRulesetReference,
 } from '../models/World';
 import type { RulesetInteractionDefinition } from '@settingforge/module-sdk';
-import type {
-  RulesetDefinition,
-  RulesetOccurrenceTagDefinition,
-} from './RulesetDefinition';
+import type { RulesetDefinition } from './RulesetDefinition';
 import type { RulesetResolution } from './RulesetRequirementResolver';
 import { rulesetRegistry } from './RulesetRegistry';
 import { rulesetRequirementResolver } from './RulesetRequirementResolver';
@@ -71,35 +68,6 @@ export class RulesService {
     null
   );
 }
-
-  getOccurrenceTags(
-    world: World
-  ): RulesetOccurrenceTagDefinition[]
-  {
-    const activeRuleset = this.getActiveRuleset(world);
-
-    return (
-      activeRuleset
-        ?.definition
-        .occurrenceTags ??
-      []
-    );
-  }
-
-  getOccurrenceTag(
-    world: World,
-    tagId: string
-  ): RulesetOccurrenceTagDefinition | null
-  {
-    return (
-      this.getOccurrenceTags(world)
-        .find(
-          (tag) =>
-            tag.id === tagId
-        ) ??
-      null
-    );
-  }
 
 async executeFunction(
   world: World,

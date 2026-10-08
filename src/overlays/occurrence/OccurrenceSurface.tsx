@@ -243,13 +243,7 @@ export function OccurrenceSurface({
               <div>
                 <strong>Source:</strong>{' '}
                 {handledOccurrence.sourceModuleId}
-              </div>
-
-              <div>
-                <strong>Tags:</strong>{' '}
-                {handledOccurrence.tags.join(', ') ||
-                  'None'}
-              </div>
+              </div>              
             </div>
 
             <div className="dialog-buttons">
