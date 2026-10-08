@@ -18,7 +18,7 @@ export const OCCURRENCE_MAX_QUEUED_OPTIONS = [
 export function useOccurrenceOverlay()
 {
   const [maxQueued, setMaxQueued] =
-    useState(10);
+    useState(5);
 
   const [occurrences, setOccurrences] =
     useState<Occurrence[]>(() =>

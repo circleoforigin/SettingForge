@@ -1,0 +1,1488 @@
+
+.overlay-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+
+  pointer-events: none;
+}
+
+.overlay-layer > * {
+  pointer-events: auto;
+}
+
+.overlay-layer > * {
+  font-family: var(
+    --overlay-font-family,
+    Arial,
+    sans-serif
+  );
+}
+
+
+.messenger-settings-dialog {
+  width: 480px;
+}
+
+.messenger-settings-field,
+.messenger-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.messenger-settings-field span,
+.messenger-settings-section strong {
+  font-size: 12px;
+  color: #b8bac0;
+}
+
+.messenger-settings-field select,
+.messenger-settings-tab-row input {
+  padding: 6px 8px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  font: inherit;
+  font-size: 12px;
+}
+
+.messenger-settings-tab-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    28px;
+
+  gap: 5px;
+}
+
+.messenger-settings-tab-row button {
+  padding: 0;
+}
+
+.messenger-surface {
+  position: absolute;
+
+  width: min(420px, calc(100% - 24px));
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+
+.messenger-surface[data-edge='bottom'] {
+  bottom: 0;
+}
+
+.messenger-surface[data-edge='bottom']
+.messenger-panel {
+  margin-bottom: -18px;
+  padding-bottom: 18px;
+}
+
+.messenger-surface[data-edge='top'] {
+  top: 0;
+  flex-direction: column-reverse;
+}
+
+.messenger-surface[data-edge='top']
+.messenger-tab {
+  border-top: none;
+  border-bottom: 1px solid #45474e;
+
+  border-radius: 0 0 4px 4px;
+}
+
+.messenger-surface[data-edge='top']
+.messenger-tab.active {
+  margin-top: 0;
+  margin-bottom: -3px;
+
+  padding-top: 3px;
+  padding-bottom: 6px;
+
+  border-top: none;
+  border-bottom: 1px solid #666a73;
+
+  border-radius: 0 0 5px 5px;
+}
+
+.messenger-tab.unread {
+  animation:
+    messenger-unread-pulse 2.8s
+    ease-in-out infinite;
+}
+
+@keyframes messenger-unread-pulse {
+  0%,
+  100% {
+    background: #2b2d31;
+    border-color: #45474e;
+    box-shadow: none;
+  }
+
+  50% {
+    background: #7a3035;
+    border-color: #d45a62;
+
+    box-shadow:
+      0 0 4px rgba(212, 90, 98, 0.7),
+      0 0 9px rgba(212, 90, 98, 0.35);
+  }
+}
+
+.messenger-tab.active.unread {
+  animation: none;
+}
+
+.messenger-surface[data-edge='top']
+.messenger-panel {
+  position: relative;
+
+  margin-top: -18px;
+  padding-top: 18px;
+
+  border-top: 1px solid #45474e;
+  border-bottom: 1px solid #45474e;
+
+  border-radius: 0 0 5px 5px;
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.messenger-surface[data-edge='top']
+.messenger-recipients-tab {
+  top: auto;
+  bottom: 0;
+
+  transform:
+    translate(-50%, 100%);
+
+  border-top: none;
+  border-bottom: 1px solid #45474e;
+
+  border-radius: 0 0 4px 4px;
+}
+
+.messenger-surface[data-alignment='left'] {
+  left: 12px;
+}
+
+.messenger-surface[data-alignment='center'] {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.messenger-surface[data-alignment='right'] {
+  right: 12px;
+}
+
+.messenger-panel {
+  width: 100%;
+  height: 190px;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+
+  box-shadow:
+    0 -4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.messenger-chat-log {
+  flex: 1;
+  min-height: 0;
+
+  padding: 6px;
+
+  overflow-y: scroll;
+
+  color: #aeb0b6;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.messenger-chat-log::-webkit-scrollbar {
+  width: 8px;
+}
+
+.messenger-chat-log::-webkit-scrollbar-track {
+  background: #242529;
+}
+
+.messenger-chat-log::-webkit-scrollbar-thumb {
+  background: #4b4e55;
+  border-radius: 3px;
+}
+
+.messenger-chat-log::-webkit-scrollbar-thumb:hover {
+  background: #5a5e66;
+}
+
+.messenger-recipients-tab {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform:
+    translate(-50%, -100%);
+
+  padding: 3px 8px;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+
+  font: inherit;
+  font-size: 10px;
+  line-height: 1.1;
+
+  cursor: pointer;
+}
+
+.messenger-recipients-tab:hover {
+  background: #3a3c41;
+  color: white;
+}
+
+.messenger-input-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+
+  padding: 3px;
+
+  border-top: 1px solid #45474e;
+}
+
+.messenger-message-input {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+
+  padding: 2px 5px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+}
+
+.messenger-attach-button,
+.messenger-send-button {
+  height: 22px;
+
+  padding: 0 6px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+
+  cursor: pointer;
+}
+
+.messenger-attach-button {
+  width: 22px;
+  padding: 0;
+}
+
+.messenger-tab-navigation {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+
+  position: relative;
+  z-index: 2;
+
+  max-width: 100%;
+}
+
+.messenger-tabs {
+  display: flex;
+  gap: 0;
+
+  width: 380px;
+  max-width: 380px;
+
+  overflow: hidden;
+}
+
+.messenger-tab-arrow {
+  flex: 0 0 20px;
+
+  width: 20px;
+  padding: 0;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: 1px solid #45474e;
+
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.messenger-tab-arrow:hover {
+  background: #3a3c41;
+  color: white;
+}
+
+.messenger-tab-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.messenger-tab-arrow:disabled:hover {
+  background: #2b2d31;
+  color: #aeb0b6;
+}
+
+.messenger-tab {
+  flex: 0 0 95px;
+
+  padding: 3px 6px;
+
+  background: #2b2d31;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font: inherit;
+  font-family: var(
+    --overlay-font-family,
+    Arial,
+    sans-serif
+  );
+  font-size: 11px;
+  line-height: 1.1;
+
+  cursor: pointer;
+}
+
+.messenger-tab:hover {
+  background: #3a3c41;
+  color: white;
+}
+
+.messenger-tab.active {
+  position: relative;
+  z-index: 2;
+
+  margin-top: -3px;
+  padding-top: 6px;
+
+  background: #50535b;
+  color: #ffffff;
+
+  border-color: #666a73;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+
+  font-weight: 600;
+}
+
+.messenger-panel {
+  margin-bottom: -1px;
+  position: relative;
+}
+
+/* ---------- SIMCLOCK ---------- */
+
+.sim-clock-surface {
+  position: absolute;
+
+  width: min(410px, calc(100% - 24px));
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sim-clock-surface[data-edge='bottom'] {
+  bottom: 0;
+  flex-direction: column-reverse;
+}
+
+.sim-clock-surface[data-edge='top'] {
+  top: 0;
+}
+
+.sim-clock-surface[data-alignment='left'] {
+  left: 12px;
+}
+
+.sim-clock-surface[data-alignment='center'] {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sim-clock-surface[data-alignment='right'] {
+  right: 12px;
+}
+
+.sim-clock-summary {
+  position: relative;
+  z-index: 2;
+
+  box-sizing: border-box;
+  min-width: 260px;
+  height: 24px;
+
+  padding: 3px 10px;
+
+  background: #2b2d31;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.1;
+
+  cursor: pointer;
+}
+
+.sim-clock-summary:hover {
+  background: #3a3c41;
+  color: white;
+}
+
+.sim-clock-surface[data-edge='top']
+.sim-clock-summary {
+  border-top: none;
+  border-bottom: 1px solid #45474e;
+  border-radius: 0 0 4px 4px;
+}
+
+.sim-clock-go-to {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+
+  background: #2b2d31;
+
+  border: 1px solid #45474e;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.sim-clock-set-time {
+  white-space: nowrap;
+  margin-right: 6px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.sim-clock-set-time-pending {
+  opacity: 1;
+  pointer-events: auto;
+  animation: sim-clock-set-time-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes sim-clock-set-time-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    background: #3a3c41;
+    border-color: #50535b;
+  }
+
+  50% {
+    opacity: 1;
+    background: #60636b;
+    border-color: #8a8e98;
+  }
+}
+
+.sim-clock-weekday {
+  box-sizing: border-box;
+  width: 100%;
+  height: 18px;
+
+  margin: 0;
+  padding: 0;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: 1px solid #45474e;
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+.sim-clock-weekday:hover {
+  background: #3a3c41;
+  color: #ffffff;
+}
+
+.sim-clock-field-group {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+}
+
+.sim-clock-field {
+  min-width: 0;
+}
+
+.sim-clock-field-separator {
+  flex: 0 0 auto;
+
+  padding: 0 1px;
+
+  color: #aeb0b6;
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 28px;
+
+  white-space: pre;
+}
+
+.sim-clock-field-year {
+  flex: 0 0 42px;
+}
+
+.sim-clock-field-era {
+  flex: 0 0 28px;
+}
+
+.sim-clock-field-year .sim-clock-field-value,
+.sim-clock-field-era .sim-clock-field-value {
+  justify-content: flex-end;
+}
+
+.sim-clock-field-month {
+  flex: 0 0 60px;
+  width: 60px;
+}
+
+.sim-clock-field-month .sim-clock-field-value {
+  justify-content: flex-end;
+}
+
+.sim-clock-field-day {
+  flex: 0 1 32px;
+}
+
+.sim-clock-field-hour,
+.sim-clock-field-minute,
+.sim-clock-field-second {
+  flex: 0 0 27px;
+  width: 27px;
+}
+
+.sim-clock-field-control {
+  position: relative;
+
+  box-sizing: border-box;
+  width: 100%;
+  height: 28px;
+}
+
+.sim-clock-field-value {
+  box-sizing: border-box;
+
+  width: 100%;
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 2px 8px 2px 1px;
+
+  background: transparent;
+  color: #d8d8d8;
+
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+
+  white-space: nowrap;
+  cursor: default;
+}
+
+.sim-clock-field-value-input {
+  appearance: textfield;
+
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  outline: none;
+
+  background: transparent;
+  box-shadow: none;
+
+  text-align: right;
+
+  cursor: text;
+}
+
+.sim-clock-field-value-input::-webkit-inner-spin-button,
+.sim-clock-field-value-input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.sim-clock-field-arrows {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  opacity: 0;
+  pointer-events: none;
+  width: 10px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #45474e;
+}
+
+.sim-clock-field-control:hover .sim-clock-field-arrows {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sim-clock-field-arrows {
+  transition: opacity 0.12s ease;
+}
+
+.sim-clock-field-arrows button {
+  box-sizing: border-box;
+
+  width: 100%;
+  min-width: 0;
+  height: 50%;
+
+  margin: 0;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: none;
+
+  font: inherit;
+  font-size: 5px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.sim-clock-field-arrows button:first-child {
+  border-radius: 0 2px 0 0;
+}
+
+.sim-clock-field-arrows button:last-child {
+  border-top: 1px solid #45474e;
+  border-radius: 0 0 2px 0;
+}
+
+.sim-clock-field-arrows button:hover {
+  background: #3a3c41;
+  color: #ffffff;
+}
+
+.sim-clock-set-time {
+  flex: 0 0 auto;
+
+  height: 20px;
+  margin-left: 18px;
+  margin-bottom: 4px;
+  padding: 0 8px;
+
+  background: #3a3c41;
+  color: #d8d8d8;
+
+  border: 1px solid #50535b;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.sim-clock-set-time:hover {
+  background: #50535b;
+  color: #ffffff;
+  border-color: #666a73;
+}
+
+.sim-clock-set-time:active {
+  background: #2b2d31;
+}
+
+.sim-clock-surface[data-edge='top']
+.sim-clock-progression {
+  border-top: 1px solid #45474e;
+  border-radius: 0;
+}
+
+.sim-clock-surface[data-edge='top']
+.sim-clock-go-to {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sim-clock-surface[data-edge='top']
+.sim-clock-weekday {
+  border-top: none;
+  border-radius: 0 0 5px 5px;
+}
+
+.sim-clock-surface[data-edge='bottom']
+.sim-clock-weekday {
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+}
+
+.sim-clock-surface[data-edge='bottom']
+.sim-clock-go-to {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.sim-clock-surface[data-edge='bottom']
+.sim-clock-progression {
+  border-bottom: 1px solid #45474e;
+  border-radius: 0;
+}
+
+.dialog.sim-clock-settings-dialog {
+  box-sizing: border-box;
+  width: 850px;
+  max-width: calc(100vw - 48px);
+  max-height: calc(100vh - 16px);
+  padding: 16px 18px;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.sim-clock-settings-dialog h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.sim-clock-settings-dialog h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.sim-clock-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---------- SIMCLOCK THREE COLUMNS ---------- */
+
+.sim-clock-settings-columns {
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 0.65fr)
+    minmax(280px, 1.15fr)
+    minmax(330px, 1.35fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.sim-clock-settings-column {
+  min-width: 0;
+}
+
+/* ---------- BASIC CALENDAR ---------- */
+
+.sim-clock-basic-settings,
+.sim-clock-leap-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sim-clock-basic-settings label,
+.sim-clock-leap-settings label {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 5px;
+}
+
+.sim-clock-basic-settings label > span,
+.sim-clock-leap-settings label > span {
+  min-width: 0;
+  color: #b8bac0;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.sim-clock-basic-settings input,
+.sim-clock-leap-settings input,
+.sim-clock-leap-settings select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 1px 4px;
+  font-size: 12px;
+}
+
+.sim-clock-leap-section {
+  margin-top: 12px;
+}
+
+.sim-clock-leap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.sim-clock-leap-toggle input {
+  width: auto;
+  height: auto;
+  margin: 0;
+}
+
+.sim-clock-inline-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sim-clock-inline-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+.sim-clock-inline-field span {
+  flex: 0 0 auto;
+  color: #b8bac0;
+  font-size: 10px;
+}
+
+/* ---------- DAYS / MONTHS ---------- */
+
+.sim-clock-settings-list {
+  min-width: 0;
+}
+
+.sim-clock-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 26px;
+  margin-bottom: 2px;
+}
+
+.sim-clock-list-header strong {
+  font-size: 14px;
+}
+
+.sim-clock-list-header button {
+  padding: 2px 5px;
+  font-size: 10px;
+}
+
+.sim-clock-day-list,
+.sim-clock-month-list {
+  box-sizing: border-box;
+  height: 190px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sim-clock-day-list::-webkit-scrollbar,
+.sim-clock-month-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.sim-clock-day-list::-webkit-scrollbar-track,
+.sim-clock-month-list::-webkit-scrollbar-track {
+  background: #242529;
+}
+
+.sim-clock-day-list::-webkit-scrollbar-thumb,
+.sim-clock-month-list::-webkit-scrollbar-thumb {
+  background: #4b4e55;
+  border-radius: 3px;
+}
+
+.sim-clock-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  margin: 0 0 1px;
+}
+
+.sim-clock-settings-row input {
+  box-sizing: border-box;
+  height: 26px;
+  padding: 1px 4px;
+  font-size: 12px;
+}
+
+.sim-clock-settings-row input[type='text'] {
+  flex: 1 1 auto;
+  width: 0;
+  min-width: 0;
+  margin: 0;
+}
+
+.sim-clock-settings-row input[type='number'] {
+  width: 42px;
+  flex: 0 0 42px;
+  margin: 0;
+}
+
+.sim-clock-settings-row button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+
+  padding: 0;
+  margin: 0;
+
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* ---------- RECKONING / DISPLAY ---------- */
+
+.sim-clock-settings-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 20px;
+
+  padding-top: 9px;
+  border-top: 1px solid #45474e;
+}
+
+.sim-clock-settings-secondary h3 {
+  margin-bottom: 5px;
+}
+
+.sim-clock-reckoning-settings {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.4fr)
+    minmax(0, 0.8fr)
+    minmax(0, 0.7fr);
+  gap: 6px;
+}
+
+.sim-clock-reckoning-settings select {
+  box-sizing: border-box;
+  height: 24px;
+}
+
+.sim-clock-display-settings {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.7fr)
+    minmax(100px, 0.8fr);
+  gap: 8px;
+}
+
+.sim-clock-format-builder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.sim-clock-format-builder select {
+  flex: 0 0 120px;
+  width: 120px;
+  min-width: 0;
+}
+
+.sim-clock-format-builder button {
+  flex: 0 0 auto;
+  height: 24px;
+  padding: 1px 8px;
+  font-size: 12px;
+}
+
+.sim-clock-format-preview {
+  margin-left: 12px;
+  flex: 1;
+  min-width: 180px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.sim-clock-reckoning-settings label,
+.sim-clock-display-settings label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  gap: 2px;
+}
+
+.sim-clock-reckoning-settings label > span,
+.sim-clock-display-settings label > span {
+  color: #b8bac0;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.sim-clock-reckoning-settings input,
+.sim-clock-display-settings input,
+.sim-clock-display-settings select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 1px 4px;
+  font-size: 12px;
+}
+
+/* ---------- CLOSE ---------- */
+
+.sim-clock-settings-dialog .dialog-buttons {
+  margin-top: 0;
+}
+
+.sim-clock-settings-dialog .dialog-buttons button {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.sim-clock-progression {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: 176px 100px 76px;
+  justify-content: center;
+  align-items: center;
+
+  gap: 8px;
+  padding: 3px 18px 5px;
+
+  background: #2b2d31;
+  border-left: 1px solid #45474e;
+  border-right: 1px solid #45474e;
+}
+
+
+.sim-clock-progression-column {
+  min-width: 0;
+
+  display: grid;
+  grid-template-rows: 20px 20px;
+
+  gap: 3px;
+}
+
+.sim-clock-progress-header {
+  min-width: 0;
+
+  display: grid;
+  grid-template-columns: 70px 1fr 10px;
+
+  gap: 3px;
+}
+
+.sim-clock-progress-name,
+.sim-clock-progress-value input,
+.sim-clock-progress-value select,
+.sim-clock-progression-column > select {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 20px;
+
+  margin: 0;
+  padding: 0 4px;
+
+  background: #2b2d31;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+}
+
+.sim-clock-progress-name {
+  width: 70px;
+}
+
+.sim-clock-progress-value {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+
+  gap: 3px;
+}
+
+.sim-clock-progress-value input {
+  width: 38px;
+  text-align: right;
+}
+
+.sim-clock-progress-button,
+.sim-clock-progression-column > button {
+  box-sizing: border-box;
+  height: 20px;
+
+  margin: 0;
+  padding: 0 8px;
+
+  background: #3a3c41;
+  color: #d8d8d8;
+
+  border: 1px solid #50535b;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.sim-clock-progress-button:hover,
+.sim-clock-progression-column > button:hover {
+  background: #50535b;
+  color: #ffffff;
+  border-color: #666a73;
+}
+
+.sim-clock-progress-button:active,
+.sim-clock-progression-column > button:active {
+  background: #2b2d31;
+}
+
+.sim-clock-progress-preset-arrows {
+  box-sizing: border-box;
+
+  width: 10px;
+  height: 20px;
+
+  display: flex;
+  flex-direction: column;
+
+  border-left: 1px solid #45474e;
+}
+
+.sim-clock-progress-preset-arrows button {
+  box-sizing: border-box;
+
+  width: 10px;
+  min-width: 0;
+  height: 10px;
+
+  margin: 0;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: none;
+
+  font: inherit;
+  font-size: 5px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.sim-clock-progress-preset-arrows button:last-child {
+  border-top: 1px solid #45474e;
+}
+
+.sim-clock-progress-preset-arrows button:hover {
+  background: #3a3c41;
+  color: #ffffff;
+}
+
+.sim-clock-progression-actions {
+  grid-template-rows: 20px 20px;
+}
+
+/* ---------- OCCURRENCES ---------- */
+
+.occurrence-surface {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  box-sizing: border-box;
+  width: min(620px, calc(100% - 48px));
+  max-height: calc(100% - 48px);
+
+  display: flex;
+  flex-direction: column;
+
+  background: #2b2d31;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 5px;
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.occurrence-header {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 6px 8px;
+
+  border-bottom: 1px solid #45474e;
+}
+
+.occurrence-header > strong {
+  font-size: 13px;
+}
+
+.occurrence-header label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  color: #aeb0b6;
+  font-size: 11px;
+}
+
+.occurrence-header select {
+  height: 20px;
+  padding: 0 3px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
+}
+
+.occurrence-list {
+  min-height: 0;
+  overflow-y: scroll;
+}
+
+.occurrence-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.occurrence-list::-webkit-scrollbar-track {
+  background: #242529;
+}
+
+.occurrence-list::-webkit-scrollbar-thumb {
+  background: #4b4e55;
+  border-radius: 3px;
+}
+
+.occurrence-entry {
+  position: relative;
+
+  border-bottom: 1px solid #3a3c41;
+}
+
+.occurrence-entry:last-child {
+  border-bottom: none;
+}
+
+.occurrence-entry-main {
+  min-height: 42px;
+
+  display: grid;
+  grid-template-columns:
+    38px
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+  gap: 6px;
+
+  padding: 4px 8px 14px;
+}
+
+.occurrence-type {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.occurrence-summary {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.occurrence-summary strong,
+.occurrence-summary span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.occurrence-summary strong {
+  font-size: 12px;
+}
+
+.occurrence-summary span {
+  color: #aeb0b6;
+  font-size: 11px;
+}
+
+.occurrence-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.occurrence-actions button,
+.occurrence-expand {
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+
+  cursor: pointer;
+}
+
+.occurrence-actions button {
+  height: 22px;
+  padding: 0 6px;
+
+  font-size: 10px;
+}
+
+.occurrence-actions button:hover,
+.occurrence-expand:hover {
+  background: #414349;
+  color: white;
+}
+
+.occurrence-expand {
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  transform: translateX(-50%);
+
+  width: 28px;
+  height: 12px;
+  padding: 0;
+
+  font-size: 7px;
+  line-height: 1;
+}
+
+.occurrence-description {
+  padding: 8px 12px 18px;
+
+  color: #b8bac0;
+
+  border-top: 1px solid #3a3c41;
+
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.occurrence-dialog-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  color: #b8bac0;
+  font-size: 12px;
+}
+
+.occurrence-dialog p {
+  margin: 0;
+  color: #d8d8d8;
+}

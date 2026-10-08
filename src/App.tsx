@@ -1,4 +1,5 @@
 import './App.css';
+import './css/Overlays.css';
 import { moduleRegistry } from './modules/registry';
 import { useEffect, useRef, useState } from 'react';
 import { hostEventBroker } from './events/HostEventBroker';
@@ -23,8 +24,10 @@ import {
   useSimClockOverlay,
 } from './overlays/simClock/SimClockOverlay';
 import { useOccurrenceOverlay } from './overlays/occurrence/OccurrenceOverlay';
+import { OccurrenceSurface } from './overlays/occurrence/OccurrenceSurface';
 import { simulationClockService } from './simulation/SimulationClockService';
 import { createDefaultSimClockSettings } from './simulation/SimClockSettings';
+import { registerOccurrenceHostService } from './overlays/occurrence/OccurrenceHostService';
 import {
   registerCapabilityHostService,
   sendCapabilityCatalogTo,
@@ -265,6 +268,13 @@ const unregisterRulesService =
     () => activeWorldRef.current
   );
 
+const unregisterOccurrenceService =
+  registerOccurrenceHostService(
+    hostEventBroker.registerRequestHandler.bind(
+      hostEventBroker
+    )
+  );
+
 const unregisterModuleReady =
   hostEventBroker.subscribe(
     'module.ready',
@@ -363,6 +373,7 @@ loadQueueRef.current?.completeModule(
   unregisterProjectLoaded();
   unregisterModuleReady();
   unregisterRulesService();
+  unregisterOccurrenceService();
   unregisterCapabilityService();
   unregisterFileServices();
   unregisterStorageServices();
@@ -3897,6 +3908,12 @@ return (
   />
 );
   })}
+
+  {occurrencesVisible && (
+    <OccurrenceSurface
+      controller={occurrences}
+    />
+  )}
 </div>
 </main>
 
