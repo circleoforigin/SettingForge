@@ -1,18 +1,8 @@
-import type {
-  ModuleDefinition,
-} from './ModuleDefinition';
-
-import {
-  moduleRegistry,
-} from './registry';
-
-import {
-  capabilityRegistry,
-} from '../capabilities/CapabilityRegistry';
-
-import {
-  hostEventBroker,
-} from '../events/HostEventBroker';
+import type { ModuleDefinition } from './ModuleDefinition';
+import { moduleRegistry } from './registry';
+import { capabilityRegistry } from '../capabilities/CapabilityRegistry';
+import { hostEventBroker } from '../events/HostEventBroker';
+import { occurrenceProducerRegistry } from '../overlays/occurrence/OccurrenceProducerRegistry';
 
 export type ModulePresenceState =
   | 'enabled'
@@ -174,6 +164,7 @@ export class ModulePresenceService {
     );
     
     capabilityRegistry.unregisterModule(moduleId);
+    occurrenceProducerRegistry.unregister(moduleId);
 
     hostEventBroker.broadcast(
       'module.removed',
