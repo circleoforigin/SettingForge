@@ -236,8 +236,14 @@ overlays:
     useRef<LoadQueueService | null>(null);
 
   useEffect(() => {
-  const stopBroker =
-    hostEventBroker.start();
+  const stopBroker = hostEventBroker.start();
+
+  const unsubscribeOverlayEvents =
+    overlayRegistry.subscribeEvents(
+      hostEventBroker.subscribe.bind(
+        hostEventBroker
+      )
+    );
 
   const unregisterStorageServices =
     registerStorageHostServices(
@@ -378,6 +384,7 @@ loadQueueRef.current?.completeModule(
   unregisterFileServices();
   unregisterStorageServices();
   stopBroker();
+  unsubscribeOverlayEvents();
 };
 }, []);
   

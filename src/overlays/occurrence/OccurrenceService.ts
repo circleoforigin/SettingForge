@@ -191,45 +191,6 @@ if (removed > 0)
     return false;
   }
 
-  removeProspect(prospectId: string): number
-  {
-    let removed =
-      removeOccurrences(
-        this.globalQueue,
-        (occurrence) =>
-          occurrence.prospectId ===
-          prospectId
-      );
-
-    for (
-      const [
-        pieceId,
-        queue,
-      ] of this.pieceQueues
-    )
-    {
-      removed +=
-        removeOccurrences(
-          queue,
-          (occurrence) =>
-            occurrence.prospectId ===
-            prospectId
-        );
-
-      if (queue.length === 0)
-      {
-        this.pieceQueues.delete(pieceId);
-      }
-    }
-
-    if (removed > 0)
-{
-  this.notify();
-}
-
-    return removed;
-  }
-
   truncatePiece(
     pieceId: string,
     simulationTime: number

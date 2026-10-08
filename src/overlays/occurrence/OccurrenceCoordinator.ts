@@ -1,89 +1,89 @@
-import type { OccurrenceProspect } from './OccurrenceProspect';
+import type { OccurrenceRound } from './OccurrenceRound';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
 
 export class OccurrenceCoordinator
 {
-  private readonly prospects = new Map<string, OccurrenceProspect>();
+  private readonly rounds = new Map<string, OccurrenceRound>();
 
-  createProspect(): OccurrenceProspect
+  beginRound(pieceId: string): OccurrenceRound
   {
-    const prospect: OccurrenceProspect = {
-      id: crypto.randomUUID(),
+    const round: OccurrenceRound = {
+      pieceId,
       producerIds: occurrenceProducerRegistry.snapshot(),
       completedProducerIds: [],
       state: 'pending',
     };
 
-    this.prospects.set(prospect.id, prospect);
-    this.updateState(prospect);
+    this.rounds.set(pieceId, round);
+    this.updateState(round);
 
-    return this.clone(prospect);
+    return this.clone(round);
   }
 
-  getProspect(prospectId: string): OccurrenceProspect | undefined
+  getRound(pieceId: string): OccurrenceRound | undefined
   {
-    const prospect = this.prospects.get(prospectId);
+    const round = this.rounds.get(pieceId);
 
-    return prospect
-      ? this.clone(prospect)
+    return round
+      ? this.clone(round)
       : undefined;
   }
 
   completeProducer(
-    prospectId: string,
+    pieceId: string,
     producerId: string
-  ): OccurrenceProspect
+  ): OccurrenceRound
   {
-    const prospect = this.prospects.get(prospectId);
+    const round = this.rounds.get(pieceId);
 
-    if (!prospect)
+    if (!round)
     {
       throw new Error(
-        `Occurrence prospect "${prospectId}" does not exist.`
+        `Piece "${pieceId}" has no active Occurrence round.`
       );
     }
 
-    if (!prospect.producerIds.includes(producerId))
+    if (!round.producerIds.includes(producerId))
     {
       throw new Error(
-        `Module "${producerId}" is not a producer for Occurrence prospect "${prospectId}".`
+        `Module "${producerId}" is not a producer for Piece "${pieceId}".`
       );
     }
 
-    if (!prospect.completedProducerIds.includes(producerId))
+    if (!round.completedProducerIds.includes(producerId))
     {
-      prospect.completedProducerIds.push(producerId);
+      round.completedProducerIds.push(producerId);
     }
 
-    this.updateState(prospect);
+    this.updateState(round);
 
-    return this.clone(prospect);
+    return this.clone(round);
   }
 
-  removeProspect(prospectId: string): boolean
+  removeRound(pieceId: string): boolean
   {
-    return this.prospects.delete(prospectId);
+    return this.rounds.delete(pieceId);
   }
-  
+
   clear(): void
   {
-    this.prospects.clear();
+    this.rounds.clear();
   }
 
-  private updateState(prospect: OccurrenceProspect): void
+  private updateState(round: OccurrenceRound): void
   {
-    prospect.state =
-      prospect.completedProducerIds.length >= prospect.producerIds.length
+    round.state =
+      round.completedProducerIds.length >= round.producerIds.length
         ? 'complete'
         : 'pending';
   }
 
-  private clone(prospect: OccurrenceProspect): OccurrenceProspect
+  private clone(round: OccurrenceRound): OccurrenceRound
   {
     return {
-      ...prospect,
-      producerIds: [...prospect.producerIds],
-      completedProducerIds: [...prospect.completedProducerIds],
+      ...round,
+      producerIds: [...round.producerIds],
+      completedProducerIds: [...round.completedProducerIds],
     };
   }
 }

@@ -367,15 +367,11 @@ const requestTravel = () =>
 {
   stopRealTime();
 
-  const prospectId =
-    crypto.randomUUID();
-
   void hostEventBroker
     .requestModule(
       'regions',
       'Regions.Travel',
       {
-        prospectId,
         startTime: simulationClockService.getTime(),
       }
     )

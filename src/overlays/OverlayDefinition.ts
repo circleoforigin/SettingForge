@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import type { HostEventMessage } from '../events/HostMessage';
 import type { OverlayPlacement } from './OverlayPlacement';
 
 export type OverlayLayout =
@@ -15,6 +16,12 @@ export interface OverlaySurfaceProps
   }[];
 }
 
+export interface OverlayEventHandler
+{
+  type: string;
+  handle: (message: HostEventMessage) => void;
+}
+
 export interface OverlayDefinition
 {
   id: string;
@@ -23,4 +30,5 @@ export interface OverlayDefinition
   version: string;
   layout: OverlayLayout;
   Surface?: ComponentType<OverlaySurfaceProps>;
+  events?: OverlayEventHandler[];
 }

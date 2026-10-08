@@ -54,10 +54,10 @@ export function registerOccurrenceHostService(
             | OccurrenceSubmission
             | undefined;
 
-        if (!submission?.prospectId)
+               if (!submission?.pieceId)
         {
           throw new Error(
-            'occurrences.submit requires prospectId.'
+            'occurrences.submit requires pieceId.'
           );
         }
 
@@ -67,12 +67,12 @@ export function registerOccurrenceHostService(
         for (const occurrence of occurrences)
         {
           if (
-            occurrence.prospectId !==
-            submission.prospectId
+            occurrence.pieceId !==
+            submission.pieceId
           )
           {
             throw new Error(
-              'Submitted Occurrence prospectId does not match the submission prospectId.'
+              'Submitted Occurrence pieceId does not match the submission pieceId.'
             );
           }
 
@@ -95,7 +95,7 @@ export function registerOccurrenceHostService(
         if (completion)
         {
           occurrenceCoordinator.completeProducer(
-            submission.prospectId,
+            submission.pieceId,
             message.sourceModuleId
           );
         }
