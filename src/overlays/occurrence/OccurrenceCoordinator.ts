@@ -7,6 +7,15 @@ export class OccurrenceCoordinator
 
   beginRound(pieceId: string): OccurrenceRound
   {
+    const existing = this.rounds.get(pieceId);
+
+    if (existing?.state === 'pending')
+    {
+      throw new Error(
+        `Piece "${pieceId}" already has an active Occurrence round.`
+      );
+    }
+
     const round: OccurrenceRound = {
       pieceId,
       producerIds: occurrenceProducerRegistry.snapshot(),

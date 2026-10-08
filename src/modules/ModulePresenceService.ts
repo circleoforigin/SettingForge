@@ -198,6 +198,10 @@ export class ModulePresenceService {
       stopped
     );
 
+    occurrenceProducerRegistry.unregister(
+      moduleId
+    );
+
     hostEventBroker.broadcast(
       'module.stopped',
       {
