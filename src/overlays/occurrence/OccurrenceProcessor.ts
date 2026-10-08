@@ -21,7 +21,7 @@ export class OccurrenceProcessor
     const reaction =
       resolveOccurrenceReaction(
         world,
-        occurrence.tags,
+        occurrence.reaction,
         mode
       );
 

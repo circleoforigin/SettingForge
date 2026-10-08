@@ -11,12 +11,14 @@ import type {
 
 export function resolveOccurrenceReaction(
   world: World,
+  reaction: OccurrenceReaction,
   tags: readonly string[],
   mode: OccurrenceProgressionMode
 ): OccurrenceReaction
 {
-  const reactions =
-    tags.map(
+  const reactions: OccurrenceReaction[] = [
+    reaction,
+    ...tags.map(
       (tagId) =>
       {
         const tag =
@@ -30,7 +32,8 @@ export function resolveOccurrenceReaction(
           OccurrenceReactions.Notify
         );
       }
-    );
+    ),
+  ];
 
   return combineOccurrenceReactions(reactions);
 }

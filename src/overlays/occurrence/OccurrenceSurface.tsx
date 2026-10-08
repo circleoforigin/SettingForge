@@ -113,10 +113,16 @@ export function OccurrenceSurface({
         </div>
 
         <div className="occurrence-list">
-          {controller.occurrences.map(
-            (occurrence) =>
-            {
-              const expanded =
+          {controller.occurrences
+            .filter(
+              (occurrence) =>
+                occurrence.type !== undefined &&
+                occurrence.title !== undefined
+            )
+            .map(
+              (occurrence) =>
+              {
+                const expanded =
                 expandedOccurrenceIds.has(
                   occurrence.id
                 );
@@ -135,11 +141,11 @@ export function OccurrenceSurface({
                 >
                   <div className="occurrence-entry-main">
                     <div className="occurrence-type">
-                      {
-                        OCCURRENCE_TYPE_LABELS[
-                          occurrence.type
-                        ]
-                      }
+                      {occurrence.type
+                        ? OCCURRENCE_TYPE_LABELS[
+                            occurrence.type
+                          ]
+                        : ''}
                     </div>
 
                     <div className="occurrence-summary">
