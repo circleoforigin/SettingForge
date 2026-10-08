@@ -14,26 +14,27 @@ function rulesetKey(
 
 function cloneRuleset(
   ruleset: RulesetDefinition
-): RulesetDefinition {
+): RulesetDefinition
+{
   return {
     ...ruleset,
 
-        requirements:
+    requirements:
       ruleset.requirements.map(
         (requirement) => ({
           ...requirement,
         })
       ),
 
-    occurrenceTags:
-      ruleset.occurrenceTags?.map(
-        (tag) => ({
-          ...tag,
-          reactions: {
-            ...tag.reactions,
-          },
-        })
-      ),
+    functions:
+      ruleset.functions
+        ? [...ruleset.functions]
+        : undefined,
+
+    interactions:
+      ruleset.interactions
+        ? [...ruleset.interactions]
+        : undefined,
   };
 }
 

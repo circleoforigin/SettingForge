@@ -20,6 +20,7 @@ const OCCURRENCE_TYPE_LABELS:
     weather: 'W',
     almanac: 'A',
     section: 'S',
+    location: 'L',
     player: 'P',
   };
 
@@ -113,15 +114,9 @@ export function OccurrenceSurface({
         </div>
 
         <div className="occurrence-list">
-          {controller.occurrences
-            .filter(
-              (occurrence) =>
-                occurrence.type !== undefined &&
-                occurrence.title !== undefined
-            )
-            .map(
-              (occurrence) =>
-              {
+          {controller.occurrences.map(
+            (occurrence) =>
+            {
                 const expanded =
                 expandedOccurrenceIds.has(
                   occurrence.id

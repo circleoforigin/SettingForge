@@ -22,7 +22,7 @@ export function useOccurrenceOverlay()
 
   const [occurrences, setOccurrences] =
     useState<Occurrence[]>(() =>
-      occurrenceService.getNext(maxQueued)
+      occurrenceService.getVisibleNext(maxQueued)
     );
 
   useEffect(() =>
@@ -30,7 +30,7 @@ export function useOccurrenceOverlay()
     const refresh = () =>
     {
       setOccurrences(
-        occurrenceService.getNext(maxQueued)
+      occurrenceService.getVisibleNext(maxQueued)
       );
     };
 

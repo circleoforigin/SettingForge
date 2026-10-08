@@ -268,6 +268,46 @@ if (removed > 0)
     return this.getNext(1)[0] ?? null;
   }
 
+    getVisibleNext(maximum: number): Occurrence[]
+  {
+    const limit =
+      Math.max(
+        0,
+        Math.trunc(maximum)
+      );
+
+    if (limit === 0)
+    {
+      return [];
+    }
+
+    return this.getNext(
+      this.getCount()
+    )
+      .filter(
+        (occurrence) =>
+          occurrence.type !== undefined &&
+          occurrence.title !== undefined
+      )
+      .slice(
+        0,
+        limit
+      );
+  }
+
+  getCount(): number
+  {
+    let count =
+      this.globalQueue.length;
+
+    for (const queue of this.pieceQueues.values())
+    {
+      count += queue.length;
+    }
+
+    return count;
+  }
+
   getNext(maximum: number): Occurrence[]
   {
     const limit =
