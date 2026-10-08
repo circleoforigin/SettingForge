@@ -1,5 +1,7 @@
-import type { Occurrence } from '@settingforge/module-sdk';
-import type { OccurrenceReaction } from './OccurrenceProgression';
+import type {
+  Occurrence,
+  OccurrenceReaction,
+} from '@settingforge/module-sdk';
 
 export interface OccurrenceProcessingResult
 {

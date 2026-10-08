@@ -1,8 +1,4 @@
 import type { RulesetDefinition } from '../../RulesetDefinition';
-import {
-  OccurrenceProgressionModes,
-  OccurrenceReactions,
-} from '../../../overlays/occurrence/OccurrenceProgression';
 
 interface TravelRulesetData
 {
@@ -478,74 +474,7 @@ export const srd521Ruleset:
     name: 'SRD 5.2.1',
     version: SRD_521_RULESET_VERSION,
     description: 'SettingForge rules implementation based on SRD 5.2.1.',
-    requirements: [],
-    occurrenceTags: [
-      {
-        id: 'Movement',
-        label: 'Movement',
-        description:
-          'The occurrence may affect movement or travel.',
-        reactions: {
-          [OccurrenceProgressionModes.RealTime]:
-            OccurrenceReactions.Notify,
-          [OccurrenceProgressionModes.Progress]:
-            OccurrenceReactions.Notify,
-          [OccurrenceProgressionModes.ToMarker]:
-            OccurrenceReactions.Notify,
-          [OccurrenceProgressionModes.Travel]:
-            OccurrenceReactions.Recalculate,
-        },
-      },
-      {
-        id: 'VehicleMovement',
-        label: 'Vehicle Movement',
-        description:
-          'The occurrence may affect movement while traveling by vehicle.',
-        reactions: {
-          [OccurrenceProgressionModes.RealTime]:
-            OccurrenceReactions.Notify,
-          [OccurrenceProgressionModes.Progress]:
-            OccurrenceReactions.Notify,
-          [OccurrenceProgressionModes.ToMarker]:
-            OccurrenceReactions.Notify,
-          [OccurrenceProgressionModes.Travel]:
-            OccurrenceReactions.Recalculate,
-        },
-      },
-      {
-        id: 'Visibility',
-        label: 'Visibility',
-        description:
-          'The occurrence may affect visibility.',
-        reactions: {
-          [OccurrenceProgressionModes.RealTime]:
-            OccurrenceReactions.Recalculate,
-          [OccurrenceProgressionModes.Progress]:
-            OccurrenceReactions.Recalculate,
-          [OccurrenceProgressionModes.ToMarker]:
-            OccurrenceReactions.Recalculate,
-          [OccurrenceProgressionModes.Travel]:
-            OccurrenceReactions.Recalculate,
-        },
-      },
-      {
-        id: 'Encounter',
-        label: 'Encounter',
-        description:
-          'The occurrence represents an encounter.',
-        reactions: {
-          [OccurrenceProgressionModes.RealTime]:
-            OccurrenceReactions.Interrupt,
-          [OccurrenceProgressionModes.Progress]:
-            OccurrenceReactions.Interrupt,
-          [OccurrenceProgressionModes.ToMarker]:
-            OccurrenceReactions.Interrupt,
-          [OccurrenceProgressionModes.Travel]:
-            OccurrenceReactions.Interrupt,
-        },
-      },
-    ],
-
+    requirements: [],    
     functions: [
 {
   id: 'TravelTime',
