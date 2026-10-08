@@ -2,6 +2,7 @@ import { OverlayRegistry } from './OverlayRegistry';
 import type { OverlayDefinition } from './OverlayDefinition';
 import { MessengerSurface } from './messenger/MessengerSurface';
 import { SimClockSurface } from './simClock/SimClockSurface';
+import { occurrenceEventHandlers } from './occurrence/OccurrenceEvents';
 
 export const overlayRegistry =
   new OverlayRegistry();
@@ -33,6 +34,7 @@ const occurrenceOverlay: OverlayDefinition = {
     'Persistent interface for prospective simulation occurrences.',
   version: '0.1.0',
   layout: 'fixed',
+  events: occurrenceEventHandlers,
 };
 
 overlayRegistry.register(

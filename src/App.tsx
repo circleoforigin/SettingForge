@@ -383,8 +383,8 @@ loadQueueRef.current?.completeModule(
   unregisterCapabilityService();
   unregisterFileServices();
   unregisterStorageServices();
-  stopBroker();
   unsubscribeOverlayEvents();
+  stopBroker();
 };
 }, []);
   
