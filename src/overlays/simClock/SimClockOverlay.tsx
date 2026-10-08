@@ -4,6 +4,7 @@ import {
   type SimulationTime,
 } from '../../simulation/SimulationClockService';
 import { hostEventBroker } from '../../events/HostEventBroker';
+import { occurrenceCoordinator } from '../occurrence/OccurrenceCoordinator';
 import {
   createDefaultSimClockSettings,
   type SimClockEra,
@@ -367,20 +368,35 @@ const requestTravel = () =>
 {
   stopRealTime();
 
-  const prospectId =
-    crypto.randomUUID();
+  const prospect = occurrenceCoordinator.createProspect();
 
-  void hostEventBroker
-    .requestModule(
-      'regions',
-      'Regions.Travel',
-      {
-        prospectId,
-        startTime: simulationClockService.getTime(),
-      }
-    )
+  if (prospect.state === 'complete')
+  {
+    occurrenceCoordinator.cancelProspect(
+      prospect.id
+    );
+
+    console.warn(
+      '[Simulation] Travel has no registered Occurrence producers.'
+    );
+
+    return;
+  }
+
+  void hostEventBroker.requestModule(
+    'regions',
+    'Regions.Travel',
+    {
+      prospectId: prospect.id,
+      startTime: simulationClockService.getTime(),
+    }
+  )
     .catch((error: unknown) =>
     {
+      occurrenceCoordinator.cancelProspect(
+        prospect.id
+      );
+
       console.error(
         '[Simulation] Unable to begin Travel.',
         error

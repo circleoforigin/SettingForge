@@ -60,9 +60,9 @@ export class OccurrenceCoordinator
     return this.clone(prospect);
   }
 
-  removeProspect(prospectId: string): boolean
+  cancelProspect(prospectId: string): void
   {
-    return this.prospects.delete(prospectId);
+    this.prospects.delete(prospectId);
   }
 
   clear(): void
