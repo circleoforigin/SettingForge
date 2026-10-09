@@ -66,7 +66,7 @@ export class OccurrenceCoordinator
     return prospect.occurrences.filter(
       (occurrence) =>
         occurrence.type !== undefined &&
-        occurrence.title !== undefined
+        occurrence.description !== undefined
     ).length;
   }
 
@@ -89,7 +89,7 @@ export class OccurrenceCoordinator
     {
       if (
         occurrence.type === undefined ||
-        occurrence.title === undefined
+        occurrence.description === undefined
       )
       {
         continue;

@@ -11,7 +11,7 @@ export function isDisplayableOccurrence(
 {
   return (
     occurrence.type !== undefined &&
-    occurrence.title !== undefined
+    occurrence.description !== undefined
   );
 }
 

@@ -3919,6 +3919,7 @@ return (
   {occurrencesVisible && (
     <OccurrenceSurface
       controller={occurrences}
+      simClock={simClock}
     />
   )}
 </div>
