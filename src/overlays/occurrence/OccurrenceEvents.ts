@@ -31,6 +31,8 @@ function handleTravelLegProspected(
       payload.endTime
     );
   }
+
+  occurrenceCoordinator.beginRound(payload.pieceId);
 }
 
 export const occurrenceEventHandlers: OverlayEventHandler[] = [

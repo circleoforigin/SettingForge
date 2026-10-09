@@ -132,18 +132,38 @@ export class OccurrenceProcessor
         );
       }
 
-      await hostEventBroker.requestModule(
-        'regions',
-        'Regions.ContinueTravel',
-        {
-          pieceId,
-          routeLegId:
-            prospect.routeLegId,
-          startTime:
-            prospect.legEndTime,
-          mode: 'next-leg',
-        }
-      );
+      const continuation =
+        await hostEventBroker.requestModule<{
+          routeComplete?: boolean;
+        }>(
+          'regions',
+          'Regions.ContinueTravel',
+          {
+            pieceId,
+            routeLegId:
+              prospect.routeLegId,
+            startTime:
+              prospect.legEndTime,
+            mode: 'next-leg',
+          }
+        );
+
+      if (!continuation?.routeComplete)
+      {
+        return true;
+      }
+
+      const completedProspect =
+        occurrenceCoordinator.takeProspect(
+          pieceId
+        );
+
+      if (completedProspect)
+      {
+        occurrenceService.addMany(
+          completedProspect.occurrences
+        );
+      }
 
       return true;
     }
