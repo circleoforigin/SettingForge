@@ -5,6 +5,16 @@ export const PIECE_OCCURRENCE_REFRESH_LIMIT = 5;
 
 type OccurrenceListener = () => void;
 
+export function isDisplayableOccurrence(
+  occurrence: Occurrence
+): boolean
+{
+  return (
+    occurrence.type !== undefined &&
+    occurrence.title !== undefined
+  );
+}
+
 function compareOccurrences(
   left: Occurrence,
   right: Occurrence
@@ -76,10 +86,10 @@ function removeOccurrences(
 
 export class OccurrenceService
 {
-  private readonly globalQueue: Occurrence[] = [];
-  private readonly pieceQueues = new Map<string, Occurrence[]>();
-  private readonly displayedIds = new Set<string>();
-  private readonly listeners = new Set<OccurrenceListener>();
+private readonly globalQueue: Occurrence[] = [];
+private readonly pieceQueues = new Map<string, Occurrence[]>();
+private readonly visibleOccurrences: Occurrence[] = [];
+private readonly listeners = new Set<OccurrenceListener>();
 
 subscribe(listener: OccurrenceListener): () => void
 {
@@ -107,6 +117,11 @@ add(occurrence: Occurrence): void
 
 private insert(occurrence: Occurrence): void
 {
+  if (!isDisplayableOccurrence(occurrence))
+  {
+    return;
+  }
+
   if (!occurrence.pieceId)
   {
     insertOccurrence(
@@ -138,36 +153,30 @@ addMany(occurrences: readonly Occurrence[]): void
     return;
   }
 
-  let changed = false;
-
   for (const occurrence of occurrences)
   {
-    if (this.getCount() >= OCCURRENCE_BACKLOG)
-    {
-      break;
-    }
-
     this.insert(occurrence);
-    changed = true;
-
-    if (occurrence.pieceId)
-    {
-      this.pieceFrontiers.set(
-        occurrence.pieceId,
-        occurrence
-      );
-    }
   }
 
-  if (changed)
-  {
-    this.notify();
-  }
+  this.notify();
 }
 
   remove(occurrenceId: string): boolean
   {
-    this.displayedIds.delete(occurrenceId);
+    const visibleRemoved =
+      removeOccurrences(
+        this.visibleOccurrences,
+        (occurrence) =>
+          occurrence.id === occurrenceId
+      );
+
+    if (visibleRemoved > 0)
+    {
+      this.notify();
+
+      return true;
+    }
+   
     const globalRemoved =
       removeOccurrences(
         this.globalQueue,
@@ -250,35 +259,7 @@ if (removed > 0)
     return this.getNext(1)[0] ?? null;
   }
 
-  markDisplayed(occurrences: readonly Occurrence[]): void
-  {
-    for (const occurrence of occurrences)
-    {
-      this.displayedIds.add(
-        occurrence.id
-      );
-    }
-  }
-
-  getUndisplayedPieceQueue(pieceId: string): Occurrence[]
-  {
-    return this.getPieceQueue(pieceId)
-      .filter(
-        (occurrence) =>
-          !this.displayedIds.has(
-            occurrence.id
-          )
-      );
-  }
-
-  getUndisplayedPieceCount(pieceId: string): number
-  {
-    return this.getUndisplayedPieceQueue(
-      pieceId
-    ).length;
-  }
-
-  getVisibleNext(maximum: number): Occurrence[]
+    fillVisible(maximum: number): Occurrence[]
   {
     const limit =
       Math.max(
@@ -286,23 +267,56 @@ if (removed > 0)
         Math.trunc(maximum)
       );
 
-    if (limit === 0)
+    while (
+      this.visibleOccurrences.length <
+      limit
+    )
     {
-      return [];
+      const next =
+        this.getNext(1)[0];
+
+      if (!next)
+      {
+        break;
+      }
+
+      if (next.pieceId)
+      {
+        this.takePieceOccurrence(
+          next.pieceId,
+          next.id
+        );
+      }
+      else
+      {
+        removeOccurrences(
+          this.globalQueue,
+          (occurrence) =>
+            occurrence.id === next.id
+        );
+      }
+
+      if (
+        next.type !== undefined &&
+        next.title !== undefined
+      )
+      {
+        insertOccurrence(
+          this.visibleOccurrences,
+          next
+        );
+      }
     }
 
-    return this.getNext(
-      this.getCount()
-    )
-      .filter(
-        (occurrence) =>
-          occurrence.type !== undefined &&
-          occurrence.title !== undefined
-      )
-      .slice(
-        0,
-        limit
-      );
+    return this.visibleOccurrences.slice(
+      0,
+      limit
+    );
+  }
+
+  getVisibleNext(maximum: number): Occurrence[]
+  {
+    return this.fillVisible(maximum);
   }
 
   getCount(): number
@@ -397,9 +411,36 @@ if (removed > 0)
     ];
   }
 
-  getPieceFrontier(pieceId: string): Occurrence | undefined
+  getPieceDisplayableCount(pieceId: string): number
   {
-    return this.pieceFrontiers.get(pieceId);
+    return this.getPieceQueue(pieceId)
+      .filter(isDisplayableOccurrence)
+      .length;
+  }
+
+    getPieceDisplayableBoundary(
+    pieceId: string,
+    maximum = PIECE_OCCURRENCE_LIMIT
+  ): Occurrence | undefined
+  {
+    let count = 0;
+
+    for (const occurrence of this.getPieceQueue(pieceId))
+    {
+      if (!isDisplayableOccurrence(occurrence))
+      {
+        continue;
+      }
+
+      count += 1;
+
+      if (count === maximum)
+      {
+        return occurrence;
+      }
+    }
+
+    return undefined;
   }
 
   getPieceQueue(pieceId: string): Occurrence[]
@@ -412,6 +453,70 @@ if (removed > 0)
         []
       ),
     ];
+  }
+
+  trimPieceQueue(
+    pieceId: string,
+    maximum = PIECE_OCCURRENCE_LIMIT
+  ): Occurrence | undefined
+  {
+    const queue =
+      this.pieceQueues.get(pieceId);
+
+    if (!queue)
+    {
+      return undefined;
+    }
+
+    if (queue.length > maximum)
+    {
+      queue.splice(maximum);
+    }
+
+    return queue.at(-1);
+  }
+
+  getPieceQueueCount(pieceId: string): number
+  {
+    return (
+      this.pieceQueues.get(pieceId)?.length ??
+      0
+    );
+  }
+
+  takePieceOccurrence(
+    pieceId: string,
+    occurrenceId: string
+  ): Occurrence | undefined
+  {
+    const queue =
+      this.pieceQueues.get(pieceId);
+
+    if (!queue)
+    {
+      return undefined;
+    }
+
+    const index =
+      queue.findIndex(
+        (occurrence) =>
+          occurrence.id === occurrenceId
+      );
+
+    if (index < 0)
+    {
+      return undefined;
+    }
+
+    const [occurrence] =
+      queue.splice(index, 1);
+
+    if (queue.length === 0)
+    {
+      this.pieceQueues.delete(pieceId);
+    }
+
+    return occurrence;
   }
 
   getPieceIds(): string[]
@@ -427,7 +532,7 @@ clear(): void
 
   this.globalQueue.length = 0;
   this.pieceQueues.clear();
-  this.displayedIds.clear();
+  this.visibleOccurrences.length = 0;
 
   if (hadOccurrences)
   {

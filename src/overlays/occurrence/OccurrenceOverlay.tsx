@@ -25,25 +25,12 @@ export function useOccurrenceOverlay()
   {
     const refresh = () =>
     {
-      const visible =
-        occurrenceService.getVisibleNext(
-          maxQueued
-        );
-
-      occurrenceService.markDisplayed(
-        visible
-      );
-
-      setOccurrences(
-        visible
-      );
+      setOccurrences(occurrenceService.getVisibleNext(maxQueued));
     };
 
     refresh();
 
-    return occurrenceService.subscribe(
-      refresh
-    );
+    return occurrenceService.subscribe(refresh);
   }, [maxQueued]);
 
   return {
