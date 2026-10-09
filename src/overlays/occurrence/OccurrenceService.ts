@@ -117,11 +117,6 @@ add(occurrence: Occurrence): void
 
 private insert(occurrence: Occurrence): void
 {
-  if (!isDisplayableOccurrence(occurrence))
-  {
-    return;
-  }
-
   if (!occurrence.pieceId)
   {
     insertOccurrence(
@@ -259,7 +254,7 @@ if (removed > 0)
     return this.getNext(1)[0] ?? null;
   }
 
-    fillVisible(maximum: number): Occurrence[]
+  fillVisible(maximum: number): Occurrence[]
   {
     const limit =
       Math.max(
@@ -280,6 +275,11 @@ if (removed > 0)
         break;
       }
 
+      if (!isDisplayableOccurrence(next))
+      {
+        break;
+      }
+
       if (next.pieceId)
       {
         this.takePieceOccurrence(
@@ -296,16 +296,10 @@ if (removed > 0)
         );
       }
 
-      if (
-        next.type !== undefined &&
-        next.title !== undefined
-      )
-      {
-        insertOccurrence(
-          this.visibleOccurrences,
-          next
-        );
-      }
+      insertOccurrence(
+        this.visibleOccurrences,
+        next
+      );
     }
 
     return this.visibleOccurrences.slice(
@@ -453,35 +447,6 @@ if (removed > 0)
         []
       ),
     ];
-  }
-
-  trimPieceQueue(
-    pieceId: string,
-    maximum = PIECE_OCCURRENCE_LIMIT
-  ): Occurrence | undefined
-  {
-    const queue =
-      this.pieceQueues.get(pieceId);
-
-    if (!queue)
-    {
-      return undefined;
-    }
-
-    if (queue.length > maximum)
-    {
-      queue.splice(maximum);
-    }
-
-    return queue.at(-1);
-  }
-
-  getPieceQueueCount(pieceId: string): number
-  {
-    return (
-      this.pieceQueues.get(pieceId)?.length ??
-      0
-    );
   }
 
   takePieceOccurrence(
