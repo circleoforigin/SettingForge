@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Occurrence } from '@settingforge/module-sdk';
 import { occurrenceService } from './OccurrenceService';
+import { occurrenceProcessor } from './OccurrenceProcessor';
 
 export const OCCURRENCE_MAX_QUEUED_OPTIONS = [
   1,
@@ -23,14 +24,47 @@ export function useOccurrenceOverlay()
 
   useEffect(() =>
   {
-    const refresh = () =>
+    let processing = false;
+
+    const refresh = async () =>
     {
-      setOccurrences(occurrenceService.getVisibleNext(maxQueued));
+      if (processing)
+      {
+        return;
+      }
+
+      processing = true;
+
+      try
+      {
+        while (
+          await occurrenceProcessor.processSilent()
+        )
+        {
+          // Continue until the next Occurrence
+          // requires presentation or interaction.
+        }
+
+        setOccurrences(
+          occurrenceService.getVisibleNext(
+            maxQueued
+          )
+        );
+      }
+      finally
+      {
+        processing = false;
+      }
     };
 
-    refresh();
+    void refresh();
 
-    return occurrenceService.subscribe(refresh);
+    return occurrenceService.subscribe(
+      () =>
+      {
+        void refresh();
+      }
+    );
   }, [maxQueued]);
 
   return {

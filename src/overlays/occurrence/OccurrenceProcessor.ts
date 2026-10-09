@@ -22,14 +22,55 @@ export class OccurrenceProcessor
     };
   }
 
-    async processRecalculate(): Promise<boolean>
+    async processSilent(): Promise<boolean>
   {
     const result = this.peek();
 
+    if (!result)
+    {
+      return false;
+    }
+
+    const occurrence = result.occurrence;
+
     if (
-      !result ||
-      result.reaction !== 'recalculate'
+      occurrence.type !== undefined &&
+      occurrence.title !== undefined
     )
+    {
+      return false;
+    }
+
+    switch (result.reaction)
+    {
+      case 'recalculate':
+        return this.processRecalculate();
+
+      case 'notify':
+      case 'interrupt':
+        return false;
+
+      case 'end':
+        occurrenceService.remove(
+          occurrence.id
+        );
+
+        return true;
+
+      case 'none':
+        occurrenceService.remove(
+          occurrence.id
+        );
+
+        return true;
+    }
+  }
+
+  async processRecalculate(): Promise<boolean>
+  {
+    const result = this.peek();
+
+    if (!result || result.reaction !== 'recalculate')
     {
       return false;
     }
@@ -63,9 +104,7 @@ export class OccurrenceProcessor
       occurrence.simulationTime
     );
 
-    occurrenceService.remove(
-      occurrence.id
-    );
+    occurrenceService.remove(occurrence.id);
 
     await hostEventBroker.requestModule(
       'regions',
