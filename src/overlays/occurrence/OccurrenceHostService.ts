@@ -89,7 +89,8 @@ export function registerOccurrenceHostService(
 
         const completion = occurrences.find(
           (occurrence) =>
-            occurrence.reaction === 'none'
+            occurrence.reaction === 'none' ||
+            occurrence.reaction === 'recalculate'
         );
 
         if (completion)

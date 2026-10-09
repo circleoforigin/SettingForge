@@ -1,5 +1,6 @@
 import { hostEventBroker } from '../../events/HostEventBroker';
 import { occurrenceService } from './OccurrenceService';
+import { occurrenceCoordinator } from './OccurrenceCoordinator';
 import type {
   OccurrenceProcessingResult,
   TravelContinuationPayload,
@@ -14,6 +15,19 @@ export class OccurrenceProcessor
     if (!occurrence)
     {
       return null;
+    }
+
+    if (occurrence.pieceId)
+    {
+      const round =
+        occurrenceCoordinator.getRound(
+          occurrence.pieceId
+        );
+
+      if (round?.state === 'pending')
+      {
+        return null;
+      }
     }
 
     return {
