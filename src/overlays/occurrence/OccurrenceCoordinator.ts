@@ -21,6 +21,36 @@ export class OccurrenceCoordinator
       : undefined;
   }
 
+  setProspectLeg(
+    pieceId: string,
+    routeLegId: string,
+    legEndTime: number
+  ): OccurrenceProspect
+  {
+    let prospect =
+      this.prospects.get(pieceId);
+
+    if (!prospect)
+    {
+      prospect = {
+        pieceId,
+        occurrences: [],
+      };
+
+      this.prospects.set(
+        pieceId,
+        prospect
+      );
+    }
+
+    prospect.routeLegId = routeLegId;
+    prospect.legEndTime = legEndTime;
+
+    return this.cloneProspect(
+      prospect
+    );
+  }
+
   getProspectDisplayableCount(
     pieceId: string
   ): number

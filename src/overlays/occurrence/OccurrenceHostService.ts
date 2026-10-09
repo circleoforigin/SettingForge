@@ -4,6 +4,7 @@ import type {
 } from '@settingforge/module-sdk';
 import { occurrenceCoordinator } from './OccurrenceCoordinator';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
+import { occurrenceProcessor } from './OccurrenceProcessor';
 
 type RegisterRequestHandler =
   (
@@ -102,10 +103,18 @@ export function registerOccurrenceHostService(
 
         if (completion)
         {
-          occurrenceCoordinator.completeProducer(
-            submission.pieceId,
-            message.sourceModuleId
-          );
+          const round =
+            occurrenceCoordinator.completeProducer(
+              submission.pieceId,
+              message.sourceModuleId
+            );
+
+          if (round.state === 'complete')
+          {
+            await occurrenceProcessor.resolveRound(
+              submission.pieceId
+            );
+          }
         }
 
         return {

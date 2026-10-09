@@ -10,6 +10,8 @@ function handleTravelLegProspected(
     message.payload as
       | {
           pieceId?: string;
+          routeLegId?: string;
+          endTime?: number;
         }
       | undefined;
 
@@ -18,9 +20,17 @@ function handleTravelLegProspected(
     return;
   }
 
-  occurrenceCoordinator.beginRound(
-    payload.pieceId
-  );
+  if (
+    payload.routeLegId &&
+    typeof payload.endTime === 'number'
+  )
+  {
+    occurrenceCoordinator.setProspectLeg(
+      payload.pieceId,
+      payload.routeLegId,
+      payload.endTime
+    );
+  }
 }
 
 export const occurrenceEventHandlers: OverlayEventHandler[] = [

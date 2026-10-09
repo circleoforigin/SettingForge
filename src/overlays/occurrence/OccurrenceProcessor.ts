@@ -6,6 +6,7 @@ import type {
   TravelContinuationPayload,
 } from './OccurrenceProcessing';
 import type { Occurrence } from '@settingforge/module-sdk';
+import { PIECE_OCCURRENCE_LIMIT } from './OccurrenceService';
 
 export class OccurrenceProcessor
 {
@@ -104,6 +105,74 @@ export class OccurrenceProcessor
     occurrenceCoordinator.addProspectOccurrences(
       pieceId,
       completed.occurrences
+    );
+
+    const displayableCount =
+      occurrenceCoordinator.getProspectDisplayableCount(
+        pieceId
+      );
+
+    if (
+      displayableCount <
+      PIECE_OCCURRENCE_LIMIT
+    )
+    {
+      const prospect =
+        occurrenceCoordinator.getProspect(
+          pieceId
+        );
+
+      if (
+        !prospect?.routeLegId ||
+        prospect.legEndTime === undefined
+      )
+      {
+        throw new Error(
+          `Piece "${pieceId}" has no travel prospect context.`
+        );
+      }
+
+      await hostEventBroker.requestModule(
+        'regions',
+        'Regions.ContinueTravel',
+        {
+          pieceId,
+          routeLegId:
+            prospect.routeLegId,
+          startTime:
+            prospect.legEndTime,
+          mode: 'next-leg',
+        }
+      );
+
+      return true;
+    }
+
+        const boundary =
+      occurrenceCoordinator.getProspectDisplayableBoundary(
+        pieceId,
+        PIECE_OCCURRENCE_LIMIT
+      );
+
+    const prospect =
+      occurrenceCoordinator.takeProspect(
+        pieceId
+      );
+
+    if (
+      !boundary ||
+      !prospect
+    )
+    {
+      return false;
+    }
+
+    occurrenceService.addMany(
+      prospect.occurrences.filter(
+        (occurrence) =>
+          occurrence.simulationTime <=
+          boundary.simulationTime
+      )
     );
 
     return true;
