@@ -76,7 +76,11 @@ export class OccurrenceProcessor
         truncated.occurrences.filter(
           (occurrence) =>
             occurrence.id !==
-            recalculate.id
+              recalculate.id ||
+            (
+              occurrence.type !== undefined &&
+              occurrence.title !== undefined
+            )
         )
       );
 
@@ -97,7 +101,8 @@ export class OccurrenceProcessor
       return false;
     }
 
-    occurrenceService.addMany(
+    occurrenceCoordinator.addProspectOccurrences(
+      pieceId,
       completed.occurrences
     );
 

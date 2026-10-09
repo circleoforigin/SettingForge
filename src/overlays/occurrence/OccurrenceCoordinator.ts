@@ -21,6 +21,61 @@ export class OccurrenceCoordinator
       : undefined;
   }
 
+  getProspectDisplayableCount(
+    pieceId: string
+  ): number
+  {
+    const prospect =
+      this.prospects.get(pieceId);
+
+    if (!prospect)
+    {
+      return 0;
+    }
+
+    return prospect.occurrences.filter(
+      (occurrence) =>
+        occurrence.type !== undefined &&
+        occurrence.title !== undefined
+    ).length;
+  }
+
+  getProspectDisplayableBoundary(
+    pieceId: string,
+    maximum: number
+  ): Occurrence | undefined
+  {
+    const prospect =
+      this.prospects.get(pieceId);
+
+    if (!prospect)
+    {
+      return undefined;
+    }
+
+    let count = 0;
+
+    for (const occurrence of prospect.occurrences)
+    {
+      if (
+        occurrence.type === undefined ||
+        occurrence.title === undefined
+      )
+      {
+        continue;
+      }
+
+      count += 1;
+
+      if (count === maximum)
+      {
+        return occurrence;
+      }
+    }
+
+    return undefined;
+  }
+
   addProspectOccurrences(
     pieceId: string,
     occurrences: readonly Occurrence[]
