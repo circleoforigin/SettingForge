@@ -61,6 +61,25 @@ export class OccurrenceProcessor
 
     if (recalculate)
     {
+      const truncated =
+        occurrenceCoordinator.getRound(
+          pieceId
+        );
+
+      if (!truncated)
+      {
+        return false;
+      }
+
+      occurrenceCoordinator.addProspectOccurrences(
+        pieceId,
+        truncated.occurrences.filter(
+          (occurrence) =>
+            occurrence.id !==
+            recalculate.id
+        )
+      );
+
       await this.processRoundRecalculate(
         recalculate
       );

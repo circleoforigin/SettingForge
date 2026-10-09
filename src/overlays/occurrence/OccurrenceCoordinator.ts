@@ -1,10 +1,81 @@
 import type { OccurrenceRound } from './OccurrenceRound';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
 import type { Occurrence } from '@settingforge/module-sdk';
+import type { OccurrenceProspect } from './OccurrenceProspect';
 
 export class OccurrenceCoordinator
 {
   private readonly rounds = new Map<string, OccurrenceRound>();
+  private readonly prospects =
+    new Map<string, OccurrenceProspect>();
+
+  getProspect(
+    pieceId: string
+  ): OccurrenceProspect | undefined
+  {
+    const prospect =
+      this.prospects.get(pieceId);
+
+    return prospect
+      ? this.cloneProspect(prospect)
+      : undefined;
+  }
+
+  addProspectOccurrences(
+    pieceId: string,
+    occurrences: readonly Occurrence[]
+  ): OccurrenceProspect
+  {
+    let prospect =
+      this.prospects.get(pieceId);
+
+    if (!prospect)
+    {
+      prospect = {
+        pieceId,
+        occurrences: [],
+      };
+
+      this.prospects.set(
+        pieceId,
+        prospect
+      );
+    }
+
+    prospect.occurrences.push(
+      ...occurrences
+    );
+
+    prospect.occurrences.sort(
+      (left, right) =>
+        left.simulationTime -
+          right.simulationTime ||
+        left.id.localeCompare(right.id)
+    );
+
+    return this.cloneProspect(
+      prospect
+    );
+  }
+
+  takeProspect(
+    pieceId: string
+  ): OccurrenceProspect | undefined
+  {
+    const prospect =
+      this.prospects.get(pieceId);
+
+    if (!prospect)
+    {
+      return undefined;
+    }
+
+    this.prospects.delete(pieceId);
+
+    return this.cloneProspect(
+      prospect
+    );
+  }
 
   beginRound(pieceId: string): OccurrenceRound
   {
@@ -58,6 +129,25 @@ export class OccurrenceCoordinator
       (occurrence) =>
         occurrence.reaction === 'recalculate'
     );
+  }
+
+  takeCompletedRound(
+    pieceId: string
+  ): OccurrenceRound | undefined
+  {
+    const round = this.rounds.get(pieceId);
+
+    if (
+      !round ||
+      round.state !== 'complete'
+    )
+    {
+      return undefined;
+    }
+
+    this.rounds.delete(pieceId);
+
+    return this.clone(round);
   }
 
   truncateAtRecalculate(
@@ -169,6 +259,7 @@ export class OccurrenceCoordinator
   clear(): void
   {
     this.rounds.clear();
+    this.prospects.clear();
   }
 
   private updateState(round: OccurrenceRound): void
@@ -186,6 +277,18 @@ export class OccurrenceCoordinator
       producerIds: [...round.producerIds],
       completedProducerIds: [...round.completedProducerIds],
       occurrences: [...round.occurrences],
+    };
+  }
+
+  private cloneProspect(
+    prospect: OccurrenceProspect
+  ): OccurrenceProspect
+  {
+    return {
+      ...prospect,
+      occurrences: [
+        ...prospect.occurrences,
+      ],
     };
   }
 }
