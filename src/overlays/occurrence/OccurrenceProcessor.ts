@@ -1,5 +1,9 @@
+import { hostEventBroker } from '../../events/HostEventBroker';
 import { occurrenceService } from './OccurrenceService';
-import type { OccurrenceProcessingResult } from './OccurrenceProcessing';
+import type {
+  OccurrenceProcessingResult,
+  TravelContinuationPayload,
+} from './OccurrenceProcessing';
 
 export class OccurrenceProcessor
 {
@@ -16,6 +20,67 @@ export class OccurrenceProcessor
       occurrence,
       reaction: occurrence.reaction,
     };
+  }
+
+    async processRecalculate(): Promise<boolean>
+  {
+    const result = this.peek();
+
+    if (
+      !result ||
+      result.reaction !== 'recalculate'
+    )
+    {
+      return false;
+    }
+
+    const occurrence = result.occurrence;
+
+    if (!occurrence.pieceId)
+    {
+      throw new Error(
+        'Recalculate Occurrence requires pieceId.'
+      );
+    }
+
+    const payload =
+      occurrence.payload as
+        | TravelContinuationPayload
+        | undefined;
+
+    if (
+      !payload?.routeLegId ||
+      !payload.mode
+    )
+    {
+      throw new Error(
+        'Travel Recalculate Occurrence requires continuation data.'
+      );
+    }
+
+    occurrenceService.truncatePiece(
+      occurrence.pieceId,
+      occurrence.simulationTime
+    );
+
+    occurrenceService.remove(
+      occurrence.id
+    );
+
+    await hostEventBroker.requestModule(
+      'regions',
+      'Regions.ContinueTravel',
+      {
+        pieceId: occurrence.pieceId,
+        routeLegId: payload.routeLegId,
+        startTime: occurrence.simulationTime,
+        mode: payload.mode,
+        remainingDistance:
+          payload.remainingDistance,
+      }
+    );
+
+    return true;
   }
 }
 

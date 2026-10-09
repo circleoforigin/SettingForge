@@ -17,20 +17,25 @@ export const OCCURRENCE_MAX_QUEUED_OPTIONS = [
 
 export function useOccurrenceOverlay()
 {
-  const [maxQueued, setMaxQueued] =
-    useState(5);
+  const [maxQueued, setMaxQueued] = useState(5);
 
-  const [occurrences, setOccurrences] =
-    useState<Occurrence[]>(() =>
-      occurrenceService.getVisibleNext(maxQueued)
-    );
+  const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
 
   useEffect(() =>
   {
     const refresh = () =>
     {
+      const visible =
+        occurrenceService.getVisibleNext(
+          maxQueued
+        );
+
+      occurrenceService.markDisplayed(
+        visible
+      );
+
       setOccurrences(
-      occurrenceService.getVisibleNext(maxQueued)
+        visible
       );
     };
 

@@ -1,7 +1,7 @@
 import type { Occurrence } from '@settingforge/module-sdk';
 
-export const OCCURRENCE_BACKLOG = 50;
-export const OCCURRENCE_REFRESH_LIMIT = 30;
+export const PIECE_OCCURRENCE_LIMIT = 10;
+export const PIECE_OCCURRENCE_REFRESH_LIMIT = 5;
 
 type OccurrenceListener = () => void;
 
@@ -78,6 +78,7 @@ export class OccurrenceService
 {
   private readonly globalQueue: Occurrence[] = [];
   private readonly pieceQueues = new Map<string, Occurrence[]>();
+  private readonly displayedIds = new Set<string>();
   private readonly listeners = new Set<OccurrenceListener>();
 
 subscribe(listener: OccurrenceListener): () => void
@@ -137,16 +138,36 @@ addMany(occurrences: readonly Occurrence[]): void
     return;
   }
 
+  let changed = false;
+
   for (const occurrence of occurrences)
   {
+    if (this.getCount() >= OCCURRENCE_BACKLOG)
+    {
+      break;
+    }
+
     this.insert(occurrence);
+    changed = true;
+
+    if (occurrence.pieceId)
+    {
+      this.pieceFrontiers.set(
+        occurrence.pieceId,
+        occurrence
+      );
+    }
   }
 
-  this.notify();
+  if (changed)
+  {
+    this.notify();
+  }
 }
 
   remove(occurrenceId: string): boolean
   {
+    this.displayedIds.delete(occurrenceId);
     const globalRemoved =
       removeOccurrences(
         this.globalQueue,
@@ -229,7 +250,35 @@ if (removed > 0)
     return this.getNext(1)[0] ?? null;
   }
 
-    getVisibleNext(maximum: number): Occurrence[]
+  markDisplayed(occurrences: readonly Occurrence[]): void
+  {
+    for (const occurrence of occurrences)
+    {
+      this.displayedIds.add(
+        occurrence.id
+      );
+    }
+  }
+
+  getUndisplayedPieceQueue(pieceId: string): Occurrence[]
+  {
+    return this.getPieceQueue(pieceId)
+      .filter(
+        (occurrence) =>
+          !this.displayedIds.has(
+            occurrence.id
+          )
+      );
+  }
+
+  getUndisplayedPieceCount(pieceId: string): number
+  {
+    return this.getUndisplayedPieceQueue(
+      pieceId
+    ).length;
+  }
+
+  getVisibleNext(maximum: number): Occurrence[]
   {
     const limit =
       Math.max(
@@ -348,6 +397,11 @@ if (removed > 0)
     ];
   }
 
+  getPieceFrontier(pieceId: string): Occurrence | undefined
+  {
+    return this.pieceFrontiers.get(pieceId);
+  }
+
   getPieceQueue(pieceId: string): Occurrence[]
   {
     return [
@@ -373,6 +427,7 @@ clear(): void
 
   this.globalQueue.length = 0;
   this.pieceQueues.clear();
+  this.displayedIds.clear();
 
   if (hadOccurrences)
   {
