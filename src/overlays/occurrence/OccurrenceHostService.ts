@@ -4,7 +4,6 @@ import type {
 } from '@settingforge/module-sdk';
 import { occurrenceCoordinator } from './OccurrenceCoordinator';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
-import { occurrenceService } from './OccurrenceService';
 
 type RegisterRequestHandler =
   (
@@ -87,6 +86,14 @@ export function registerOccurrenceHostService(
           }
         }
 
+        occurrenceCoordinator.addOccurrences(
+          submission.pieceId,
+          occurrences.filter(
+            (occurrence) =>
+              occurrence.reaction !== 'none'
+          )
+        );
+
         const completion = occurrences.find(
           (occurrence) =>
             occurrence.reaction === 'none' ||
@@ -100,13 +107,6 @@ export function registerOccurrenceHostService(
             message.sourceModuleId
           );
         }
-
-        occurrenceService.addMany(
-          occurrences.filter(
-            (occurrence) =>
-              occurrence.reaction !== 'none'
-          )
-        );
 
         return {
           accepted:

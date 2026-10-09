@@ -5,6 +5,7 @@ import type {
   OccurrenceProcessingResult,
   TravelContinuationPayload,
 } from './OccurrenceProcessing';
+import type { Occurrence } from '@settingforge/module-sdk';
 
 export class OccurrenceProcessor
 {
@@ -36,7 +37,55 @@ export class OccurrenceProcessor
     };
   }
 
-    async processSilent(): Promise<boolean>
+  async resolveRound(
+    pieceId: string
+  ): Promise<boolean>
+  {
+    const round =
+      occurrenceCoordinator.getRound(
+        pieceId
+      );
+
+    if (
+      !round ||
+      round.state !== 'complete'
+    )
+    {
+      return false;
+    }
+
+    const recalculate =
+      occurrenceCoordinator.truncateAtRecalculate(
+        pieceId
+      );
+
+    if (recalculate)
+    {
+      await this.processRoundRecalculate(
+        recalculate
+      );
+
+      return true;
+    }
+
+    const completed =
+      occurrenceCoordinator.takeCompletedRound(
+        pieceId
+      );
+
+    if (!completed)
+    {
+      return false;
+    }
+
+    occurrenceService.addMany(
+      completed.occurrences
+    );
+
+    return true;
+  }
+
+  async processSilent(): Promise<boolean>
   {
     const result = this.peek();
 
@@ -78,6 +127,50 @@ export class OccurrenceProcessor
 
         return true;
     }
+  }
+
+  private async processRoundRecalculate(
+    occurrence: Occurrence
+  ): Promise<void>
+  {
+    if (!occurrence.pieceId)
+    {
+      throw new Error(
+        'Recalculate Occurrence requires pieceId.'
+      );
+    }
+
+    const payload =
+      occurrence.payload as
+        | TravelContinuationPayload
+        | undefined;
+
+    if (
+      !payload?.routeLegId ||
+      !payload.mode
+    )
+    {
+      throw new Error(
+        'Travel Recalculate Occurrence requires continuation data.'
+      );
+    }
+
+    occurrenceCoordinator.removeRound(
+      occurrence.pieceId
+    );
+
+    await hostEventBroker.requestModule(
+      'regions',
+      'Regions.ContinueTravel',
+      {
+        pieceId: occurrence.pieceId,
+        routeLegId: payload.routeLegId,
+        startTime: occurrence.simulationTime,
+        mode: payload.mode,
+        remainingDistance:
+          payload.remainingDistance,
+      }
+    );
   }
 
   async processRecalculate(): Promise<boolean>
