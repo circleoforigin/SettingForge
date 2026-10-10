@@ -185,6 +185,14 @@ const [
   setOccurrencesVisible,
 ] = useState(true);
 
+useEffect(() =>
+{
+  if (occurrences.occurrences.length > 0)
+  {
+    setOccurrencesVisible(true);
+  }
+}, [occurrences.occurrences.length]);
+
 const captureWorldRuntimeState = (
   world: World
 ): World =>

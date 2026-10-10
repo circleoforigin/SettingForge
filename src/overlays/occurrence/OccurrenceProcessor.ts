@@ -80,7 +80,7 @@ export class OccurrenceProcessor
               recalculate.id ||
             (
               occurrence.type !== undefined &&
-              occurrence.title !== undefined
+              occurrence.description !== undefined
             )
         )
       );
@@ -211,7 +211,7 @@ export class OccurrenceProcessor
 
     if (
       occurrence.type !== undefined &&
-      occurrence.title !== undefined
+      occurrence.description !== undefined
     )
     {
       return false;
