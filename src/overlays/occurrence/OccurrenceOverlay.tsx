@@ -26,11 +26,14 @@ export function useOccurrenceOverlay()
   useEffect(() =>
   {
     let processing = false;
+    let refreshPending = false;
 
     const refresh = async () =>
     {
       if (processing)
       {
+        refreshPending = true;
+
         return;
       }
 
@@ -69,6 +72,12 @@ export function useOccurrenceOverlay()
       finally
       {
         processing = false;
+
+        if (refreshPending)
+        {
+          refreshPending = false;
+          void refresh();
+        }
       }
     };
 
