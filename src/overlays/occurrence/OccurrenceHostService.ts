@@ -109,12 +109,12 @@ export function registerOccurrenceHostService(
               message.sourceModuleId
             );
 
-          if (round.state === 'complete')
-          {
-            await occurrenceProcessor.resolveRound(
-              submission.pieceId
-            );
-          }
+if (round.state === 'complete')
+{
+  void occurrenceProcessor.resolveRound(
+    submission.pieceId
+  );
+}
         }
 
         return {
