@@ -149,98 +149,51 @@ export class OccurrenceProcessor
       return false;
     }
 
-    occurrenceCoordinator.addProspectOccurrences(
-      pieceId,
-      completed.occurrences
+    occurrenceService.addMany(
+      completed.occurrences.filter(
+        (occurrence) =>
+          occurrence.type !== undefined &&
+          occurrence.description !== undefined
+      )
     );
 
-    const displayableCount =
-      occurrenceCoordinator.getProspectDisplayableCount(
+    const prospect =
+      occurrenceCoordinator.getProspect(
         pieceId
       );
 
     if (
-      displayableCount <
-      PIECE_OCCURRENCE_LIMIT
+      !prospect?.routeLegId ||
+      prospect.legEndTime === undefined
     )
     {
-      const prospect =
-        occurrenceCoordinator.getProspect(
-          pieceId
-        );
-
-      if (
-        !prospect?.routeLegId ||
-        prospect.legEndTime === undefined
-      )
-      {
-        throw new Error(
-          `Piece "${pieceId}" has no travel prospect context.`
-        );
-      }
-
-      const continuation =
-        await hostEventBroker.requestModule<{
-          routeComplete?: boolean;
-        }>(
-          'regions',
-          'Regions.ContinueTravel',
-          {
-            pieceId,
-            routeLegId:
-              prospect.routeLegId,
-            startTime:
-              prospect.legEndTime,
-            mode: 'next-leg',
-          }
-        );
-
-      if (!continuation?.routeComplete)
-      {
-        return true;
-      }
-
-      const completedProspect =
-        occurrenceCoordinator.takeProspect(
-          pieceId
-        );
-
-      if (completedProspect)
-      {
-        occurrenceService.addMany(
-          completedProspect.occurrences
-        );
-      }
-
-      return true;
+      throw new Error(
+        `Piece "${pieceId}" has no travel prospect context.`
+      );
     }
 
-        const boundary =
-      occurrenceCoordinator.getProspectDisplayableBoundary(
-        pieceId,
-        PIECE_OCCURRENCE_LIMIT
+    const continuation =
+      await hostEventBroker.requestModule<{
+        routeComplete?: boolean;
+      }>(
+        'regions',
+        'Regions.ContinueTravel',
+        {
+          pieceId,
+          routeLegId:
+            prospect.routeLegId,
+          startTime:
+            prospect.legEndTime,
+          mode: 'next-leg',
+        }
       );
 
-    const prospect =
+    if (continuation?.routeComplete)
+    {
       occurrenceCoordinator.takeProspect(
         pieceId
       );
-
-    if (
-      !boundary ||
-      !prospect
-    )
-    {
-      return false;
     }
-
-    occurrenceService.addMany(
-      prospect.occurrences.filter(
-        (occurrence) =>
-          occurrence.simulationTime <=
-          boundary.simulationTime
-      )
-    );
 
     return true;
   }
