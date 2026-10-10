@@ -249,22 +249,26 @@ export class OccurrenceCoordinator
       return undefined;
     }
 
-    const recalculate =
-      round.occurrences.find(
+    const recalculateIndex =
+      round.occurrences.findIndex(
         (occurrence) =>
           occurrence.reaction === 'recalculate'
       );
 
-    if (!recalculate)
+    if (recalculateIndex < 0)
     {
       return undefined;
     }
 
+    const recalculate =
+      round.occurrences[
+        recalculateIndex
+      ];
+
     round.occurrences =
-      round.occurrences.filter(
-        (occurrence) =>
-          occurrence.simulationTime <=
-            recalculate.simulationTime
+      round.occurrences.slice(
+        0,
+        recalculateIndex + 1
       );
 
     return recalculate;
@@ -295,7 +299,7 @@ export class OccurrenceCoordinator
       {
         return undefined;
       }
-      
+
       if (
         occurrence.type === undefined ||
         occurrence.description === undefined
