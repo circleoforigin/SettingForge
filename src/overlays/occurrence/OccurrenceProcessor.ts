@@ -102,6 +102,19 @@ export class OccurrenceProcessor
         )
       );
 
+      const storageCursor =
+        travelProspectService.truncateAtTime(
+          pieceId,
+          capacityBoundary.simulationTime
+        );
+
+      if (!storageCursor)
+      {
+        throw new Error(
+          `Piece "${pieceId}" has no travel prospect at its Occurrence storage boundary.`
+        );
+      }
+
       return true;
     }
 

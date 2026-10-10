@@ -26,6 +26,7 @@ export interface TravelProspectCursor
   routeLegId: string;
   simulationTime: number;
   distanceFromLegStart: number;
+  atLegEnd: boolean;
 }
 
 export class TravelProspectService
@@ -89,10 +90,95 @@ export class TravelProspectService
         prospect.intervals.length - 1
       ];
 
+   
     interval.endTime = endTime;
     interval.endDistanceFromLegStart =
       endDistanceFromLegStart;
   }
+
+   truncateAtTime(
+    pieceId: string,
+    simulationTime: number
+  ): TravelProspectCursor | undefined
+  {
+    const prospect =
+      this.prospects.get(pieceId);
+
+    if (
+      !prospect ||
+      prospect.intervals.length === 0
+    )
+    {
+      return undefined;
+    }
+
+    const intervalIndex =
+      prospect.intervals.findIndex(
+        (candidate) =>
+          simulationTime >=
+            candidate.startTime &&
+          simulationTime <=
+            candidate.endTime
+      );
+
+    if (intervalIndex < 0)
+    {
+      return undefined;
+    }
+
+    const interval =
+      prospect.intervals[
+        intervalIndex
+      ];
+
+    const originalEndTime = interval.endTime;
+    const atLegEnd = simulationTime >= originalEndTime;
+
+    const duration =
+      interval.endTime -
+      interval.startTime;
+
+    const progress =
+      duration > 0
+        ? Math.max(
+            0,
+            Math.min(
+              1,
+              (
+                simulationTime -
+                interval.startTime
+              ) / duration
+            )
+          )
+        : 1;
+
+    const distanceFromLegStart =
+      interval.startDistanceFromLegStart +
+      (
+        interval.endDistanceFromLegStart -
+        interval.startDistanceFromLegStart
+      ) *
+      progress;
+
+    interval.endTime =
+      simulationTime;
+
+    interval.endDistanceFromLegStart =
+      distanceFromLegStart;
+
+    prospect.intervals.splice(
+      intervalIndex + 1
+    );
+
+    return {
+      pieceId,
+      routeLegId:
+        interval.routeLegId,
+      simulationTime,
+      distanceFromLegStart,
+      atLegEnd,
+    };
+  } 
 
   getProspect(
     pieceId: string
@@ -159,6 +245,7 @@ export class TravelProspectService
       simulationTime: interval.endTime,
       distanceFromLegStart:
         interval.endDistanceFromLegStart,
+      atLegEnd: true,
     };
   }
 
