@@ -31,8 +31,8 @@ export interface TravelProspectCursor
 
 export class TravelProspectService
 {
-  private readonly prospects =
-    new Map<string, PieceTravelProspect>();
+  private readonly prospects = new Map<string, PieceTravelProspect>();
+  private readonly storageCursors = new Map<string, TravelProspectCursor>();
 
   addInterval(
     pieceId: string,
@@ -218,6 +218,34 @@ export class TravelProspectService
       })
     );
   }
+
+  setStorageCursor(
+    cursor: TravelProspectCursor
+  ): void
+  {
+    this.storageCursors.set(
+      cursor.pieceId,
+      {
+        ...cursor,
+      }
+    );
+  }
+
+  getStorageCursor(
+    pieceId: string
+  ): TravelProspectCursor | undefined
+  {
+    const cursor =
+      this.storageCursors.get(
+        pieceId
+      );
+
+    return cursor
+      ? {
+          ...cursor,
+        }
+      : undefined;
+  }
   
   getLatestCursor(
     pieceId: string
@@ -339,6 +367,7 @@ export class TravelProspectService
   clear(): void
   {
     this.prospects.clear();
+    this.storageCursors.clear();
   }
 }
 

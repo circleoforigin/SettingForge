@@ -115,6 +115,10 @@ export class OccurrenceProcessor
         );
       }
 
+      travelProspectService.setStorageCursor(
+        storageCursor
+      );
+
       return true;
     }
 
