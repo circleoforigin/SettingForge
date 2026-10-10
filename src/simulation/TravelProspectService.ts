@@ -13,6 +13,13 @@ export interface PieceTravelProspect
   intervals: TravelProspectInterval[];
 }
 
+export interface ResolvedTravelPosition
+{
+  pieceId: string;
+  routeLegId: string;
+  distanceFromLegStart: number;
+}
+
 export class TravelProspectService
 {
   private readonly prospects =
@@ -116,6 +123,93 @@ export class TravelProspectService
           ),
       })
     );
+  }
+
+    resolvePositionsAt(
+    simulationTime: number
+  ): ResolvedTravelPosition[]
+  {
+    const positions:
+      ResolvedTravelPosition[] = [];
+
+    for (const prospect of this.prospects.values())
+    {
+      const intervals =
+        prospect.intervals;
+
+      if (intervals.length === 0)
+      {
+        continue;
+      }
+
+      const interval =
+        intervals.find(
+          (candidate) =>
+            simulationTime >=
+              candidate.startTime &&
+            simulationTime <=
+              candidate.endTime
+        );
+
+      if (interval)
+      {
+        const duration =
+          interval.endTime -
+          interval.startTime;
+
+        const progress =
+          duration > 0
+            ? Math.max(
+                0,
+                Math.min(
+                  1,
+                  (
+                    simulationTime -
+                    interval.startTime
+                  ) / duration
+                )
+              )
+            : 1;
+
+        const distanceFromLegStart =
+          interval.startDistanceFromLegStart +
+          (
+            interval.endDistanceFromLegStart -
+            interval.startDistanceFromLegStart
+          ) *
+          progress;
+
+        positions.push({
+          pieceId: prospect.pieceId,
+          routeLegId: interval.routeLegId,
+          distanceFromLegStart,
+        });
+
+        continue;
+      }
+
+      const lastInterval =
+        intervals[
+          intervals.length - 1
+        ];
+
+      if (
+        simulationTime >
+        lastInterval.endTime
+      )
+      {
+        positions.push({
+          pieceId: prospect.pieceId,
+          routeLegId:
+            lastInterval.routeLegId,
+          distanceFromLegStart:
+            lastInterval
+              .endDistanceFromLegStart,
+        });
+      }
+    }
+
+    return positions;
   }
 
   clear(): void
