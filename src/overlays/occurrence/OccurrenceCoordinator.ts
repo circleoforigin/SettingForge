@@ -270,6 +270,51 @@ export class OccurrenceCoordinator
     return recalculate;
   }
 
+  getRoundDisplayableBoundary(
+    pieceId: string,
+    maximum: number
+  ): Occurrence | undefined
+  {
+    if (maximum <= 0)
+    {
+      return undefined;
+    }
+
+    const round = this.rounds.get(pieceId);
+
+    if (!round || round.state !== 'complete')
+    {
+      return undefined;
+    }
+
+    let count = 0;
+
+    for (const occurrence of round.occurrences)
+    {
+      if (occurrence.reaction === 'recalculate')
+      {
+        return undefined;
+      }
+      
+      if (
+        occurrence.type === undefined ||
+        occurrence.description === undefined
+      )
+      {
+        continue;
+      }
+
+      count += 1;
+
+      if (count === maximum)
+      {
+        return occurrence;
+      }
+    }
+
+    return undefined;
+  }
+
   addOccurrences(
     pieceId: string,
     occurrences: readonly Occurrence[]

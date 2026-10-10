@@ -20,6 +20,14 @@ export interface ResolvedTravelPosition
   distanceFromLegStart: number;
 }
 
+export interface TravelProspectCursor
+{
+  pieceId: string;
+  routeLegId: string;
+  simulationTime: number;
+  distanceFromLegStart: number;
+}
+
 export class TravelProspectService
 {
   private readonly prospects =
@@ -124,8 +132,37 @@ export class TravelProspectService
       })
     );
   }
+  
+  getLatestCursor(
+    pieceId: string
+  ): TravelProspectCursor | undefined
+  {
+    const prospect =
+      this.prospects.get(pieceId);
 
-    resolvePositionsAt(
+    if (
+      !prospect ||
+      prospect.intervals.length === 0
+    )
+    {
+      return undefined;
+    }
+
+    const interval =
+      prospect.intervals[
+        prospect.intervals.length - 1
+      ];
+
+    return {
+      pieceId,
+      routeLegId: interval.routeLegId,
+      simulationTime: interval.endTime,
+      distanceFromLegStart:
+        interval.endDistanceFromLegStart,
+    };
+  }
+
+  resolvePositionsAt(
     simulationTime: number
   ): ResolvedTravelPosition[]
   {

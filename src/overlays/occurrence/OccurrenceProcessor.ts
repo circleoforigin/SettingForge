@@ -48,12 +48,61 @@ export class OccurrenceProcessor
         pieceId
       );
 
-    if (
-      !round ||
-      round.state !== 'complete'
-    )
+    if (!round || round.state !== 'complete')
     {
       return false;
+    }
+
+        const queuedDisplayableCount =
+      occurrenceService.getPieceDisplayableCount(
+        pieceId
+      );
+
+    const availableCapacity =
+      Math.max(
+        0,
+        PIECE_OCCURRENCE_LIMIT -
+          queuedDisplayableCount
+      );
+
+    if (availableCapacity === 0)
+    {
+      occurrenceCoordinator.removeRound(
+        pieceId
+      );
+
+      return true;
+    }
+
+    const capacityBoundary =
+      occurrenceCoordinator.getRoundDisplayableBoundary(
+        pieceId,
+        availableCapacity
+      );
+
+    if (capacityBoundary)
+    {
+      const completed =
+        occurrenceCoordinator.takeCompletedRound(
+          pieceId
+        );
+
+      if (!completed)
+      {
+        return false;
+      }
+
+      occurrenceService.addMany(
+        completed.occurrences.filter(
+          (occurrence) =>
+            occurrence.simulationTime <=
+              capacityBoundary.simulationTime &&
+            occurrence.type !== undefined &&
+            occurrence.description !== undefined
+        )
+      );
+
+      return true;
     }
 
     const recalculate =
@@ -197,6 +246,52 @@ export class OccurrenceProcessor
     );
 
     return true;
+  }
+
+  async refillPiece(
+    pieceId: string
+  ): Promise<boolean>
+  {
+    const queuedCount =
+      occurrenceService.getPieceDisplayableCount(
+        pieceId
+      );
+
+    if (
+      queuedCount >=
+      PIECE_OCCURRENCE_LIMIT
+    )
+    {
+      return false;
+    }
+
+    const cursor =
+      travelProspectService.getLatestCursor(
+        pieceId
+      );
+
+    if (!cursor)
+    {
+      return false;
+    }
+
+    const continuation =
+      await hostEventBroker.requestModule<{
+        routeComplete?: boolean;
+      }>(
+        'regions',
+        'Regions.ContinueTravel',
+        {
+          pieceId,
+          routeLegId:
+            cursor.routeLegId,
+          startTime:
+            cursor.simulationTime,
+          mode: 'next-leg',
+        }
+      );
+
+    return !continuation?.routeComplete;
   }
 
   async processSilent(): Promise<boolean>
