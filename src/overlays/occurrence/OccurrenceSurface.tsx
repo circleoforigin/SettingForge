@@ -140,11 +140,12 @@ export function OccurrenceSurface({
                 >
                   <div className="occurrence-entry-main">
                     <div className="occurrence-type">
-                      {occurrence.type
-                        ? OCCURRENCE_TYPE_LABELS[
-                            occurrence.type
-                          ]
-                        : ''}
+                      {occurrence.displayLabel ??
+                        (occurrence.type
+                          ? OCCURRENCE_TYPE_LABELS[
+                              occurrence.type
+                            ]
+                          : '')}
                     </div>
 
                     <div className="occurrence-summary">

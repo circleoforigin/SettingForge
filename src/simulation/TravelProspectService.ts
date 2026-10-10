@@ -33,6 +33,7 @@ export class TravelProspectService
 {
   private readonly prospects = new Map<string, PieceTravelProspect>();
   private readonly storageCursors = new Map<string, TravelProspectCursor>();
+  private readonly completedPieces = new Set<string>();
 
   addInterval(
     pieceId: string,
@@ -246,6 +247,24 @@ export class TravelProspectService
         }
       : undefined;
   }
+
+  markRouteComplete(
+    pieceId: string
+  ): void
+  {
+    this.completedPieces.add(
+      pieceId
+    );
+  }
+
+  isRouteComplete(
+    pieceId: string
+  ): boolean
+  {
+    return this.completedPieces.has(
+      pieceId
+    );
+  }
   
   getLatestCursor(
     pieceId: string
@@ -368,6 +387,7 @@ export class TravelProspectService
   {
     this.prospects.clear();
     this.storageCursors.clear();
+    this.completedPieces.clear();
   }
 }
 

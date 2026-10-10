@@ -53,7 +53,7 @@ export class OccurrenceProcessor
       return false;
     }
 
-        const queuedDisplayableCount =
+    const queuedDisplayableCount =
       occurrenceService.getPieceDisplayableCount(
         pieceId
       );
@@ -210,6 +210,10 @@ export class OccurrenceProcessor
       occurrenceCoordinator.takeProspect(
         pieceId
       );
+
+      travelProspectService.markRouteComplete(
+        pieceId
+      );
     }
 
     return true;
@@ -219,6 +223,11 @@ async refillPiece(
     pieceId: string
   ): Promise<boolean>
   {
+    if (travelProspectService.isRouteComplete(pieceId))
+    {
+      return false;
+    }
+
     const queuedCount =
       occurrenceService.getPieceDisplayableCount(
         pieceId
@@ -265,7 +274,16 @@ async refillPiece(
         }
       );
 
-    return !continuation?.routeComplete;
+    if (continuation?.routeComplete)
+    {
+      travelProspectService.markRouteComplete(
+        pieceId
+      );
+
+      return false;
+    }
+
+    return true;
   }
 
   async processSilent(): Promise<boolean>
