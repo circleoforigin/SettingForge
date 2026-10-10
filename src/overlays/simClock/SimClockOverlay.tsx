@@ -21,6 +21,7 @@ import {
   stepSimulationTime,
   type SimCalendarField,
 } from '../../simulation/SimCalendar';
+import { travelProspectService } from '../../simulation/TravelProspectService';
 
 type DateFormatField =
   | 'monthName'
@@ -366,6 +367,8 @@ const stopRealTime = () =>
 const requestTravel = () =>
 {
   stopRealTime();
+
+  travelProspectService.clear();
 
   void hostEventBroker
     .requestModule(

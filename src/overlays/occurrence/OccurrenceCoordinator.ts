@@ -32,10 +32,10 @@ export class OccurrenceCoordinator
 
     if (!prospect)
     {
-      prospect = {
-        pieceId,
-        occurrences: [],
-      };
+        prospect = {
+            pieceId,
+            occurrences: [],
+        };
 
       this.prospects.set(
         pieceId,
@@ -116,10 +116,10 @@ export class OccurrenceCoordinator
 
     if (!prospect)
     {
-      prospect = {
-        pieceId,
-        occurrences: [],
-      };
+        prospect = {
+            pieceId,
+            occurrences: [],
+        };
 
       this.prospects.set(
         pieceId,

@@ -7,6 +7,7 @@ import type {
 } from './OccurrenceProcessing';
 import type { Occurrence } from '@settingforge/module-sdk';
 import { PIECE_OCCURRENCE_LIMIT } from './OccurrenceService';
+import { travelProspectService } from '../../simulation/TravelProspectService';
 
 export class OccurrenceProcessor
 {
@@ -265,6 +266,18 @@ export class OccurrenceProcessor
     {
       throw new Error(
         'Travel Recalculate Occurrence requires continuation data.'
+      );
+    }
+
+        if (
+      typeof payload.distanceFromLegStart ===
+        'number'
+    )
+    {
+      travelProspectService.truncateLatestInterval(
+        occurrence.pieceId,
+        occurrence.simulationTime,
+        payload.distanceFromLegStart
       );
     }
 
