@@ -280,8 +280,8 @@ export class OccurrenceProcessor
         routeLegId: payload.routeLegId,
         startTime: occurrence.simulationTime,
         mode: payload.mode,
-        remainingDistance:
-          payload.remainingDistance,
+        remainingDistance: payload.remainingDistance,
+        distanceFromLegStart: payload.distanceFromLegStart,
       }
     );
   }
@@ -334,8 +334,8 @@ export class OccurrenceProcessor
         routeLegId: payload.routeLegId,
         startTime: occurrence.simulationTime,
         mode: payload.mode,
-        remainingDistance:
-          payload.remainingDistance,
+        remainingDistance: payload.remainingDistance,
+        distanceFromLegStart: payload.distanceFromLegStart,
       }
     );
 

@@ -111,9 +111,17 @@ export function registerOccurrenceHostService(
 
 if (round.state === 'complete')
 {
-  void occurrenceProcessor.resolveRound(
-    submission.pieceId
-  );
+  void occurrenceProcessor
+    .resolveRound(
+      submission.pieceId
+    )
+    .catch((error: unknown) =>
+    {
+      console.error(
+        '[Occurrences] Unable to resolve completed round.',
+        error
+      );
+    });
 }
         }
 

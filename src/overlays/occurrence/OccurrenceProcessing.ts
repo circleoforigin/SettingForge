@@ -8,6 +8,7 @@ export interface TravelContinuationPayload
   mode: 'recalculate' | 'next-leg';
   routeLegId: string;
   remainingDistance?: number;
+  distanceFromLegStart?: number;
 }
 
 export interface OccurrenceProcessingResult
