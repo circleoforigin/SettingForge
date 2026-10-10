@@ -215,7 +215,7 @@ export class OccurrenceProcessor
     return true;
   }
 
-  async refillPiece(
+async refillPiece(
     pieceId: string
   ): Promise<boolean>
   {
@@ -233,7 +233,7 @@ export class OccurrenceProcessor
     }
 
     const cursor =
-      travelProspectService.getLatestCursor(
+      travelProspectService.getStorageCursor(
         pieceId
       );
 
@@ -254,7 +254,14 @@ export class OccurrenceProcessor
             cursor.routeLegId,
           startTime:
             cursor.simulationTime,
-          mode: 'next-leg',
+          mode:
+            cursor.atLegEnd
+              ? 'next-leg'
+              : 'recalculate',
+          distanceFromLegStart:
+            cursor.atLegEnd
+              ? undefined
+              : cursor.distanceFromLegStart,
         }
       );
 
