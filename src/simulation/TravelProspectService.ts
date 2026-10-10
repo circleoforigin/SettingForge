@@ -248,6 +248,13 @@ export class TravelProspectService
       : undefined;
   }
 
+  getStorageCursorPieceIds(): string[]
+  {
+    return Array.from(
+      this.storageCursors.keys()
+    );
+  }
+
   markRouteComplete(
     pieceId: string
   ): void

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Occurrence } from '@settingforge/module-sdk';
 import { occurrenceService } from './OccurrenceService';
 import { occurrenceProcessor } from './OccurrenceProcessor';
+import { travelProspectService } from '../../simulation/TravelProspectService';
 
 export const OCCURRENCE_MAX_QUEUED_OPTIONS = [
   1,
@@ -45,11 +46,25 @@ export function useOccurrenceOverlay()
           // requires presentation or interaction.
         }
 
-        setOccurrences(
+        const visibleOccurrences =
           occurrenceService.getVisibleNext(
             maxQueued
-          )
+          );
+
+        setOccurrences(
+          visibleOccurrences
         );
+
+        for (
+          const pieceId of
+            travelProspectService
+              .getStorageCursorPieceIds()
+        )
+        {
+          await occurrenceProcessor.refillPiece(
+            pieceId
+          );
+        }
       }
       finally
       {
