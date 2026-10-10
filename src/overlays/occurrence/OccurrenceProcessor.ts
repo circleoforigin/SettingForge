@@ -122,16 +122,13 @@ export class OccurrenceProcessor
         return false;
       }
 
-      occurrenceCoordinator.addProspectOccurrences(
-        pieceId,
+      occurrenceService.addMany(
         truncated.occurrences.filter(
           (occurrence) =>
             occurrence.id !==
-              recalculate.id ||
-            (
-              occurrence.type !== undefined &&
-              occurrence.description !== undefined
-            )
+              recalculate.id &&
+            occurrence.type !== undefined &&
+            occurrence.description !== undefined
         )
       );
 
