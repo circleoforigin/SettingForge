@@ -8,6 +8,7 @@ import type {
 import type { Occurrence } from '@settingforge/module-sdk';
 import { PIECE_OCCURRENCE_LIMIT } from './OccurrenceService';
 import { travelProspectService } from '../../simulation/TravelProspectService';
+import { simulationClockService } from '../../simulation/SimulationClockService';
 
 export class OccurrenceProcessor
 {
@@ -228,15 +229,17 @@ async refillPiece(
       return false;
     }
 
-    const queuedCount =
-      occurrenceService.getPieceDisplayableCount(
-        pieceId
-      );
+    const activeRound = occurrenceCoordinator.getRound(pieceId);
 
-    if (
-      queuedCount >=
-      PIECE_OCCURRENCE_LIMIT
-    )
+    if (activeRound)
+    {
+      return false;
+    }
+
+    const queuedCount =
+      occurrenceService.getPieceDisplayableCount(pieceId);
+
+    if (queuedCount >= PIECE_OCCURRENCE_LIMIT)
     {
       return false;
     }
@@ -284,6 +287,47 @@ async refillPiece(
     }
 
     return true;
+  }
+
+  async handleOccurrence(
+    occurrence: Occurrence
+  ): Promise<void>
+  {
+    const simulationTime =
+      occurrence.simulationTime;
+
+    const positions =
+      travelProspectService.resolvePositionsAt(
+        simulationTime
+      );
+
+    for (const position of positions)
+    {
+      await hostEventBroker.requestModule(
+        'regions',
+        'Regions.CommitTravelPosition',
+        {
+          pieceId:
+            position.pieceId,
+          routeLegId:
+            position.routeLegId,
+          distanceFromLegStart:
+            position.distanceFromLegStart,
+        }
+      );
+    }
+
+    simulationClockService.setTime(
+      simulationTime
+    );
+
+    occurrenceService.truncateAfter(
+      simulationTime
+    );
+
+    occurrenceService.remove(
+      occurrence.id
+    );
   }
 
   async processSilent(): Promise<boolean>

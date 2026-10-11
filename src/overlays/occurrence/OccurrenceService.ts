@@ -1,7 +1,6 @@
 import type { Occurrence } from '@settingforge/module-sdk';
 
 export const PIECE_OCCURRENCE_LIMIT = 10;
-export const PIECE_OCCURRENCE_REFRESH_LIMIT = 5;
 
 type OccurrenceListener = () => void;
 
@@ -487,6 +486,57 @@ if (removed > 0)
   getPieceIds(): string[]
   {
     return Array.from(this.pieceQueues.keys());
+  }
+
+  truncateAfter(
+    simulationTime: number
+  ): number
+  {
+    let removed =
+      removeOccurrences(
+        this.visibleOccurrences,
+        (occurrence) =>
+          occurrence.simulationTime >
+          simulationTime
+      );
+
+    removed +=
+      removeOccurrences(
+        this.globalQueue,
+        (occurrence) =>
+          occurrence.simulationTime >
+          simulationTime
+      );
+
+    for (
+      const [
+        pieceId,
+        queue,
+      ] of this.pieceQueues
+    )
+    {
+      removed +=
+        removeOccurrences(
+          queue,
+          (occurrence) =>
+            occurrence.simulationTime >
+            simulationTime
+        );
+
+      if (queue.length === 0)
+      {
+        this.pieceQueues.delete(
+          pieceId
+        );
+      }
+    }
+
+    if (removed > 0)
+    {
+      this.notify();
+    }
+
+    return removed;
   }
 
 clear(): void
