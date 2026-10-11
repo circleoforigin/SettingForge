@@ -317,17 +317,10 @@ async refillPiece(
       );
     }
 
-    simulationClockService.setTime(
-      simulationTime
-    );
-
-    occurrenceService.truncateAfter(
-      simulationTime
-    );
-
-    occurrenceService.remove(
-      occurrence.id
-    );
+    simulationClockService.setTime(simulationTime);
+    occurrenceService.clear();
+    occurrenceCoordinator.clear();
+    travelProspectService.clear();
   }
 
   async processSilent(): Promise<boolean>

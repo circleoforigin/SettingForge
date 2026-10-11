@@ -9,13 +9,17 @@ import {
 } from './OccurrenceOverlay';
 import { occurrenceService } from './OccurrenceService';
 import { occurrenceProcessor } from './OccurrenceProcessor';
-import { formatSimulationTime } from '../../simulation/SimCalendar';
+import {
+  formatSimulationDate,
+  formatSimulationTimeToMinute,
+} from '../../simulation/SimCalendar';
 import type { SimClockOverlayController } from '../simClock/SimClockOverlay';
 
 interface OccurrenceSurfaceProps
 {
   controller: OccurrenceOverlayController;
   simClock: SimClockOverlayController;
+  onHandleComplete: () => void;
 }
 
 const OCCURRENCE_TYPE_LABELS:
@@ -31,6 +35,7 @@ const OCCURRENCE_TYPE_LABELS:
 export function OccurrenceSurface({
   controller,
   simClock,
+  onHandleComplete,
 }: OccurrenceSurfaceProps)
 {
   const [
@@ -67,9 +72,8 @@ export function OccurrenceSurface({
     occurrence: Occurrence
   ) =>
   {
-    await occurrenceProcessor.handleOccurrence(
-      occurrence
-    );
+    await occurrenceProcessor.handleOccurrence(occurrence);
+    onHandleComplete();
 
     setExpandedOccurrenceIds(
       (current) =>
@@ -164,11 +168,16 @@ export function OccurrenceSurface({
 
                     <div className="occurrence-summary">
                       <span>
-                        {formatSimulationTime(
-                          occurrence.simulationTime,
-                          simClock.activeEra
-                        )}
-                        {' - '}
+{formatSimulationDate(
+  occurrence.simulationTime,
+  simClock.activeEra
+)}
+{' '}
+{formatSimulationTimeToMinute(
+  occurrence.simulationTime,
+  simClock.activeEra
+)}
+{' - '}
                         {occurrence.description ??
                           ''}
                       </span>

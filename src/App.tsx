@@ -183,7 +183,7 @@ const occurrences = useOccurrenceOverlay();
 const [
   occurrencesVisible,
   setOccurrencesVisible,
-] = useState(true);
+] = useState(false);
 
 useEffect(() =>
 {
@@ -3595,6 +3595,11 @@ async function removeModuleFromWorld(
 
 {overlayRegistry.getAll().map((overlay) =>
 {
+    if (overlay.id === 'occurrences')
+  {
+    return null;
+  }
+
   if (overlay.layout === 'fixed')
   {
     return (
@@ -3608,25 +3613,7 @@ async function removeModuleFromWorld(
         </div>
 
         <div className="dropdown-menu overlay-submenu">
-          <button
-            type="button"
-            className="dropdown-item"
-            onClick={() =>
-            {
-              if (overlay.id === 'occurrences')
-              {
-                setOccurrencesVisible(
-                  (current) => !current
-                );
-              }
-            }}
-          >
-            {overlay.id === 'occurrences' &&
-              occurrencesVisible
-              ? '✓ '
-              : ''}
-            Visible
-          </button>
+        
         </div>
       </div>
     );
@@ -3928,6 +3915,10 @@ return (
     <OccurrenceSurface
       controller={occurrences}
       simClock={simClock}
+      onHandleComplete={() =>
+      {
+        setOccurrencesVisible(false);
+      }}
     />
   )}
 </div>

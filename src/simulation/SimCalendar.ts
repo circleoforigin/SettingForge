@@ -709,3 +709,39 @@ export function formatSimulationTime(
     period
   );
 }
+
+export function formatSimulationTimeToMinute(
+  time: SimulationTime,
+  era: SimClockEra
+): string
+{
+  const calendar =
+    simulationTimeToCalendar(
+      time,
+      era
+    );
+
+  const minute =
+    String(calendar.minute)
+      .padStart(2, '0');
+
+  const period =
+    calendar.hour <
+      era.hoursPerDay / 2
+      ? 'AM'
+      : 'PM';
+
+  const halfDay =
+    era.hoursPerDay / 2;
+
+  let hour =
+    calendar.hour %
+    halfDay;
+
+  if (hour === 0)
+  {
+    hour = halfDay;
+  }
+
+  return `${hour}:${minute} ${period}`;
+}
