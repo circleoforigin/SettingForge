@@ -1126,10 +1126,32 @@ useEffect(() => {
   const [moduleManagerOpen, setModuleManagerOpen] =
     useState(false);
 
+  const [applicationSettingsOpen, setApplicationSettingsOpen] =
+    useState(false);
+
+  const [fullScreen, setFullScreen] =
+    useState(false);
+
   const [enabledModuleIds, setEnabledModuleIds] =
     useState<string[]>([]);    
 
-    const [readyModuleIds, setReadyModuleIds] =
+  useEffect(() =>
+  {
+    void window.settingForge.window
+      .isFullScreen()
+      .then(setFullScreen);
+  }, []);
+
+  async function handleFullScreenChange()
+  {
+    const enabled =
+      await window.settingForge.window
+        .setFullScreen(!fullScreen);
+
+    setFullScreen(enabled);
+  }
+
+  const [readyModuleIds, setReadyModuleIds] =
   useState<string[]>([]);
 
   const readyModules = readyModuleIds
@@ -3747,6 +3769,19 @@ async function removeModuleFromWorld(
 })}
   </div>
 </div>
+      <div className="dropdown-separator" />
+
+      <button
+        type="button"
+        className="dropdown-item"
+        onClick={() =>
+        {
+          setSettingsMenuOpen(false);
+          setApplicationSettingsOpen(true);
+        }}
+      >
+        Settings
+      </button>
     </div>
   )}
 </div>   
@@ -4562,6 +4597,36 @@ return (
           {addWorldModuleLoading
             ? 'Adding...'
             : 'Add Module'}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{applicationSettingsOpen && (
+  <div className="dialog-backdrop">
+    <div className="dialog">
+      <h2>Settings</h2>
+
+      <label>
+        <input
+          type="checkbox"
+          checked={fullScreen}
+          onChange={() =>
+            void handleFullScreenChange()
+          }
+        />
+
+        Full Screen
+      </label>
+
+      <div className="dialog-buttons">
+        <button
+          onClick={() =>
+            setApplicationSettingsOpen(false)
+          }
+        >
+          Close
         </button>
       </div>
     </div>

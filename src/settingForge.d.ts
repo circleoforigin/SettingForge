@@ -50,6 +50,10 @@ declare global {
 
     window: {
       setTitle(title: string): Promise<boolean>;
+      setFullScreen(
+        fullScreen: boolean
+      ): Promise<boolean>;
+      isFullScreen(): Promise<boolean>;
       closeApp(): Promise<boolean>;
     };
 

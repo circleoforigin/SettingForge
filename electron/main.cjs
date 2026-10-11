@@ -647,6 +647,28 @@ function registerWindowHandlers() {
     return true;
   });
 
+  ipcMain.handle(
+    'settingforge:window:setFullScreen',
+    (_event, fullScreen) => {
+      if (!mainWindow) {
+        return false;
+      }
+
+      mainWindow.setFullScreen(
+        Boolean(fullScreen)
+      );
+
+      return mainWindow.isFullScreen();
+    }
+  );
+
+  ipcMain.handle(
+    'settingforge:window:isFullScreen',
+    () => {
+      return mainWindow?.isFullScreen() ?? false;
+    }
+  );
+
   ipcMain.handle('settingforge:window:closeApp', () => {
     setImmediate(() => app.quit());
     return true;

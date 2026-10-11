@@ -93,6 +93,15 @@ contextBridge.exposeInMainWorld(
     window: {
       setTitle: (title) =>
         ipcRenderer.invoke('settingforge:window:setTitle', title),
+      setFullScreen: (fullScreen) =>
+        ipcRenderer.invoke(
+          'settingforge:window:setFullScreen',
+          fullScreen
+        ),
+      isFullScreen: () =>
+        ipcRenderer.invoke(
+          'settingforge:window:isFullScreen'
+        ),
       closeApp: () =>
         ipcRenderer.invoke('settingforge:window:closeApp'),
     },
