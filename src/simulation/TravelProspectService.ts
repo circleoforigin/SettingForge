@@ -236,10 +236,7 @@ export class TravelProspectService
     pieceId: string
   ): TravelProspectCursor | undefined
   {
-    const cursor =
-      this.storageCursors.get(
-        pieceId
-      );
+    const cursor = this.storageCursors.get(pieceId);
 
     return cursor
       ? {
