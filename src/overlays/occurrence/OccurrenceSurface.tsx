@@ -8,6 +8,7 @@ import {
   type OccurrenceOverlayController,
 } from './OccurrenceOverlay';
 import { occurrenceService } from './OccurrenceService';
+import { occurrenceProcessor } from './OccurrenceProcessor';
 import { formatSimulationTime } from '../../simulation/SimCalendar';
 import type { SimClockOverlayController } from '../simClock/SimClockOverlay';
 
@@ -39,11 +40,6 @@ export function OccurrenceSurface({
     () => new Set()
   );
 
-  const [
-    handledOccurrence,
-    setHandledOccurrence,
-  ] = useState<Occurrence | null>(null);
-
   const toggleExpanded = (
     occurrenceId: string
   ) =>
@@ -61,6 +57,25 @@ export function OccurrenceSurface({
         {
           next.add(occurrenceId);
         }
+
+        return next;
+      }
+    );
+  };
+
+  const handleOccurrence = async (
+    occurrence: Occurrence
+  ) =>
+  {
+    await occurrenceProcessor.handleOccurrence(
+      occurrence
+    );
+
+    setExpandedOccurrenceIds(
+      (current) =>
+      {
+        const next = new Set(current);
+        next.delete(occurrence.id);
 
         return next;
       }
@@ -87,8 +102,7 @@ export function OccurrenceSurface({
   };
 
   return (
-    <>
-      <div className="occurrence-surface">
+    <div className="occurrence-surface">
         <div className="occurrence-header">
           <strong>Occurrences</strong>
 
@@ -164,10 +178,11 @@ export function OccurrenceSurface({
                       <button
                         type="button"
                         onClick={() =>
-                          setHandledOccurrence(
+                        {
+                          void handleOccurrence(
                             occurrence
-                          )
-                        }
+                          );
+                        }}
                       >
                         Handle
                       </button>
@@ -216,50 +231,6 @@ export function OccurrenceSurface({
             }
           )}
         </div>
-      </div>
-
-      {handledOccurrence && (
-        <div className="dialog-backdrop">
-          <div className="dialog occurrence-dialog">
-            <h2>
-              {handledOccurrence.title}
-            </h2>
-
-            <p>
-              {handledOccurrence.description ??
-                'No description.'}
-            </p>
-
-            <div className="occurrence-dialog-details">
-              <div>
-                <strong>Type:</strong>{' '}
-                {handledOccurrence.type}
-              </div>
-
-              <div>
-                <strong>Simulation Time:</strong>{' '}
-                {handledOccurrence.simulationTime}
-              </div>
-
-              <div>
-                <strong>Source:</strong>{' '}
-                {handledOccurrence.sourceModuleId}
-              </div>              
-            </div>
-
-            <div className="dialog-buttons">
-              <button
-                type="button"
-                onClick={() =>
-                  setHandledOccurrence(null)
-                }
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+      </div> 
   );
 }
