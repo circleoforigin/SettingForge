@@ -54,21 +54,6 @@ export class OccurrenceProcessor
       return false;
     }
 
-    for (const occurrence of round.occurrences)
-    {
-      console.log(
-        '[Occurrence Debug] round occurrence',
-        'reaction=',
-        occurrence.reaction,
-        'type=',
-        occurrence.type,
-        'description=',
-        occurrence.description,
-        'time=',
-        occurrence.simulationTime
-      );
-    }
-
     const queuedDisplayableCount =
       occurrenceService.getPieceDisplayableCount(
         pieceId
