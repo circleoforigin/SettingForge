@@ -19,7 +19,6 @@ interface OccurrenceSurfaceProps
 {
   controller: OccurrenceOverlayController;
   simClock: SimClockOverlayController;
-  onHandleComplete: () => void;
 }
 
 const OCCURRENCE_TYPE_LABELS:
@@ -35,7 +34,6 @@ const OCCURRENCE_TYPE_LABELS:
 export function OccurrenceSurface({
   controller,
   simClock,
-  onHandleComplete,
 }: OccurrenceSurfaceProps)
 {
   const [
@@ -73,7 +71,6 @@ export function OccurrenceSurface({
   ) =>
   {
     await occurrenceProcessor.handleOccurrence(occurrence);
-    onHandleComplete();
 
     setExpandedOccurrenceIds(
       (current) =>

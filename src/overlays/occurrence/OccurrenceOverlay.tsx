@@ -54,9 +54,7 @@ export function useOccurrenceOverlay()
             maxQueued
           );
 
-        setOccurrences(
-          visibleOccurrences
-        );
+        setOccurrences(visibleOccurrences);
 
         for (
           const pieceId of

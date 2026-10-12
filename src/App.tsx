@@ -180,19 +180,6 @@ const messenger = useMessengerOverlay();
 const simClock = useSimClockOverlay();
 const occurrences = useOccurrenceOverlay();
 
-const [
-  occurrencesVisible,
-  setOccurrencesVisible,
-] = useState(false);
-
-useEffect(() =>
-{
-  if (occurrences.occurrences.length > 0)
-  {
-    setOccurrencesVisible(true);
-  }
-}, [occurrences.occurrences.length]);
-
 const captureWorldRuntimeState = (
   world: World
 ): World =>
@@ -3946,14 +3933,10 @@ return (
 );
   })}
 
-  {occurrencesVisible && (
+  {occurrences.occurrences.length > 0 && (
     <OccurrenceSurface
       controller={occurrences}
       simClock={simClock}
-      onHandleComplete={() =>
-      {
-        setOccurrencesVisible(false);
-      }}
     />
   )}
 </div>

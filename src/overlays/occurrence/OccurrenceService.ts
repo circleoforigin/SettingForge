@@ -543,7 +543,8 @@ clear(): void
 {
   const hadOccurrences =
     this.globalQueue.length > 0 ||
-    this.pieceQueues.size > 0;
+    this.pieceQueues.size > 0 ||
+    this.visibleOccurrences.length > 0;
 
   this.globalQueue.length = 0;
   this.pieceQueues.clear();
