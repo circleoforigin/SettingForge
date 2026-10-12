@@ -289,7 +289,7 @@ async refillPiece(
     return true;
   }
 
-  async handleOccurrence(
+  private async commitThrough(
     occurrence: Occurrence
   ): Promise<void>
   {
@@ -317,7 +317,61 @@ async refillPiece(
       );
     }
 
-    simulationClockService.setTime(simulationTime);
+    simulationClockService.setTime(
+      simulationTime
+    );
+  }
+
+  async handleOccurrence(
+    occurrence: Occurrence
+  ): Promise<void>
+  {
+    await this.commitThrough(
+      occurrence
+    );
+
+    occurrenceService.clear();
+    occurrenceCoordinator.clear();
+    travelProspectService.clear();
+  }
+
+  async progressOccurrences(
+    maximum: number
+  ): Promise<boolean>
+  {
+    const visible =
+      occurrenceService.getVisibleOccurrences();
+
+    const count =
+      Math.max(
+        0,
+        Math.min(
+          Math.trunc(maximum),
+          visible.length
+        )
+      );
+
+    if (count === 0)
+    {
+      return false;
+    }
+
+    const target =
+      visible[count - 1];
+
+    await this.commitThrough(
+      target
+    );
+
+    occurrenceService.consumeVisible(
+      count
+    );
+
+    return true;
+  }
+
+  clearOccurrences(): void
+  {
     occurrenceService.clear();
     occurrenceCoordinator.clear();
     travelProspectService.clear();

@@ -488,6 +488,42 @@ if (removed > 0)
     return Array.from(this.pieceQueues.keys());
   }
 
+consumeVisible(
+  maximum: number
+): Occurrence[]
+{
+  const count =
+    Math.max(
+      0,
+      Math.min(
+        Math.trunc(maximum),
+        this.visibleOccurrences.length
+      )
+    );
+
+  if (count === 0)
+  {
+    return [];
+  }
+
+  const consumed =
+    this.visibleOccurrences.splice(
+      0,
+      count
+    );
+
+  this.notify();
+
+  return consumed;
+}
+
+getVisibleOccurrences(): Occurrence[]
+{
+  return [
+    ...this.visibleOccurrences,
+  ];
+}
+
   truncateAfter(
     simulationTime: number
   ): number

@@ -27,8 +27,9 @@ const OCCURRENCE_TYPE_LABELS:
     weather: 'W',
     almanac: 'A',
     section: 'S',
+    path: 'P',
     location: 'L',
-    player: 'P',
+    character: 'C',
   };
 
 export function OccurrenceSurface({
@@ -63,6 +64,32 @@ export function OccurrenceSurface({
 
         return next;
       }
+    );
+  };
+
+  const progressOccurrences = async () =>
+  {
+    const progressed =
+      await occurrenceProcessor.progressOccurrences(
+        controller.progressCount
+      );
+
+    if (!progressed)
+    {
+      return;
+    }
+
+    setExpandedOccurrenceIds(
+      new Set()
+    );
+  };
+
+  const clearOccurrences = () =>
+  {
+    occurrenceProcessor.clearOccurrences();
+
+    setExpandedOccurrenceIds(
+      new Set()
     );
   };
 
@@ -104,32 +131,80 @@ export function OccurrenceSurface({
 
   return (
     <div className="occurrence-surface">
-        <div className="occurrence-header">
+               <div className="occurrence-header">
           <strong>Occurrences</strong>
 
-          <label>
-            <span>Max Queued</span>
+          <div className="occurrence-header-controls">
+            <div className="occurrence-progress-control">
+              <button
+                type="button"
+                onClick={() =>
+                {
+                  void progressOccurrences();
+                }}
+              >
+                Progress
+              </button>
 
-            <select
-              value={controller.maxQueued}
-              onChange={(event) =>
-                controller.setMaxQueued(
-                  Number(event.target.value)
-                )
-              }
+              <select
+                aria-label="Occurrences to progress"
+                value={controller.progressCount}
+                onChange={(event) =>
+                  controller.setProgressCount(
+                    Number(event.target.value)
+                  )
+                }
+              >
+                {OCCURRENCE_MAX_QUEUED_OPTIONS
+                  .filter(
+                    (count) =>
+                      count <=
+                      controller.maxQueued
+                  )
+                  .map(
+                    (count) => (
+                      <option
+                        key={count}
+                        value={count}
+                      >
+                        {count}
+                      </option>
+                    )
+                  )}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={clearOccurrences}
             >
-              {OCCURRENCE_MAX_QUEUED_OPTIONS.map(
-                (maximum) => (
-                  <option
-                    key={maximum}
-                    value={maximum}
-                  >
-                    {maximum}
-                  </option>
-                )
-              )}
-            </select>
-          </label>
+              Clear
+            </button>
+
+            <label>
+              <span>Max Queued</span>
+
+              <select
+                value={controller.maxQueued}
+                onChange={(event) =>
+                  controller.setMaxQueued(
+                    Number(event.target.value)
+                  )
+                }
+              >
+                {OCCURRENCE_MAX_QUEUED_OPTIONS.map(
+                  (maximum) => (
+                    <option
+                      key={maximum}
+                      value={maximum}
+                    >
+                      {maximum}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
+          </div>
         </div>
 
         <div className="occurrence-list">
@@ -163,18 +238,27 @@ export function OccurrenceSurface({
                           : '')}
                     </div>
 
-                    <div className="occurrence-summary">
+                    <div
+                      className={[
+                        'occurrence-summary',
+                        expanded
+                          ? 'expanded'
+                          : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    >
                       <span>
-{formatSimulationDate(
-  occurrence.simulationTime,
-  simClock.activeEra
-)}
-{' '}
-{formatSimulationTimeToMinute(
-  occurrence.simulationTime,
-  simClock.activeEra
-)}
-{' - '}
+                        {formatSimulationDate(
+                            occurrence.simulationTime,
+                            simClock.activeEra
+                        )}
+                        {' '}
+                        {formatSimulationTimeToMinute(
+                            occurrence.simulationTime,
+                            simClock.activeEra
+                        )}
+                        {' - '}
                         {occurrence.description ??
                           ''}
                       </span>
@@ -208,13 +292,6 @@ export function OccurrenceSurface({
                       )}
                     </div>
                   </div>
-
-                  {expanded && (
-                    <div className="occurrence-description">
-                      {occurrence.description ??
-                        'No description.'}
-                    </div>
-                  )}
 
                   <button
                     type="button"

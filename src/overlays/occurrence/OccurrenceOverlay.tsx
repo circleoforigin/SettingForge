@@ -19,9 +19,51 @@ export const OCCURRENCE_MAX_QUEUED_OPTIONS = [
 
 export function useOccurrenceOverlay()
 {
-  const [maxQueued, setMaxQueued] = useState(5);
+  const [maxQueued, setMaxQueuedState] = useState(5);
+  const [progressCount, setProgressCountState] = useState(1);
 
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
+
+  const setMaxQueued = (
+    maximum: number
+  ) =>
+  {
+    const nextMaximum =
+      Math.max(
+        1,
+        Math.min(
+          10,
+          Math.trunc(maximum)
+        )
+      );
+
+    setMaxQueuedState(
+      nextMaximum
+    );
+
+    setProgressCountState(
+      (current) =>
+        Math.min(
+          current,
+          nextMaximum
+        )
+    );
+  };
+
+  const setProgressCount = (
+    count: number
+  ) =>
+  {
+    setProgressCountState(
+      Math.max(
+        1,
+        Math.min(
+          Math.trunc(count),
+          maxQueued
+        )
+      )
+    );
+  };
 
   useEffect(() =>
   {
@@ -92,6 +134,8 @@ export function useOccurrenceOverlay()
   return {
     maxQueued,
     setMaxQueued,
+    progressCount,
+    setProgressCount,
     occurrences,
   };
 }
