@@ -21,6 +21,26 @@ const MARKERS: readonly SimClockMarker[] = [
   'midnight',
 ];
 
+export function getSimClockOccurrenceKey(
+  occurrence: Occurrence
+): string | undefined
+{
+  if (
+    occurrence.sourceModuleId !==
+      'settingforge' ||
+    occurrence.pieceId !== null ||
+    occurrence.type !== 'almanac'
+  )
+  {
+    return undefined;
+  }
+
+  return [
+    occurrence.simulationTime,
+    occurrence.title ?? '',
+  ].join(':');
+}
+
 export function generateSimClockOccurrences(
   startTime: number,
   endTime: number,
