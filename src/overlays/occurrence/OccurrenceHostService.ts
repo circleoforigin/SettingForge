@@ -5,6 +5,7 @@ import type {
 import { occurrenceCoordinator } from './OccurrenceCoordinator';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
 import { occurrenceProcessor } from './OccurrenceProcessor';
+import { globalOccurrenceCoordinator } from './GlobalOccurrenceCoordinator';
 
 type RegisterRequestHandler =
   (
@@ -54,10 +55,10 @@ export function registerOccurrenceHostService(
             | OccurrenceSubmission
             | undefined;
 
-               if (!submission?.pieceId)
+        if (!submission)
         {
           throw new Error(
-            'occurrences.submit requires pieceId.'
+            'occurrences.submit requires a submission.'
           );
         }
 
@@ -87,48 +88,86 @@ export function registerOccurrenceHostService(
           }
         }
 
-        occurrenceCoordinator.addOccurrences(
-          submission.pieceId,
-          occurrences.filter(
-            (occurrence) =>
-              occurrence.reaction !== 'none'
-          )
-        );
-
-        const completion = occurrences.find(
-          (occurrence) =>
-            occurrence.reaction === 'none' ||
-            occurrence.reaction === 'recalculate'
-        );
-
-        if (completion)
+               if (submission.pieceId === null)
         {
-          const round =
-            occurrenceCoordinator.completeProducer(
-              submission.pieceId,
-              message.sourceModuleId
+          globalOccurrenceCoordinator
+            .addOccurrences(
+              occurrences.filter(
+                (occurrence) =>
+                  occurrence.reaction !==
+                    'none'
+              )
             );
 
-if (round.state === 'complete')
-{
-  void occurrenceProcessor
-    .resolveRound(
-      submission.pieceId
-    )
-    .catch((error: unknown) =>
-    {
-      console.error(
-        '[Occurrences] Unable to resolve completed round.',
-        error
-      );
-    });
-}
-        }
+          const completion =
+            occurrences.find(
+              (occurrence) =>
+                occurrence.reaction ===
+                  'none' ||
+                occurrence.reaction ===
+                  'recalculate'
+            );
 
-        return {
-          accepted:
-            occurrences.length,
-        };
+          if (completion)
+          {
+            globalOccurrenceCoordinator
+              .completeProducer(
+                message.sourceModuleId
+              );
+          }
+        }
+        else
+        {
+          occurrenceCoordinator.addOccurrences(
+            submission.pieceId,
+            occurrences.filter(
+              (occurrence) =>
+                occurrence.reaction !==
+                  'none'
+            )
+          );
+
+          const completion =
+            occurrences.find(
+              (occurrence) =>
+                occurrence.reaction ===
+                  'none' ||
+                occurrence.reaction ===
+                  'recalculate'
+            );
+
+          if (completion)
+          {
+            const round =
+              occurrenceCoordinator
+                .completeProducer(
+                  submission.pieceId,
+                  message.sourceModuleId
+                );
+
+            if (
+              round.state ===
+              'complete'
+            )
+            {
+              void occurrenceProcessor
+                .resolveRound(
+                  submission.pieceId
+                )
+                .catch(
+                  (
+                    error: unknown
+                  ) =>
+                  {
+                    console.error(
+                      '[Occurrences] Unable to resolve completed round.',
+                      error
+                    );
+                  }
+                );
+            }
+          }
+        }
       }
     );
 
