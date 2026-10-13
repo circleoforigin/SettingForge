@@ -180,6 +180,39 @@ const commitPendingTime = () =>
     );
   };
 
+const requestProgressTime = (
+  targetTime: SimulationTime
+) =>
+{
+  const startTime =
+    simulationClockService.getTime();
+
+  const duration =
+    targetTime - startTime;
+
+  if (duration <= 0)
+  {
+    return;
+  }
+
+  void hostEventBroker
+    .requestModule(
+      'regions',
+      'Regions.ProgressTime',
+      {
+        startTime,
+        duration,
+      }
+    )
+    .catch((error: unknown) =>
+    {
+      console.error(
+        '[Simulation] Unable to progress time.',
+        error
+      );
+    });
+};
+
 const progressTime = (
   preset: SimClockProgressPreset
 ) =>
@@ -197,9 +230,7 @@ const progressTime = (
       activeEra
     );
 
-  simulationClockService.setTime(
-    targetTime
-  );
+    requestProgressTime(targetTime);
 };
 
 const progressToMarker = (
@@ -219,9 +250,7 @@ const progressToMarker = (
       activeEra
     );
 
-  simulationClockService.setTime(
-    targetTime
-  );
+    requestProgressTime(targetTime);
 };
 
 const progressToMarkerAfter = (
@@ -250,9 +279,7 @@ const progressToMarkerAfter = (
       activeEra
     );
 
-  simulationClockService.setTime(
-    targetTime
-  );
+    requestProgressTime(targetTime);  
 };
 
   const stepPendingTime = (
@@ -406,6 +433,7 @@ const restoreWorldState = (
     commitPendingTime,
     progressTime,
     progressToMarker,
+    progressToMarkerAfter,
     requestTravel,
     restoreWorldState,
   };
