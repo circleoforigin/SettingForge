@@ -26,6 +26,7 @@ import { stationaryTimeProspectService } from '../../simulation/StationaryTimePr
 import { occurrenceProcessor } from '../occurrence/OccurrenceProcessor';
 import { occurrenceService } from '../occurrence/OccurrenceService';
 import { generateSimClockOccurrences } from '../../simulation/SimClockOccurrenceGenerator';
+import { globalOccurrenceCoordinator } from '../occurrence/GlobalOccurrenceCoordinator';
 
 type DateFormatField =
   | 'monthName'
@@ -121,6 +122,45 @@ export function useSimClockOverlay()
     );
   }, []);
 
+    useEffect(() =>
+  {
+    return globalOccurrenceCoordinator.subscribe(
+      (round) =>
+      {
+        if (round.state !== 'complete')
+        {
+          return;
+        }
+
+        queueMicrotask(() =>
+        {
+          const completed =
+            globalOccurrenceCoordinator
+              .takeCompletedRound();
+
+          if (!completed)
+          {
+            return;
+          }
+
+          occurrenceService.addMany(
+            completed.occurrences
+          );
+
+          stationaryTimeProspectService
+            .finishInitialization(
+              stationaryTimeProspectService
+                .getProspects()
+                .length
+            );
+
+          occurrenceProcessor
+            .completeStationaryTimeIfReady();
+        });
+      }
+    );
+  }, []);
+
   const [settingsOpen, setSettingsOpen] =
     useState(false);
 
@@ -207,45 +247,26 @@ const requestProgressTime = (
   stationaryTimeProspectService
     .beginOperation(targetTime);
 
-  void hostEventBroker
-    .requestModule<{
-      accepted?: boolean;
-      prospectedCount?: number;
-    }>(
-      'regions',
-      'Regions.ProgressTime',
-      {
-        startTime,
-        duration,
-      }
+  globalOccurrenceCoordinator
+    .beginRound();
+
+  occurrenceService.addMany(
+    generateSimClockOccurrences(
+      startTime,
+      targetTime,
+      settings.markers,
+      activeEra
     )
-    .then((result) =>
+  );
+
+  hostEventBroker.broadcast(
+    'Simulation.TimeProspected',
     {
-      occurrenceService.addMany(
-        generateSimClockOccurrences(
-          startTime,
-          targetTime,
-          settings.markers,
-          activeEra
-        )
-      );
-
-      stationaryTimeProspectService
-        .finishInitialization(
-          result?.prospectedCount ?? 0
-        );
-
-      occurrenceProcessor.completeStationaryTimeIfReady();
-    })
-    .catch((error: unknown) =>
-    {
-      stationaryTimeProspectService.clear();
-
-      console.error(
-        '[Simulation] Unable to progress time.',
-        error
-      );
-    });
+      startTime,
+      endTime: targetTime,
+      duration,
+    }
+  );
 };
 
 const progressTime = (
