@@ -23,6 +23,7 @@ import {
 } from '../../simulation/SimCalendar';
 import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
+import { occurrenceProcessor } from '../occurrence/OccurrenceProcessor';
 
 type DateFormatField =
   | 'monthName'
@@ -197,7 +198,7 @@ const requestProgressTime = (
   }
 
   stationaryTimeProspectService
-    .beginOperation();
+    .beginOperation(targetTime);
 
   void hostEventBroker
     .requestModule<{
@@ -217,6 +218,8 @@ const requestProgressTime = (
         .finishInitialization(
           result?.prospectedCount ?? 0
         );
+
+      occurrenceProcessor.completeStationaryTimeIfReady();
     })
     .catch((error: unknown) =>
     {

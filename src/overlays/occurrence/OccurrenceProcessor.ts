@@ -231,6 +231,45 @@ export class OccurrenceProcessor
     return true;
   }
 
+    completeStationaryTimeIfReady(): boolean
+  {
+    if (
+      !stationaryTimeProspectService
+        .isOperationComplete()
+    )
+    {
+      return false;
+    }
+
+    if (
+      occurrenceService.getCount() > 0 ||
+      occurrenceService
+        .getVisibleOccurrences()
+        .length > 0
+    )
+    {
+      return false;
+    }
+
+    const targetTime =
+      stationaryTimeProspectService
+        .getTargetTime();
+
+    if (targetTime === undefined)
+    {
+      return false;
+    }
+
+    simulationClockService.setTime(
+      targetTime
+    );
+
+    occurrenceCoordinator.clear();
+    stationaryTimeProspectService.clear();
+
+    return true;
+  }
+
   async refillPiece(
     pieceId: string
   ): Promise<boolean>
@@ -362,25 +401,32 @@ export class OccurrenceProcessor
     const simulationTime =
       occurrence.simulationTime;
 
-    const positions =
-      travelProspectService.resolvePositionsAt(
-        simulationTime
-      );
+    const stationaryOperationActive =
+      stationaryTimeProspectService
+        .getTargetTime() !== undefined;
 
-    for (const position of positions)
+    if (!stationaryOperationActive)
     {
-      await hostEventBroker.requestModule(
-        'regions',
-        'Regions.CommitTravelPosition',
-        {
-          pieceId:
-            position.pieceId,
-          routeLegId:
-            position.routeLegId,
-          distanceFromLegStart:
-            position.distanceFromLegStart,
-        }
-      );
+      const positions =
+        travelProspectService.resolvePositionsAt(
+          simulationTime
+        );
+
+      for (const position of positions)
+      {
+        await hostEventBroker.requestModule(
+          'regions',
+          'Regions.CommitTravelPosition',
+          {
+            pieceId:
+              position.pieceId,
+            routeLegId:
+              position.routeLegId,
+            distanceFromLegStart:
+              position.distanceFromLegStart,
+          }
+        );
+      }
     }
 
     simulationClockService.setTime(

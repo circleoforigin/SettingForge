@@ -109,6 +109,8 @@ export function useOccurrenceOverlay()
         {
           await occurrenceProcessor.refillPiece(pieceId);
         }
+        
+        occurrenceProcessor.completeStationaryTimeIfReady();
       }
       finally
       {

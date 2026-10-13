@@ -17,13 +17,17 @@ export class StationaryTimeProspectService
 
   private initializing = false;
   private expectedPieceCount: number | undefined;
+  private operationTargetTime: number | undefined;
 
-  beginOperation(): void
+  beginOperation(
+    targetTime: number
+  ): void
   {
     this.prospects.clear();
 
     this.initializing = true;
     this.expectedPieceCount = undefined;
+    this.operationTargetTime = targetTime;
   }
 
   finishInitialization(
@@ -201,32 +205,7 @@ export class StationaryTimeProspectService
 
   getTargetTime(): number | undefined
   {
-    let targetTime:
-      number | undefined;
-
-    for (
-      const prospect
-      of this.prospects.values()
-    )
-    {
-      if (targetTime === undefined)
-      {
-        targetTime =
-          prospect.targetTime;
-
-        continue;
-      }
-
-      if (
-        prospect.targetTime !==
-        targetTime
-      )
-      {
-        return undefined;
-      }
-    }
-
-    return targetTime;
+    return this.operationTargetTime;
   }
 
   clear(): void
@@ -235,6 +214,7 @@ export class StationaryTimeProspectService
 
     this.initializing = false;
     this.expectedPieceCount = undefined;
+    this.operationTargetTime = undefined;
   }
 }
 
