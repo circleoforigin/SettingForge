@@ -124,6 +124,34 @@ function App()
   const [activeOverlays, setActiveOverlays] = useState(
     () => overlayManager.getAllActive()
   );
+    const [
+    expandedBottomOverlays,
+    setExpandedBottomOverlays,
+  ] = useState<
+    Partial<
+      Record<
+        OverlayMountId,
+        string
+      >
+    >
+  >({});
+
+  const toggleBottomOverlay = (
+    mountId: OverlayMountId,
+    overlayId: string
+  ) =>
+  {
+    setExpandedBottomOverlays(
+      (current) => ({
+        ...current,
+
+        [mountId]:
+          current[mountId] === overlayId
+            ? undefined
+            : overlayId,
+      })
+    );
+  };
   const [overlayFont, setOverlayFont] =
     useState('Arial, sans-serif');
 
@@ -3915,6 +3943,67 @@ async function removeModuleFromWorld(
           overlayFont,
       } as React.CSSProperties}
     >
+
+  <div className="overlay-mount-bar">
+    {(
+      [
+        'bottom-left',
+        'bottom-center',
+        'bottom-right',
+      ] as const
+    ).map((mountId) => (
+      <div
+        key={mountId}
+        className="overlay-mount-stack"
+        data-mount={mountId}
+      >
+        {activeOverlays
+          .filter(
+            (activeOverlay) =>
+              activeOverlay.mountId ===
+              mountId
+          )
+          .map((activeOverlay) =>
+          {
+            const overlay =
+              overlayRegistry.get(
+                activeOverlay.overlayId
+              );
+
+            if (!overlay)
+            {
+              return null;
+            }
+
+            const expanded =
+              expandedBottomOverlays[
+                mountId
+              ] === overlay.id;
+
+            return (
+              <button
+                key={overlay.id}
+                type="button"
+                className={
+                  expanded
+                    ? 'overlay-mount-tab active'
+                    : 'overlay-mount-tab'
+                }
+                onClick={() =>
+                  toggleBottomOverlay(
+                    mountId,
+                    overlay.id
+                  )
+                }
+              >
+                {overlay.name}
+              </button>
+            );
+          })}
+      </div>
+    ))}
+  </div>
+
   {activeOverlays.map((activeOverlay) => {
     const overlay =
       overlayRegistry.get(

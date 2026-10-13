@@ -19,6 +19,88 @@
   );
 }
 
+/* ---------- OVERLAY MOUNT BAR ---------- */
+
+.overlay-mount-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  box-sizing: border-box;
+  height: 24px;
+
+  display: grid;
+  grid-template-columns:
+    1fr
+    1fr
+    1fr;
+
+  background: #242529;
+
+  border-top: 1px solid #45474e;
+}
+
+.overlay-mount-stack {
+  min-width: 0;
+
+  display: flex;
+  align-items: stretch;
+}
+
+.overlay-mount-stack[
+  data-mount='bottom-left'
+] {
+  justify-content: flex-start;
+}
+
+.overlay-mount-stack[
+  data-mount='bottom-center'
+] {
+  justify-content: center;
+}
+
+.overlay-mount-stack[
+  data-mount='bottom-right'
+] {
+  justify-content: flex-end;
+}
+
+.overlay-mount-tab {
+  box-sizing: border-box;
+  height: 24px;
+
+  margin: -1px 0 0;
+  padding: 0 10px;
+
+  background: #2b2d31;
+  color: #aeb0b6;
+
+  border: 1px solid #45474e;
+  border-bottom: none;
+
+  font: inherit;
+  font-size: 11px;
+  line-height: 23px;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+}
+
+.overlay-mount-tab:hover {
+  background: #3a3c41;
+  color: #ffffff;
+}
+
+.overlay-mount-tab.active {
+  background: #50535b;
+  color: #ffffff;
+
+  border-color: #666a73;
+
+  font-weight: 600;
+}
 
 .messenger-settings-dialog {
   width: 480px;
