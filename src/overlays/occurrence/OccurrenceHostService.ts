@@ -5,7 +5,7 @@ import type {
 import { occurrenceCoordinator } from './OccurrenceCoordinator';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
 import { occurrenceProcessor } from './OccurrenceProcessor';
-import { globalOccurrenceCoordinator } from './GlobalOccurrenceCoordinator';
+import { occurrenceService } from './OccurrenceService';
 
 type RegisterRequestHandler =
   (
@@ -88,33 +88,15 @@ export function registerOccurrenceHostService(
           }
         }
 
-               if (submission.pieceId === null)
+         if (submission.pieceId === null)
         {
-          globalOccurrenceCoordinator
-            .addOccurrences(
-              occurrences.filter(
-                (occurrence) =>
-                  occurrence.reaction !==
-                    'none'
-              )
-            );
-
-          const completion =
-            occurrences.find(
+          occurrenceService.addGlobal(
+            occurrences.filter(
               (occurrence) =>
-                occurrence.reaction ===
-                  'none' ||
-                occurrence.reaction ===
-                  'recalculate'
-            );
-
-          if (completion)
-          {
-            globalOccurrenceCoordinator
-              .completeProducer(
-                message.sourceModuleId
-              );
-          }
+                occurrence.reaction !==
+                  'none'
+            )
+          );
         }
         else
         {

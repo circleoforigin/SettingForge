@@ -253,7 +253,7 @@ if (removed > 0)
     return this.getNext(1)[0] ?? null;
   }
 
-  fillVisible(maximum: number): Occurrence[]
+   fillVisible(maximum: number): Occurrence[]
   {
     const limit =
       Math.max(
@@ -266,8 +266,51 @@ if (removed > 0)
       limit
     )
     {
-      const next =
-        this.getNext(1)[0];
+      const visibleIds =
+        new Set(
+          this.visibleOccurrences.map(
+            (occurrence) =>
+              occurrence.id
+          )
+        );
+
+      const globalCandidates =
+        this.globalQueue.filter(
+          (occurrence) =>
+            !visibleIds.has(
+              occurrence.id
+            )
+        );
+
+      const queues: Occurrence[][] = [
+        globalCandidates,
+        ...this.pieceQueues.values(),
+      ];
+
+      let next:
+        Occurrence | undefined;
+
+      for (const queue of queues)
+      {
+        const candidate =
+          queue[0];
+
+        if (
+          !candidate ||
+          (
+            next &&
+            compareOccurrences(
+              candidate,
+              next
+            ) >= 0
+          )
+        )
+        {
+          continue;
+        }
+
+        next = candidate;
+      }
 
       if (!next)
       {
@@ -284,14 +327,6 @@ if (removed > 0)
         this.takePieceOccurrence(
           next.pieceId,
           next.id
-        );
-      }
-      else
-      {
-        removeOccurrences(
-          this.globalQueue,
-          (occurrence) =>
-            occurrence.id === next.id
         );
       }
 
@@ -312,10 +347,24 @@ if (removed > 0)
     return this.fillVisible(maximum);
   }
 
+  clearOperationOccurrences(): void
+  {
+    const hadOccurrences =
+      this.pieceQueues.size > 0 ||
+      this.visibleOccurrences.length > 0;
+
+    this.pieceQueues.clear();
+    this.visibleOccurrences.length = 0;
+
+    if (hadOccurrences)
+    {
+      this.notify();
+    }
+  }
+
   getCount(): number
   {
-    let count =
-      this.globalQueue.length;
+    let count = 0;
 
     for (const queue of this.pieceQueues.values())
     {
@@ -516,6 +565,86 @@ consumeVisible(
 
   return consumed;
 }
+  replaceGlobal(
+    occurrences: readonly Occurrence[]
+  ): void
+  {
+    this.globalQueue.length = 0;
+
+    for (const occurrence of occurrences)
+    {
+      if (occurrence.pieceId !== null)
+      {
+        continue;
+      }
+
+      insertOccurrence(
+        this.globalQueue,
+        occurrence
+      );
+    }
+
+    this.notify();
+  }
+
+  addGlobal(
+    occurrences: readonly Occurrence[]
+  ): void
+  {
+    let added = false;
+
+    for (const occurrence of occurrences)
+    {
+      if (occurrence.pieceId !== null)
+      {
+        continue;
+      }
+
+      insertOccurrence(
+        this.globalQueue,
+        occurrence
+      );
+
+      added = true;
+    }
+
+    if (added)
+    {
+      this.notify();
+    }
+  }
+
+  clearGlobal(): void
+  {
+    if (this.globalQueue.length === 0)
+    {
+      return;
+    }
+
+    this.globalQueue.length = 0;
+
+    this.notify();
+  }
+
+  expireGlobalThrough(
+    simulationTime: number
+  ): number
+  {
+    const removed =
+      removeOccurrences(
+        this.globalQueue,
+        (occurrence) =>
+          occurrence.simulationTime <=
+            simulationTime
+      );
+
+    if (removed > 0)
+    {
+      this.notify();
+    }
+
+    return removed;
+  }
 
 getVisibleOccurrences(): Occurrence[]
 {

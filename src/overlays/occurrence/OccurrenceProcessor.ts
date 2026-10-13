@@ -432,7 +432,7 @@ export class OccurrenceProcessor
   {
     await this.commitThrough(occurrence);
 
-    occurrenceService.clear();
+    occurrenceService.clearOperationOccurrences();
     occurrenceCoordinator.clear();
     travelProspectService.clear();
     stationaryTimeProspectService.clear();
@@ -469,7 +469,7 @@ export class OccurrenceProcessor
 
   clearOccurrences(): void
   {
-    occurrenceService.clear();
+    occurrenceService.clearOperationOccurrences();
     occurrenceCoordinator.clear();
     travelProspectService.clear();
     stationaryTimeProspectService.clear();

@@ -25,8 +25,7 @@ import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 import { occurrenceProcessor } from '../occurrence/OccurrenceProcessor';
 import { occurrenceService } from '../occurrence/OccurrenceService';
-import { globalOccurrenceCoordinator } from '../occurrence/GlobalOccurrenceCoordinator';
-import { RebuildGlobalOccurrences } from '../../simulation/RebuildGlobalOccurrences';
+import { rebuildGlobalOccurrences } from '../../simulation/SimClockGlobalOccurrences';
 
 type DateFormatField =
   | 'monthName'
@@ -122,45 +121,6 @@ export function useSimClockOverlay()
     );
   }, []);
 
-    useEffect(() =>
-  {
-    return globalOccurrenceCoordinator.subscribe(
-      (round) =>
-      {
-        if (round.state !== 'complete')
-        {
-          return;
-        }
-
-        queueMicrotask(() =>
-        {
-          const completed =
-            globalOccurrenceCoordinator
-              .takeCompletedRound();
-
-          if (!completed)
-          {
-            return;
-          }
-
-          occurrenceService.addMany(
-            completed.occurrences
-          );
-
-          stationaryTimeProspectService
-            .finishInitialization(
-              stationaryTimeProspectService
-                .getProspects()
-                .length
-            );
-
-          occurrenceProcessor
-            .completeStationaryTimeIfReady();
-        });
-      }
-    );
-  }, []);
-
   const [settingsOpen, setSettingsOpen] =
     useState(false);
 
@@ -183,11 +143,15 @@ export function useSimClockOverlay()
       return;
     }
 
-    RebuildGlobalOccurrences({
-      markers: settings.markers,
-      era: activeEra,
-    });
+    rebuildGlobalOccurrences(
+      committedTime,
+      {
+        markers: settings.markers,
+        era: activeEra,
+      }
+    );
   }, [
+    committedTime,
     activeEra,
     settings.markers,
   ]);
@@ -262,9 +226,6 @@ const requestProgressTime = (
 
   stationaryTimeProspectService
     .beginOperation(targetTime);
-
-  globalOccurrenceCoordinator
-    .beginRound();
 
   hostEventBroker.broadcast(
     'Simulation.TimeProspected',
