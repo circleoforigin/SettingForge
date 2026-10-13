@@ -15,6 +15,57 @@ export class StationaryTimeProspectService
       PieceStationaryTimeProspect
     >();
 
+  private initializing = false;
+  private expectedPieceCount: number | undefined;
+
+  beginOperation(): void
+  {
+    this.prospects.clear();
+
+    this.initializing = true;
+    this.expectedPieceCount = undefined;
+  }
+
+  finishInitialization(
+    expectedPieceCount: number
+  ): void
+  {
+    this.expectedPieceCount =
+      Math.max(
+        0,
+        Math.trunc(
+          expectedPieceCount
+        )
+      );
+
+    this.initializing = false;
+  }
+
+  isInitializing(): boolean
+  {
+    return this.initializing;
+  }
+
+  isOperationComplete(): boolean
+  {
+    if (
+      this.initializing ||
+      this.expectedPieceCount === undefined ||
+      this.prospects.size !==
+        this.expectedPieceCount
+    )
+    {
+      return false;
+    }
+
+    if (this.expectedPieceCount === 0)
+    {
+      return true;
+    }
+
+    return this.areAllComplete();
+  }
+
   begin(
     pieceId: string,
     startTime: number,
@@ -181,6 +232,9 @@ export class StationaryTimeProspectService
   clear(): void
   {
     this.prospects.clear();
+
+    this.initializing = false;
+    this.expectedPieceCount = undefined;
   }
 }
 

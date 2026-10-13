@@ -22,6 +22,7 @@ import {
   type SimCalendarField,
 } from '../../simulation/SimCalendar';
 import { travelProspectService } from '../../simulation/TravelProspectService';
+import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 
 type DateFormatField =
   | 'monthName'
@@ -195,8 +196,14 @@ const requestProgressTime = (
     return;
   }
 
+  stationaryTimeProspectService
+    .beginOperation();
+
   void hostEventBroker
-    .requestModule(
+    .requestModule<{
+      accepted?: boolean;
+      prospectedCount?: number;
+    }>(
       'regions',
       'Regions.ProgressTime',
       {
@@ -204,8 +211,17 @@ const requestProgressTime = (
         duration,
       }
     )
+    .then((result) =>
+    {
+      stationaryTimeProspectService
+        .finishInitialization(
+          result?.prospectedCount ?? 0
+        );
+    })
     .catch((error: unknown) =>
     {
+      stationaryTimeProspectService.clear();
+
       console.error(
         '[Simulation] Unable to progress time.',
         error

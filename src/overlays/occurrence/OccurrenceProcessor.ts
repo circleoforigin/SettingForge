@@ -264,11 +264,13 @@ export class OccurrenceProcessor
           pieceId
         );
 
-    if (
-      stationaryProspect &&
-      !stationaryProspect.complete
-    )
+    if (stationaryProspect)
     {
+      if (stationaryProspect.complete)
+      {
+        return false;
+      }
+
       const cursor =
         stationaryTimeProspectService
           .getStorageCursor(
@@ -498,6 +500,55 @@ export class OccurrenceProcessor
       );
     }
 
+    const prospect =
+      occurrenceCoordinator.getProspect(
+        occurrence.pieceId
+      );
+
+    if (
+      prospect?.kind ===
+        'stationary-time'
+    )
+    {
+      const stationaryProspect =
+        stationaryTimeProspectService
+          .getProspect(
+            occurrence.pieceId
+          );
+
+      if (!stationaryProspect)
+      {
+        throw new Error(
+          `Piece "${occurrence.pieceId}" has no stationary time prospect.`
+        );
+      }
+
+      stationaryTimeProspectService
+        .setStorageCursor(
+          occurrence.pieceId,
+          occurrence.simulationTime
+        );
+
+      occurrenceCoordinator.removeRound(
+        occurrence.pieceId
+      );
+
+      await hostEventBroker.requestModule(
+        'regions',
+        'Regions.ContinueProgressTime',
+        {
+          pieceId:
+            occurrence.pieceId,
+          startTime:
+            occurrence.simulationTime,
+          targetTime:
+            stationaryProspect.targetTime,
+        }
+      );
+
+      return;
+    }
+
     const payload =
       occurrence.payload as
         | TravelContinuationPayload
@@ -513,9 +564,8 @@ export class OccurrenceProcessor
       );
     }
 
-        if (
-      typeof payload.distanceFromLegStart ===
-        'number'
+    if (
+      typeof payload.distanceFromLegStart === 'number'
     )
     {
       travelProspectService.truncateLatestInterval(
@@ -559,6 +609,48 @@ export class OccurrenceProcessor
       throw new Error(
         'Recalculate Occurrence requires pieceId.'
       );
+    }
+
+        const stationaryProspect =
+      stationaryTimeProspectService
+        .getProspect(
+          occurrence.pieceId
+        );
+
+    if (
+      stationaryProspect &&
+      !stationaryProspect.complete
+    )
+    {
+      occurrenceService.truncatePiece(
+        occurrence.pieceId,
+        occurrence.simulationTime
+      );
+
+      occurrenceService.remove(
+        occurrence.id
+      );
+
+      stationaryTimeProspectService
+        .setStorageCursor(
+          occurrence.pieceId,
+          occurrence.simulationTime
+        );
+
+      await hostEventBroker.requestModule(
+        'regions',
+        'Regions.ContinueProgressTime',
+        {
+          pieceId:
+            occurrence.pieceId,
+          startTime:
+            occurrence.simulationTime,
+          targetTime:
+            stationaryProspect.targetTime,
+        }
+      );
+
+      return true;
     }
 
     const payload =
