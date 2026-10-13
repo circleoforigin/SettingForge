@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { OverlaySurfaceProps } from '../OverlayDefinition';
 import { SimClockValueControl } from './SimClockValueControl';
-import { OVERLAY_PLACEMENTS } from '../OverlayPlacement';
 import type { SimClockOverlayController } from './SimClockOverlay';
 import type {
   SimClockMarker,
@@ -20,7 +19,7 @@ interface SimClockSurfaceProps
 }
 
 export function SimClockSurface({
-  placement,
+  mountId = 'bottom-center',
   controller,
 }: SimClockSurfaceProps)
 {
@@ -123,14 +122,10 @@ export function SimClockSurface({
     },
   ] as const;
 
-  const resolvedPlacement =
-    OVERLAY_PLACEMENTS[placement.index];
-
   return (
     <div
       className="sim-clock-surface"
-      data-edge={resolvedPlacement.edge}
-      data-alignment={resolvedPlacement.alignment}
+      data-mount={mountId}
     >
       {!expanded && (
         <button

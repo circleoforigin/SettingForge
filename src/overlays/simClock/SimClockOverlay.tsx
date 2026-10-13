@@ -11,7 +11,10 @@ import {
   type SimClockProgressPreset,
   type SimClockSettings,
 } from '../../simulation/SimClockSettings';
-import type { OverlayPlacement } from '../OverlayPlacement';
+import type {
+  OverlayMountId,
+  OverlayPlacement,
+} from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
 import {
   advanceSimulationTimeToMarker,
@@ -449,11 +452,13 @@ const restoreWorldState = (
 interface SimClockOverlayProps
 {
   controller: SimClockOverlayController;
+  mountId?: OverlayMountId;
   placement?: OverlayPlacement;
 }
 
 export function SimClockOverlay({
   controller,
+  mountId,
   placement,
 }: SimClockOverlayProps)
 {
@@ -523,8 +528,9 @@ export function SimClockOverlay({
     <>
       {placement && (
         <SimClockSurface
-            placement={placement}
             controller={controller}
+            mountId={mountId}
+            placement={placement}
         />
       )}
 

@@ -1,4 +1,5 @@
 import type { SimClockSettings } from '../simulation/SimClockSettings';
+import type { OverlayMountId } from '../overlays/OverlayPlacement';
 
 export interface WorldModuleReference {
   moduleId: string;
@@ -13,7 +14,7 @@ export interface WorldRulesetReference {
 export interface WorldOverlayState
 {
   overlayId: string;
-  placementIndex?: number;
+  mountId?: OverlayMountId;
 }
 
 export interface WorldSimulationState

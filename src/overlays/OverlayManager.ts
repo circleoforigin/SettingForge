@@ -1,153 +1,162 @@
 import {
-  OVERLAY_PLACEMENTS,
-  type OverlayPlacementIndex,
+  OVERLAY_MOUNTS,
+  type OverlayMountId,
 } from './OverlayPlacement';
 
 export interface ActiveOverlay
 {
   overlayId: string;
-  placementIndex: OverlayPlacementIndex;
+  mountId: OverlayMountId;
 }
 
-function getAvailablePlacementIndexes(): OverlayPlacementIndex[]
+function isValidMountId(
+  mountId: string
+): mountId is OverlayMountId
 {
-  return Object.keys(OVERLAY_PLACEMENTS)
-    .map(Number)
-    .filter((index) => index in OVERLAY_PLACEMENTS) as OverlayPlacementIndex[];
-}
-
-function isValidPlacementIndex(
-  placementIndex: number
-): placementIndex is OverlayPlacementIndex
-{
-  return placementIndex in OVERLAY_PLACEMENTS;
+  return mountId in OVERLAY_MOUNTS;
 }
 
 export class OverlayManager
 {
-  private activeOverlays = new Map<string, ActiveOverlay>();
+  private activeOverlays =
+    new Map<string, ActiveOverlay>();
 
-  getActive(overlayId: string): ActiveOverlay | undefined
+  getActive(
+    overlayId: string
+  ): ActiveOverlay | undefined
   {
-    return this.activeOverlays.get(overlayId);
+    return this.activeOverlays.get(
+      overlayId
+    );
   }
 
   getAllActive(): ActiveOverlay[]
   {
-    return Array.from(this.activeOverlays.values());
+    return Array.from(
+      this.activeOverlays.values()
+    );
   }
 
-  isActive(overlayId: string): boolean
+  isActive(
+    overlayId: string
+  ): boolean
   {
-    return this.activeOverlays.has(overlayId);
+    return this.activeOverlays.has(
+      overlayId
+    );
   }
 
-  enable(overlayId: string): ActiveOverlay | undefined
+  enable(
+    overlayId: string,
+    defaultMount: OverlayMountId,
+    allowedMounts: readonly OverlayMountId[]
+  ): ActiveOverlay | undefined
   {
-    const existing = this.activeOverlays.get(overlayId);
+    const existing =
+      this.activeOverlays.get(
+        overlayId
+      );
 
     if (existing)
     {
       return existing;
     }
 
-    const occupiedIndexes = new Set(
-      this.getAllActive().map((overlay) => overlay.placementIndex)
-    );
+    if (
+      !allowedMounts.includes(
+        defaultMount
+      )
+    )
+    {
+      return undefined;
+    }
 
-    const placementIndex = getAvailablePlacementIndexes().find(
-        (index) => !occupiedIndexes.has(index)
-    );
+    const mountId =
+      this.resolveAvailableMount(
+        defaultMount,
+        allowedMounts
+      );
 
-    if (placementIndex === undefined)
+    if (!mountId)
     {
       return undefined;
     }
 
     const activeOverlay: ActiveOverlay = {
       overlayId,
-      placementIndex,
+      mountId,
     };
 
-    this.activeOverlays.set(overlayId, activeOverlay);
+    this.activeOverlays.set(
+      overlayId,
+      activeOverlay
+    );
 
     return activeOverlay;
   }
 
-    restore(
+  restore(
     overlayId: string,
-    placementIndex: number
+    mountId: string,
+    allowedMounts: readonly OverlayMountId[]
   ): ActiveOverlay | undefined
   {
-    if (!isValidPlacementIndex(placementIndex))
+    if (
+      !isValidMountId(mountId) ||
+      !allowedMounts.includes(mountId) ||
+      !this.canUseMount(
+        overlayId,
+        mountId
+      )
+    )
     {
       return undefined;
     }
 
-    const occupied =
-      this.getAllActive().some(
-        (overlay) =>
-          overlay.placementIndex ===
-          placementIndex
-      );
-
-    if (occupied)
-    {
-      return undefined;
-    }
-
-    const active: ActiveOverlay = {
+    const activeOverlay: ActiveOverlay = {
       overlayId,
-      placementIndex,
+      mountId,
     };
 
     this.activeOverlays.set(
       overlayId,
-      active
+      activeOverlay
     );
 
-    return active;
+    return activeOverlay;
   }
 
-
-  setPlacement(
+  setMount(
     overlayId: string,
-    placementIndex: OverlayPlacementIndex
+    mountId: OverlayMountId,
+    allowedMounts: readonly OverlayMountId[]
   ): ActiveOverlay | undefined
   {
-    if (!isValidPlacementIndex(placementIndex))
-    {
-        return undefined;
-    }
-    
     const activeOverlay =
-        this.activeOverlays.get(overlayId);
+      this.activeOverlays.get(
+        overlayId
+      );
 
-    if (!activeOverlay)
+    if (
+      !activeOverlay ||
+      !allowedMounts.includes(mountId) ||
+      !this.canUseMount(
+        overlayId,
+        mountId
+      )
+    )
     {
-        return undefined;
-    }
-
-    const occupied =
-        this.getAllActive().some(
-        (overlay) =>
-            overlay.overlayId !== overlayId &&
-            overlay.placementIndex === placementIndex
-        );
-
-    if (occupied)
-    {
-        return undefined;
+      return undefined;
     }
 
     const updatedOverlay: ActiveOverlay = {
-        ...activeOverlay,
-        placementIndex,
+      ...activeOverlay,
+      mountId,
     };
 
     this.activeOverlays.set(
-        overlayId,
-        updatedOverlay
+      overlayId,
+      updatedOverlay
     );
 
     return updatedOverlay;
@@ -158,9 +167,57 @@ export class OverlayManager
     this.activeOverlays.clear();
   }
 
-
-  disable(overlayId: string): void
+  disable(
+    overlayId: string
+  ): void
   {
-    this.activeOverlays.delete(overlayId);
+    this.activeOverlays.delete(
+      overlayId
+    );
+  }
+
+  private resolveAvailableMount(
+    defaultMount: OverlayMountId,
+    allowedMounts: readonly OverlayMountId[]
+  ): OverlayMountId | undefined
+  {
+    if (
+      this.canUseMount(
+        '',
+        defaultMount
+      )
+    )
+    {
+      return defaultMount;
+    }
+
+    return allowedMounts.find(
+      (mountId) =>
+        this.canUseMount(
+          '',
+          mountId
+        )
+    );
+  }
+
+  private canUseMount(
+    overlayId: string,
+    mountId: OverlayMountId
+  ): boolean
+  {
+    const mount =
+      OVERLAY_MOUNTS[mountId];
+
+    if (mount.kind === 'stack')
+    {
+      return true;
+    }
+
+    return !this.getAllActive().some(
+      (overlay) =>
+        overlay.overlayId !==
+          overlayId &&
+        overlay.mountId === mountId
+    );
   }
 }

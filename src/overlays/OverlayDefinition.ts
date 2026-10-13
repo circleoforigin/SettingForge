@@ -1,6 +1,9 @@
 import type { ComponentType } from 'react';
 import type { HostEventMessage } from '../events/HostMessage';
-import type { OverlayPlacement } from './OverlayPlacement';
+import type {
+  OverlayMountId,
+  OverlayPlacement,
+} from './OverlayPlacement';
 
 export type OverlayLayout =
   | 'positioned'
@@ -8,7 +11,15 @@ export type OverlayLayout =
 
 export interface OverlaySurfaceProps
 {
-  placement: OverlayPlacement;
+  mountId?: OverlayMountId;
+
+  /*
+   * Legacy surface placement.
+   * Remove once all positioned Overlay
+   * surfaces render from mountId.
+   */
+  placement?: OverlayPlacement;
+
   tabs?: {
     id: string;
     name: string;
@@ -22,13 +33,42 @@ export interface OverlayEventHandler
   handle: (message: HostEventMessage) => void;
 }
 
-export interface OverlayDefinition
+interface OverlayDefinitionBase
 {
   id: string;
   name: string;
   description: string;
   version: string;
-  layout: OverlayLayout;
   Surface?: ComponentType<OverlaySurfaceProps>;
   events?: OverlayEventHandler[];
 }
+
+export interface PositionedOverlayDefinition
+  extends OverlayDefinitionBase
+{
+  layout: 'positioned';
+
+  /*
+   * Mounts this Overlay's presentation
+   * has been designed to support.
+   */
+  allowedMounts: readonly OverlayMountId[];
+
+  /*
+   * Initial mount used when the Overlay
+   * is enabled without a saved assignment.
+   *
+   * Must also appear in allowedMounts.
+   */
+  defaultMount: OverlayMountId;
+}
+
+export interface FixedOverlayDefinition
+  extends OverlayDefinitionBase
+{
+  layout: 'fixed';
+}
+
+export type OverlayDefinition =
+  | PositionedOverlayDefinition
+  | FixedOverlayDefinition;

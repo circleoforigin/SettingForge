@@ -14,6 +14,12 @@ const messengerOverlay: OverlayDefinition = {
     'Persistent communications interface for host and player messaging.',
   version: '0.1.0',
   layout: 'positioned',
+  allowedMounts: [
+    'bottom-left',
+    'bottom-center',
+    'bottom-right',
+  ],
+  defaultMount: 'bottom-left',
   Surface: MessengerSurface,
 };
 
@@ -24,6 +30,12 @@ const simClockOverlay: OverlayDefinition = {
     'Persistent simulation time and calendar interface.',
   version: '0.1.0',
   layout: 'positioned',
+  allowedMounts: [
+    'bottom-left',
+    'bottom-center',
+    'bottom-right',
+  ],
+  defaultMount: 'bottom-center',
   Surface: SimClockSurface,
 };
 

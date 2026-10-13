@@ -77,7 +77,7 @@
 
 
 
-.messenger-surface[data-edge='bottom'] {
+.messenger-surface[data-mount^='bottom-'] {
   bottom: 0;
 }
 
@@ -172,16 +172,16 @@
   border-radius: 0 0 4px 4px;
 }
 
-.messenger-surface[data-alignment='left'] {
+.messenger-surface[data-mount='bottom-left'] {
   left: 12px;
 }
 
-.messenger-surface[data-alignment='center'] {
+.messenger-surface[data-mount='bottom-center'] {
   left: 50%;
   transform: translateX(-50%);
 }
 
-.messenger-surface[data-alignment='right'] {
+.messenger-surface[data-mount='bottom-right'] {
   right: 12px;
 }
 
@@ -430,7 +430,7 @@
   align-items: center;
 }
 
-.sim-clock-surface[data-edge='bottom'] {
+.sim-clock-surface[data-mount^='bottom-'] {
   bottom: 0;
   flex-direction: column-reverse;
 }
@@ -439,16 +439,16 @@
   top: 0;
 }
 
-.sim-clock-surface[data-alignment='left'] {
+.sim-clock-surface[data-mount='bottom-left'] {
   left: 12px;
 }
 
-.sim-clock-surface[data-alignment='center'] {
+.sim-clock-surface[data-mount='bottom-center'] {
   left: 50%;
   transform: translateX(-50%);
 }
 
-.sim-clock-surface[data-alignment='right'] {
+.sim-clock-surface[data-mount='bottom-right'] {
   right: 12px;
 }
 
@@ -790,19 +790,19 @@
   border-radius: 0 0 5px 5px;
 }
 
-.sim-clock-surface[data-edge='bottom']
+.sim-clock-surface[data-mount^='bottom-']
 .sim-clock-weekday {
   border-bottom: none;
   border-radius: 5px 5px 0 0;
 }
 
-.sim-clock-surface[data-edge='bottom']
+.sim-clock-surface[data-mount^='bottom-']
 .sim-clock-go-to {
   border-radius: 0;
   box-shadow: none;
 }
 
-.sim-clock-surface[data-edge='bottom']
+.sim-clock-surface[data-mount^='bottom-']
 .sim-clock-progression {
   border-bottom: 1px solid #45474e;
   border-radius: 0;

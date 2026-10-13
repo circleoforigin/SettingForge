@@ -12,9 +12,10 @@ import { worldRepository } from './worlds/WorldRepository';
 import { projectLifecycleService } from './projects/ProjectLifecycleService';
 import { overlayRegistry } from './overlays/registry';
 import { OverlayManager } from './overlays/OverlayManager';
-import type { OverlayPlacementIndex } from './overlays/OverlayPlacement';
+import type { OverlayMountId } from './overlays/OverlayPlacement';
 import { rulesetRegistry } from './rules/RulesetRegistry';
 import { registerRulesHostService } from './rules/RulesHostService';
+
 import {
   MessengerOverlay,
   useMessengerOverlay,
@@ -134,16 +135,33 @@ function App()
     enabled: boolean
   ) =>
   {
+    const overlay =
+      overlayRegistry.get(overlayId);
+
+    if (
+      !overlay ||
+      overlay.layout !== 'positioned'
+    )
+    {
+      return;
+    }
+
     if (enabled)
     {
-      overlayManager.enable(overlayId);
+      overlayManager.enable(
+        overlayId,
+        overlay.defaultMount,
+        overlay.allowedMounts
+      );
     }
     else
     {
       overlayManager.disable(overlayId);
     }
 
-    setActiveOverlays(overlayManager.getAllActive());
+    setActiveOverlays(
+      overlayManager.getAllActive()
+    );
 
     if (activeWorldRef.current)
     {
@@ -151,14 +169,27 @@ function App()
     }
   };
 
-const setOverlayPlacement = (
+const setOverlayMount = (
   overlayId: string,
-  placementIndex: OverlayPlacementIndex
+  mountId: OverlayMountId
 ) =>
 {
-  const result = overlayManager.setPlacement(
+  const overlay =
+    overlayRegistry.get(overlayId);
+
+  if (
+    !overlay ||
+    overlay.layout !== 'positioned'
+  )
+  {
+    return false;
+  }
+
+  const result =
+    overlayManager.setMount(
       overlayId,
-      placementIndex
+      mountId,
+      overlay.allowedMounts
     );
 
   if (!result)
@@ -166,7 +197,9 @@ const setOverlayPlacement = (
     return false;
   }
 
-  setActiveOverlays(overlayManager.getAllActive());
+  setActiveOverlays(
+    overlayManager.getAllActive()
+  );
 
   if (activeWorldRef.current)
   {
@@ -208,27 +241,19 @@ overlays:
     )
     .map((overlay) =>
         {
-          const active =
-            overlayManager.getActive(
-              overlay.id
-            );
+          const active = overlayManager.getActive(overlay.id);
 
           return {
-            overlayId:
-              overlay.id,
-
-            placementIndex:
-              active?.placementIndex,
+            overlayId: overlay.id,
+            mountId: active?.mountId,
           };
         }),
 
-    updatedAt:
-      new Date(),
+    updatedAt: new Date(),
   };
 };
 
-  const loadQueueRef =
-    useRef<LoadQueueService | null>(null);
+  const loadQueueRef = useRef<LoadQueueService | null>(null);
 
   useEffect(() => {
   const stopBroker = hostEventBroker.start();
@@ -2090,13 +2115,10 @@ async function handleLoadWorld(worldId: string) {
 
         if (!world)
     {
-      throw new Error(
-        'The selected World could not be found.'
-      );
+      throw new Error('The selected World could not be found.');
     }
 
-    const simulation =
-      world.simulation;
+    const simulation = world.simulation;
 
     simClock.restoreWorldState(
       simulation?.time ?? 0,
@@ -2106,24 +2128,24 @@ async function handleLoadWorld(worldId: string) {
 
     overlayManager.clear();
 
-    for (const overlay of world.overlays ?? [])
+    for (const savedOverlay of world.overlays ?? [])
     {
-      if (
-        overlay.placementIndex ===
-        undefined
-      )
+      if (!savedOverlay.mountId)
       {
         continue;
       }
 
-      if (!overlayRegistry.get(overlay.overlayId))
+      const overlay = overlayRegistry.get(savedOverlay.overlayId);
+
+      if (!overlay || overlay.layout !== 'positioned')
       {
         continue;
       }
 
       overlayManager.restore(
-        overlay.overlayId,
-        overlay.placementIndex
+        overlay.id,
+        savedOverlay.mountId,
+        overlay.allowedMounts
       );
     }
 
@@ -3663,63 +3685,76 @@ async function removeModuleFromWorld(
 
           <div className="overlay-menu-entry">
             <div className="dropdown-item overlay-menu-label">
-              Position
+              Mount
               <span>›</span>
             </div>
 
             <div className="dropdown-menu overlay-submenu">
-              {[
-                'Top Left',
-                'Top Center',
-                'Top Right',
-                'Bottom Left',
-                'Bottom Center',
-                'Bottom Right',
-              ].map((label, index) => {
-                const placementIndex =
-                  index as OverlayPlacementIndex;
+              {overlay.allowedMounts.map(
+                (mountId) =>
+                {
+                  const activeOverlay =
+                    overlayManager.getActive(
+                      overlay.id
+                    );
 
-                const activeOverlay =
-                  overlayManager.getActive(
-                    overlay.id
+                  const selected =
+                    activeOverlay?.mountId ===
+                    mountId;
+
+                  const occupied =
+                    activeOverlays.some(
+                      (candidate) =>
+                        candidate.overlayId !==
+                          overlay.id &&
+                        candidate.mountId ===
+                          mountId
+                    );
+
+                  const isExclusive =
+                    mountId ===
+                      'middle-left' ||
+                    mountId ===
+                      'middle-right';
+
+                  const label =
+                    mountId === 'middle-left'
+                      ? 'Middle Left'
+                      : mountId === 'middle-right'
+                        ? 'Middle Right'
+                        : mountId === 'bottom-left'
+                          ? 'Bottom Left'
+                          : mountId === 'bottom-center'
+                            ? 'Bottom Center'
+                            : 'Bottom Right';
+
+                  return (
+                    <button
+                      key={mountId}
+                      type="button"
+                      className="dropdown-item"
+                      disabled={
+                        !isOverlayEnabled(
+                          overlay.id
+                        ) ||
+                        (
+                          isExclusive &&
+                          occupied
+                        )
+                      }
+                      onClick={() =>
+                        setOverlayMount(
+                          overlay.id,
+                          mountId
+                        )
+                      }
+                    >
+                      {selected ? '✓ ' : ''}
+                      {label}
+                    </button>
                   );
-
-                const occupied =
-                  activeOverlays.some(
-                    (candidate) =>
-                      candidate.overlayId !==
-                        overlay.id &&
-                      candidate.placementIndex ===
-                        placementIndex
-                  );
-
-                const selected =
-                  activeOverlay?.placementIndex ===
-                  placementIndex;
-
-                return (
-                  <button
-                    key={placementIndex}
-                    type="button"
-                    className="dropdown-item"
-                    disabled={
-                      !isOverlayEnabled(
-                        overlay.id
-                      ) ||
-                      occupied
-                    }
-                    onClick={() =>
-                      setOverlayPlacement(
-                        overlay.id,
-                        placementIndex
-                      )
-                    }
-                  >
-                    {selected ? '✓ ' : ''}
-                    {label}
-                  </button>
-                );
-              })}
+                }
+              )}
             </div>
           </div>
 
@@ -3891,18 +3926,13 @@ async function removeModuleFromWorld(
       return null;
     }
 
-    const placement = {
-      index:
-        activeOverlay.placementIndex,
-    };
-
     if (overlay.id === 'messenger')
 {
   return (
     <MessengerOverlay
       key={overlay.id}
       controller={messenger}
-      placement={placement}
+      mountId={activeOverlay.mountId}
     />
   );
 }
@@ -3913,7 +3943,7 @@ if (overlay.id === 'sim-clock')
     <SimClockOverlay
       key={overlay.id}
       controller={simClock}
-      placement={placement}
+      mountId={activeOverlay.mountId}
     />
   );
 }
@@ -3928,7 +3958,7 @@ if (!Surface)
 return (
   <Surface
     key={overlay.id}
-    placement={placement}
+    mountId={activeOverlay.mountId}
   />
 );
   })}

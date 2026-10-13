@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import type { OverlayPlacement } from '../OverlayPlacement';
+import type {
+  OverlayMountId,
+  OverlayPlacement,
+} from '../OverlayPlacement';
 import { MessengerSurface } from './MessengerSurface';
 
 export interface MessengerTabConfig 
@@ -46,13 +49,15 @@ export type MessengerOverlayController =
 interface MessengerOverlayProps
 {
   controller: MessengerOverlayController;
-  placement: OverlayPlacement;
+  mountId?: OverlayMountId;
+  placement?: OverlayPlacement;
 }
 
 export function MessengerOverlay({
   controller,
+  mountId,
   placement,
-}: MessengerOverlayProps) 
+}: MessengerOverlayProps)
 {
   const {
     settingsOpen,
@@ -64,6 +69,7 @@ export function MessengerOverlay({
   return (
     <>
       <MessengerSurface
+        mountId={mountId}
         placement={placement}
         tabs={tabs}
       />
