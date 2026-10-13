@@ -15,6 +15,12 @@ export interface WorldOverlayState
 {
   overlayId: string;
   mountId?: OverlayMountId;
+
+  /*
+   * Legacy Overlay position.
+   * Read only for World migration.
+   */
+  placementIndex?: number;
 }
 
 export interface WorldSimulationState

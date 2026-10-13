@@ -2158,21 +2158,59 @@ async function handleLoadWorld(worldId: string) {
 
     for (const savedOverlay of world.overlays ?? [])
     {
-      if (!savedOverlay.mountId)
+      const overlay =
+        overlayRegistry.get(
+          savedOverlay.overlayId
+        );
+
+      if (
+        !overlay ||
+        overlay.layout !== 'positioned'
+      )
       {
         continue;
       }
 
-      const overlay = overlayRegistry.get(savedOverlay.overlayId);
+      let mountId =
+        savedOverlay.mountId;
 
-      if (!overlay || overlay.layout !== 'positioned')
+      if (!mountId)
       {
-        continue;
+        switch (
+          savedOverlay.placementIndex
+        )
+        {
+          case 0:
+          case 3:
+            mountId = 'bottom-left';
+            break;
+
+          case 1:
+          case 4:
+            mountId = 'bottom-center';
+            break;
+
+          case 2:
+          case 5:
+            mountId = 'bottom-right';
+            break;
+        }
+      }
+
+      if (
+        !mountId ||
+        !overlay.allowedMounts.includes(
+          mountId
+        )
+      )
+      {
+        mountId =
+          overlay.defaultMount;
       }
 
       overlayManager.restore(
         overlay.id,
-        savedOverlay.mountId,
+        mountId,
         overlay.allowedMounts
       );
     }
@@ -4011,6 +4049,24 @@ async function removeModuleFromWorld(
       );
 
     if (!overlay)
+    {
+      return null;
+    }
+
+        const isBottomMount =
+      activeOverlay.mountId ===
+        'bottom-left' ||
+      activeOverlay.mountId ===
+        'bottom-center' ||
+      activeOverlay.mountId ===
+        'bottom-right';
+
+    if (
+      isBottomMount &&
+      expandedBottomOverlays[
+        activeOverlay.mountId
+      ] !== overlay.id
+    )
     {
       return null;
     }

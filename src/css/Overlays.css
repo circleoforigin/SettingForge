@@ -160,7 +160,7 @@
 
 
 .messenger-surface[data-mount^='bottom-'] {
-  bottom: 0;
+  bottom: 24px;
 }
 
 .messenger-surface[data-edge='bottom']
@@ -513,7 +513,7 @@
 }
 
 .sim-clock-surface[data-mount^='bottom-'] {
-  bottom: 0;
+  bottom: 24px;
   flex-direction: column-reverse;
 }
 
