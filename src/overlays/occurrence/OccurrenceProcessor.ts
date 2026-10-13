@@ -398,8 +398,7 @@ export class OccurrenceProcessor
     occurrence: Occurrence
   ): Promise<void>
   {
-    const simulationTime =
-      occurrence.simulationTime;
+    const simulationTime = occurrence.simulationTime;
 
     const stationaryOperationActive =
       stationaryTimeProspectService
@@ -408,9 +407,7 @@ export class OccurrenceProcessor
     if (!stationaryOperationActive)
     {
       const positions =
-        travelProspectService.resolvePositionsAt(
-          simulationTime
-        );
+        travelProspectService.resolvePositionsAt(simulationTime);
 
       for (const position of positions)
       {
@@ -418,29 +415,22 @@ export class OccurrenceProcessor
           'regions',
           'Regions.CommitTravelPosition',
           {
-            pieceId:
-              position.pieceId,
-            routeLegId:
-              position.routeLegId,
-            distanceFromLegStart:
-              position.distanceFromLegStart,
+            pieceId: position.pieceId,
+            routeLegId: position.routeLegId,
+            distanceFromLegStart: position.distanceFromLegStart,
           }
         );
       }
     }
 
-    simulationClockService.setTime(
-      simulationTime
-    );
+    simulationClockService.setTime(simulationTime);
   }
 
   async handleOccurrence(
     occurrence: Occurrence
   ): Promise<void>
   {
-    await this.commitThrough(
-      occurrence
-    );
+    await this.commitThrough(occurrence);
 
     occurrenceService.clear();
     occurrenceCoordinator.clear();
@@ -452,8 +442,7 @@ export class OccurrenceProcessor
     maximum: number
   ): Promise<boolean>
   {
-    const visible =
-      occurrenceService.getVisibleOccurrences();
+    const visible = occurrenceService.getVisibleOccurrences();
 
     const count =
       Math.max(
@@ -469,16 +458,11 @@ export class OccurrenceProcessor
       return false;
     }
 
-    const target =
-      visible[count - 1];
+    const target = visible[count - 1];
 
-    await this.commitThrough(
-      target
-    );
+    await this.commitThrough(target);
 
-    occurrenceService.consumeVisible(
-      count
-    );
+    occurrenceService.consumeVisible(count);
 
     return true;
   }
@@ -520,16 +504,12 @@ export class OccurrenceProcessor
         return false;
 
       case 'end':
-        occurrenceService.remove(
-          occurrence.id
-        );
+        occurrenceService.remove(occurrence.id);
 
         return true;
 
       case 'none':
-        occurrenceService.remove(
-          occurrence.id
-        );
+        occurrenceService.remove(occurrence.id);
 
         return true;
     }
@@ -547,20 +527,13 @@ export class OccurrenceProcessor
     }
 
     const prospect =
-      occurrenceCoordinator.getProspect(
-        occurrence.pieceId
-      );
+      occurrenceCoordinator.getProspect(occurrence.pieceId);
 
-    if (
-      prospect?.kind ===
-        'stationary-time'
-    )
+    if (prospect?.kind === 'stationary-time')
     {
       const stationaryProspect =
         stationaryTimeProspectService
-          .getProspect(
-            occurrence.pieceId
-          );
+          .getProspect(occurrence.pieceId);
 
       if (!stationaryProspect)
       {

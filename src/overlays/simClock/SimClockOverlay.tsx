@@ -24,6 +24,8 @@ import {
 import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 import { occurrenceProcessor } from '../occurrence/OccurrenceProcessor';
+import { occurrenceService } from '../occurrence/OccurrenceService';
+import { generateSimClockOccurrences } from '../../simulation/SimClockOccurrenceGenerator';
 
 type DateFormatField =
   | 'monthName'
@@ -186,6 +188,11 @@ const requestProgressTime = (
   targetTime: SimulationTime
 ) =>
 {
+  if (!activeEra)
+  {
+    return;
+  }
+
   const startTime =
     simulationClockService.getTime();
 
@@ -214,6 +221,15 @@ const requestProgressTime = (
     )
     .then((result) =>
     {
+      occurrenceService.addMany(
+        generateSimClockOccurrences(
+          startTime,
+          targetTime,
+          settings.markers,
+          activeEra
+        )
+      );
+
       stationaryTimeProspectService
         .finishInitialization(
           result?.prospectedCount ?? 0
