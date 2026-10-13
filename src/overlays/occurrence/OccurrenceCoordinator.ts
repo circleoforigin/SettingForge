@@ -43,13 +43,51 @@ export class OccurrenceCoordinator
       );
     }
 
+    prospect.kind = 'travel';
     prospect.routeLegId = routeLegId;
     prospect.legEndTime = legEndTime;
+    prospect.targetTime = undefined;
 
-    return this.cloneProspect(
+    return this.cloneProspect(prospect);
+  }
+
+setProspectStationaryTime(
+  pieceId: string,
+  targetTime: number
+): OccurrenceProspect
+{
+  let prospect =
+    this.prospects.get(pieceId);
+
+  if (!prospect)
+  {
+    prospect = {
+      pieceId,
+      occurrences: [],
+    };
+
+    this.prospects.set(
+      pieceId,
       prospect
     );
   }
+
+  prospect.kind =
+    'stationary-time';
+
+  prospect.targetTime =
+    targetTime;
+
+  prospect.routeLegId =
+    undefined;
+
+  prospect.legEndTime =
+    undefined;
+
+  return this.cloneProspect(
+    prospect
+  );
+}
 
   getProspectDisplayableCount(
     pieceId: string
