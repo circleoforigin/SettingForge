@@ -11,10 +11,7 @@ import {
   type SimClockProgressPreset,
   type SimClockSettings,
 } from '../../simulation/SimClockSettings';
-import type {
-  OverlayMountId,
-  OverlayPlacement,
-} from '../OverlayPlacement';
+import type { OverlayMountId } from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
 import {
   advanceSimulationTimeToMarker,
@@ -109,9 +106,6 @@ export function useSimClockOverlay()
       simulationClockService.getTime()
     );
 
-  const [realTimeActive, setRealTimeActive] =
-    useState(false);
-
   useEffect(() =>
   {
     return simulationClockService.subscribe(
@@ -122,52 +116,6 @@ export function useSimClockOverlay()
       }
     );
   }, []);
-
-  useEffect(() =>
-{
-  if (!realTimeActive)
-  {
-    return;
-  }
-
-  let previousTime = performance.now();
-  let accumulatedMilliseconds = 0;
-
-  const interval =
-    window.setInterval(() =>
-    {
-      const currentTime =
-        performance.now();
-
-      accumulatedMilliseconds +=
-        currentTime - previousTime;
-
-      previousTime = currentTime;
-
-      const elapsedSeconds =
-        Math.floor(
-          accumulatedMilliseconds / 1000
-        );
-
-      if (elapsedSeconds < 1)
-      {
-        return;
-      }
-
-      accumulatedMilliseconds -=
-        elapsedSeconds * 1000;
-
-      simulationClockService.setTime(
-        simulationClockService.getTime() +
-        elapsedSeconds
-      );
-    }, 100);
-
-  return () =>
-  {
-    window.clearInterval(interval);
-  };
-}, [realTimeActive]);
 
   const [settingsOpen, setSettingsOpen] =
     useState(false);
@@ -276,6 +224,37 @@ const progressToMarker = (
   );
 };
 
+const progressToMarkerAfter = (
+  preset: SimClockProgressPreset,
+  marker: SimClockMarker
+) =>
+{
+  if (!activeEra)
+  {
+    return;
+  }
+
+  const progressedTime =
+    progressSimulationTime(
+      committedTime,
+      preset.amount,
+      preset.unit,
+      activeEra
+    );
+
+  const targetTime =
+    advanceSimulationTimeToMarker(
+      progressedTime,
+      marker,
+      settings.markers,
+      activeEra
+    );
+
+  simulationClockService.setTime(
+    targetTime
+  );
+};
+
   const stepPendingTime = (
     field: SimCalendarField,
     direction: 1 | -1
@@ -355,22 +334,8 @@ const progressToMarker = (
     });
   };
 
-const toggleRealTime = () =>
-{
-  setRealTimeActive(
-    (current) => !current
-  );
-};
-
-const stopRealTime = () =>
-{
-  setRealTimeActive(false);
-};
-
 const requestTravel = () =>
 {
-  stopRealTime();
-
   travelProspectService.clear();
 
   void hostEventBroker
@@ -441,10 +406,7 @@ const restoreWorldState = (
     commitPendingTime,
     progressTime,
     progressToMarker,
-    realTimeActive,
-    toggleRealTime,
     requestTravel,
-    stopRealTime,
     restoreWorldState,
   };
 }
@@ -453,13 +415,11 @@ interface SimClockOverlayProps
 {
   controller: SimClockOverlayController;
   mountId?: OverlayMountId;
-  placement?: OverlayPlacement;
 }
 
 export function SimClockOverlay({
   controller,
   mountId,
-  placement,
 }: SimClockOverlayProps)
 {
   const activeEra = controller.activeEra;
@@ -526,11 +486,10 @@ export function SimClockOverlay({
 
   return (
     <>
-      {placement && (
+      {mountId && (
         <SimClockSurface
             controller={controller}
             mountId={mountId}
-            placement={placement}
         />
       )}
 

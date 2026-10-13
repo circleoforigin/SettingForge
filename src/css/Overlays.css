@@ -1,3 +1,6 @@
+:root {
+  --overlay-mount-bar-height: 24px;
+}
 
 .overlay-layer {
   position: absolute;
@@ -28,7 +31,7 @@
   bottom: 0;
 
   box-sizing: border-box;
-  height: 24px;
+  height: var(--overlay-mount-bar-height);
 
   display: grid;
   grid-template-columns:
@@ -157,10 +160,8 @@
   align-items: center;
 }
 
-
-
 .messenger-surface[data-mount^='bottom-'] {
-  bottom: 24px;
+  bottom: var(--overlay-mount-bar-height);
 }
 
 .messenger-surface[data-edge='bottom']
@@ -513,7 +514,7 @@
 }
 
 .sim-clock-surface[data-mount^='bottom-'] {
-  bottom: 24px;
+  bottom: var(--overlay-mount-bar-height);
   flex-direction: column-reverse;
 }
 

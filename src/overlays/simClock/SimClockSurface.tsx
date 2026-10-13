@@ -176,8 +176,6 @@ export function SimClockSurface({
                   className="sim-clock-progress-button"
                   onClick={() =>
                   {
-                    controller.stopRealTime();
-
                     controller.progressTime(
                       progressPreset
                     );
@@ -280,8 +278,6 @@ export function SimClockSurface({
                 type="button"
                 onClick={() =>
                 {
-                  controller.stopRealTime();
-
                   controller.progressToMarker(
                     marker
                   );
@@ -317,25 +313,27 @@ export function SimClockSurface({
               </select>
             </div>
 
-            <div className="sim-clock-progression-column sim-clock-progression-actions">
-              <button
-                type="button"
-                onClick={controller.requestTravel}
-              >
-                Travel
-              </button>
+<div className="sim-clock-progression-column sim-clock-progression-actions">
+  <button
+    type="button"
+    onClick={() =>
+    {
+      controller.progressToMarkerAfter(
+        progressPreset,
+        marker
+      );
+    }}
+  >
+    Progress To
+  </button>
 
-              <button
-                type="button"
-                onClick={
-                  controller.toggleRealTime
-                }
-              >
-                {controller.realTimeActive
-                  ? 'Stop'
-                  : 'Real Time'}
-              </button>
-            </div>
+  <button
+    type="button"
+    onClick={controller.requestTravel}
+  >
+    Travel
+  </button>
+</div>
           </div>
 
           <div className="sim-clock-go-to">
@@ -402,7 +400,6 @@ export function SimClockSurface({
               }
               onClick={() =>
               {
-                controller.stopRealTime();
                 controller.commitPendingTime();
               }}
               disabled={
