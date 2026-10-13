@@ -25,12 +25,8 @@ import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 import { occurrenceProcessor } from '../occurrence/OccurrenceProcessor';
 import { occurrenceService } from '../occurrence/OccurrenceService';
-import {
-  generateSimClockOccurrences,
-  getSimClockOccurrenceKey,
-} from '../../simulation/SimClockOccurrenceGenerator';
 import { globalOccurrenceCoordinator } from '../occurrence/GlobalOccurrenceCoordinator';
-
+import { RebuildGlobalOccurrences } from '../../simulation/RebuildGlobalOccurrences';
 
 type DateFormatField =
   | 'monthName'
@@ -180,6 +176,22 @@ export function useSimClockOverlay()
     ) ??
     settings.eras[0];
 
+  useEffect(() =>
+  {
+    if (!activeEra)
+    {
+      return;
+    }
+
+    RebuildGlobalOccurrences({
+      markers: settings.markers,
+      era: activeEra,
+    });
+  }, [
+    activeEra,
+    settings.markers,
+  ]);
+
   const updateActiveEra = (
     update: (
       current: SimClockEra
@@ -199,89 +211,6 @@ export function useSimClockOverlay()
       ),
     }));
   };
-
-  useEffect(() =>
-{
-  if (!activeEra)
-  {
-    return;
-  }
-
-  return hostEventBroker.subscribe(
-    'Regions.TravelLegProspected',
-    (message) =>
-    {
-      const payload =
-        message.payload as
-          | {
-              startTime?: number;
-              endTime?: number;
-            }
-          | undefined;
-
-      if (
-        typeof payload?.startTime !==
-          'number' ||
-        typeof payload.endTime !==
-          'number' ||
-        payload.endTime <=
-          payload.startTime
-      )
-      {
-        return;
-      }
-
-      const existingKeys =
-        new Set(
-          [
-            ...occurrenceService
-              .getGlobalQueue(),
-
-            ...occurrenceService
-              .getVisibleOccurrences(),
-          ]
-            .map(
-              getSimClockOccurrenceKey
-            )
-            .filter(
-              (
-                key
-              ): key is string =>
-                key !== undefined
-            )
-        );
-
-      const occurrences =
-        generateSimClockOccurrences(
-          payload.startTime,
-          payload.endTime,
-          settings.markers,
-          activeEra
-        )
-          .filter(
-            (occurrence) =>
-            {
-              const key =
-                getSimClockOccurrenceKey(
-                  occurrence
-                );
-
-              return (
-                key === undefined ||
-                !existingKeys.has(key)
-              );
-            }
-          );
-
-      occurrenceService.addMany(
-        occurrences
-      );
-    }
-  );
-}, [
-  activeEra,
-  settings.markers,
-]);
 
 const updateProgressPreset = (
   index: number,
@@ -336,15 +265,6 @@ const requestProgressTime = (
 
   globalOccurrenceCoordinator
     .beginRound();
-
-  occurrenceService.addMany(
-    generateSimClockOccurrences(
-      startTime,
-      targetTime,
-      settings.markers,
-      activeEra
-    )
-  );
 
   hostEventBroker.broadcast(
     'Simulation.TimeProspected',
