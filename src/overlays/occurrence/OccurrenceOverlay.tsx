@@ -3,6 +3,7 @@ import type { Occurrence } from '@settingforge/module-sdk';
 import { occurrenceService } from './OccurrenceService';
 import { occurrenceProcessor } from './OccurrenceProcessor';
 import { travelProspectService } from '../../simulation/TravelProspectService';
+import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 
 export const OCCURRENCE_MAX_QUEUED_OPTIONS = [
   1,
@@ -12,9 +13,7 @@ export const OCCURRENCE_MAX_QUEUED_OPTIONS = [
   5,
   6,
   7,
-  8,
-  9,
-  10,
+  8,  
 ] as const;
 
 export function useOccurrenceOverlay()
@@ -98,15 +97,17 @@ export function useOccurrenceOverlay()
 
         setOccurrences(visibleOccurrences);
 
-        for (
-          const pieceId of
-            travelProspectService
-              .getStorageCursorPieceIds()
-        )
+        const refillPieceIds =
+          new Set([
+            ...travelProspectService
+              .getStorageCursorPieceIds(),
+            ...stationaryTimeProspectService
+              .getStorageCursorPieceIds(),
+          ]);
+
+        for (const pieceId of refillPieceIds)
         {
-          await occurrenceProcessor.refillPiece(
-            pieceId
-          );
+          await occurrenceProcessor.refillPiece(pieceId);
         }
       }
       finally

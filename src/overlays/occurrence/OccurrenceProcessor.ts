@@ -8,6 +8,7 @@ import type {
 import type { Occurrence } from '@settingforge/module-sdk';
 import { PIECE_OCCURRENCE_LIMIT } from './OccurrenceService';
 import { travelProspectService } from '../../simulation/TravelProspectService';
+import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 import { simulationClockService } from '../../simulation/SimulationClockService';
 
 export class OccurrenceProcessor
@@ -103,6 +104,22 @@ export class OccurrenceProcessor
         )
       );
 
+      const prospect =
+        occurrenceCoordinator.getProspect(
+          pieceId
+        );
+
+      if (prospect?.kind === 'stationary-time')
+      {
+        stationaryTimeProspectService
+          .setStorageCursor(
+            pieceId,
+            capacityBoundary.simulationTime
+          );
+
+        return true;
+      }
+
       const storageCursor =
         travelProspectService.truncateAtTime(
           pieceId,
@@ -130,10 +147,7 @@ export class OccurrenceProcessor
 
     if (recalculate)
     {
-      const truncated =
-        occurrenceCoordinator.getRound(
-          pieceId
-        );
+      const truncated = occurrenceCoordinator.getRound(pieceId);
 
       if (!truncated)
       {
@@ -150,17 +164,13 @@ export class OccurrenceProcessor
         )
       );
 
-      await this.processRoundRecalculate(
-        recalculate
-      );
+      await this.processRoundRecalculate(recalculate);
 
       return true;
     }
 
     const completed =
-      occurrenceCoordinator.takeCompletedRound(
-        pieceId
-      );
+      occurrenceCoordinator.takeCompletedRound(pieceId);
 
     if (!completed)
     {
@@ -175,10 +185,17 @@ export class OccurrenceProcessor
       )
     );
 
-    const prospect =
-      occurrenceCoordinator.getProspect(
-        pieceId
-      );
+    const prospect = occurrenceCoordinator.getProspect(pieceId);
+
+    if (prospect?.kind === 'stationary-time')
+    {
+      occurrenceCoordinator.takeProspect(pieceId);
+
+      stationaryTimeProspectService
+        .markComplete(pieceId);
+
+      return true;
+    }
 
     if (
       !prospect?.routeLegId ||
@@ -198,38 +215,30 @@ export class OccurrenceProcessor
         'Regions.ContinueTravel',
         {
           pieceId,
-          routeLegId:
-            prospect.routeLegId,
-          startTime:
-            prospect.legEndTime,
+          routeLegId: prospect.routeLegId,
+          startTime: prospect.legEndTime,
           mode: 'next-leg',
         }
       );
 
     if (continuation?.routeComplete)
     {
-      occurrenceCoordinator.takeProspect(
-        pieceId
-      );
+      occurrenceCoordinator.takeProspect(pieceId);
 
-      travelProspectService.markRouteComplete(
-        pieceId
-      );
+      travelProspectService.markRouteComplete(pieceId);
     }
 
     return true;
   }
 
-async refillPiece(
+  async refillPiece(
     pieceId: string
   ): Promise<boolean>
   {
-    if (travelProspectService.isRouteComplete(pieceId))
-    {
-      return false;
-    }
-
-    const activeRound = occurrenceCoordinator.getRound(pieceId);
+    const activeRound =
+      occurrenceCoordinator.getRound(
+        pieceId
+      );
 
     if (activeRound)
     {
@@ -237,9 +246,64 @@ async refillPiece(
     }
 
     const queuedCount =
-      occurrenceService.getPieceDisplayableCount(pieceId);
+      occurrenceService.getPieceDisplayableCount(
+        pieceId
+      );
 
-    if (queuedCount >= PIECE_OCCURRENCE_LIMIT)
+    if (
+      queuedCount >=
+      PIECE_OCCURRENCE_LIMIT
+    )
+    {
+      return false;
+    }
+
+    const stationaryProspect =
+      stationaryTimeProspectService
+        .getProspect(
+          pieceId
+        );
+
+    if (
+      stationaryProspect &&
+      !stationaryProspect.complete
+    )
+    {
+      const cursor =
+        stationaryTimeProspectService
+          .getStorageCursor(
+            pieceId
+          );
+
+      if (
+        cursor === undefined ||
+        cursor >=
+          stationaryProspect.targetTime
+      )
+      {
+        return false;
+      }
+
+      await hostEventBroker.requestModule(
+        'regions',
+        'Regions.ContinueProgressTime',
+        {
+          pieceId,
+          startTime:
+            cursor,
+          targetTime:
+            stationaryProspect.targetTime,
+        }
+      );
+
+      return true;
+    }
+
+    if (
+      travelProspectService.isRouteComplete(
+        pieceId
+      )
+    )
     {
       return false;
     }
@@ -333,6 +397,7 @@ async refillPiece(
     occurrenceService.clear();
     occurrenceCoordinator.clear();
     travelProspectService.clear();
+    stationaryTimeProspectService.clear();
   }
 
   async progressOccurrences(
@@ -375,6 +440,7 @@ async refillPiece(
     occurrenceService.clear();
     occurrenceCoordinator.clear();
     travelProspectService.clear();
+    stationaryTimeProspectService.clear();
   }
 
   async processSilent(): Promise<boolean>

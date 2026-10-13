@@ -2,6 +2,7 @@ import type { HostEventMessage } from '../../events/HostMessage';
 import type { OverlayEventHandler } from '../OverlayDefinition';
 import { occurrenceCoordinator } from './OccurrenceCoordinator';
 import { travelProspectService } from '../../simulation/TravelProspectService';
+import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 
 function handleTravelLegProspected(
   message: HostEventMessage
@@ -63,9 +64,63 @@ function handleTravelLegProspected(
   occurrenceCoordinator.beginRound(payload.pieceId);
 }
 
+function handleTimeProspected(
+  message: HostEventMessage
+): void
+{
+  const payload =
+    message.payload as
+      | {
+          pieceId?: string;
+          startTime?: number;
+          endTime?: number;
+        }
+      | undefined;
+
+  if (
+    !payload?.pieceId ||
+    typeof payload.startTime !==
+      'number' ||
+    typeof payload.endTime !==
+      'number'
+  )
+  {
+    return;
+  }
+
+  const existing =
+    stationaryTimeProspectService.getProspect(
+      payload.pieceId
+    );
+
+  if (!existing)
+  {
+    stationaryTimeProspectService.begin(
+      payload.pieceId,
+      payload.startTime,
+      payload.endTime
+    );
+  }
+
+  occurrenceCoordinator
+    .setProspectStationaryTime(
+      payload.pieceId,
+      existing?.targetTime ??
+        payload.endTime
+    );
+
+  occurrenceCoordinator.beginRound(
+    payload.pieceId
+  );
+}
+
 export const occurrenceEventHandlers: OverlayEventHandler[] = [
   {
     type: 'Regions.TravelLegProspected',
     handle: handleTravelLegProspected,
+  },
+  {
+    type: 'Regions.TimeProspected',
+    handle: handleTimeProspected,
   },
 ];
