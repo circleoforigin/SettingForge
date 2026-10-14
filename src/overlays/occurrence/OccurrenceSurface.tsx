@@ -10,7 +10,7 @@ import {
 import { occurrenceService } from './OccurrenceService';
 import { occurrenceProcessor } from './OccurrenceProcessor';
 import {
-  formatSimulationDate,
+  formatSimulationMonthDay,
   formatSimulationTimeToMinute,
 } from '../../simulation/SimCalendar';
 import type { SimClockOverlayController } from '../simClock/SimClockOverlay';
@@ -239,30 +239,57 @@ export function OccurrenceSurface({
                     </div>
 
                     <div
-                      className={[
-                        'occurrence-summary',
-                        expanded
-                          ? 'expanded'
-                          : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    >
-                      <span>
-                        {formatSimulationDate(
-                            occurrence.simulationTime,
-                            simClock.activeEra
-                        )}
-                        {' '}
-                        {formatSimulationTimeToMinute(
-                            occurrence.simulationTime,
-                            simClock.activeEra
-                        )}
-                        {' - '}
-                        {occurrence.description ??
-                          ''}
-                      </span>
-                    </div>
+  className={[
+    'occurrence-summary',
+    expanded
+      ? 'expanded'
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ')}
+>
+  <span
+    className="occurrence-description"
+    role="button"
+    tabIndex={0}
+    aria-expanded={expanded}
+    onClick={() =>
+      toggleExpanded(
+        occurrence.id
+      )
+    }
+    onKeyDown={(event) =>
+    {
+      if (
+        event.key !== 'Enter' &&
+        event.key !== ' '
+      )
+      {
+        return;
+      }
+
+      event.preventDefault();
+
+      toggleExpanded(
+        occurrence.id
+      );
+    }}
+  >
+    <strong className="occurrence-timestamp">
+      {formatSimulationMonthDay(
+        occurrence.simulationTime,
+        simClock.activeEra
+      )}
+      {', '}
+      {formatSimulationTimeToMinute(
+        occurrence.simulationTime,
+        simClock.activeEra
+      )}
+    </strong>
+    {' — '}
+    {occurrence.description ?? ''}
+  </span>
+</div>
 
                     <div className="occurrence-actions">
                       <button
@@ -291,24 +318,7 @@ export function OccurrenceSurface({
                         </button>
                       )}
                     </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="occurrence-expand"
-                    aria-label={
-                      expanded
-                        ? 'Collapse occurrence'
-                        : 'Expand occurrence'
-                    }
-                    onClick={() =>
-                      toggleExpanded(
-                        occurrence.id
-                      )
-                    }
-                  >
-                    {expanded ? '▲' : '▼'}
-                  </button>
+                  </div>                  
                 </div>
               );
             }

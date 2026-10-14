@@ -1486,18 +1486,18 @@
 }
 
 .occurrence-entry-main {
-  min-height: 42px;
+  min-height: 30px;
 
   display: grid;
   grid-template-columns:
-    38px
+    30px
     minmax(0, 1fr)
     112px;
 
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 
-  padding: 4px 8px 14px;
+  padding: 3px 8px;
 }
 
 .occurrence-type {
@@ -1505,39 +1505,40 @@
   align-items: center;
   justify-content: center;
 
-  font-size: 24px;
+  font-size: 18px;
   font-weight: 700;
 }
 
 .occurrence-summary {
   min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
-.occurrence-summary.expanded span {
-  overflow: visible;
-  white-space: normal;
-  text-overflow: clip;
-  line-height: 1.35;
-}
+.occurrence-description {
+  display: block;
 
-.occurrence-summary strong,
-.occurrence-summary span {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
 
-.occurrence-summary strong {
-  font-size: 12px;
-}
-
-.occurrence-summary span {
   color: #aeb0b6;
+
   font-size: 11px;
+  line-height: 1.25;
+
+  cursor: pointer;
+}
+
+.occurrence-summary.expanded
+.occurrence-description {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.occurrence-timestamp {
+  color: #d8d8d8;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .occurrence-actions {
@@ -1548,8 +1549,7 @@
   gap: 4px;
 }
 
-.occurrence-actions button,
-.occurrence-expand {
+.occurrence-actions button {
   background: #34363c;
   color: #d8d8d8;
 
@@ -1568,24 +1568,9 @@
   font-size: 10px;
 }
 
-.occurrence-actions button:hover,
-.occurrence-expand:hover {
+.occurrence-actions button:hover {
   background: #414349;
   color: white;
-}
-
-.occurrence-expand {
-  position: absolute;
-  left: 50%;
-  bottom: 1px;
-  transform: translateX(-50%);
-
-  width: 28px;
-  height: 12px;
-  padding: 0;
-
-  font-size: 7px;
-  line-height: 1;
 }
 
 .occurrence-dialog-details {

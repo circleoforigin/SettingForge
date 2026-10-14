@@ -15,7 +15,7 @@ import { OverlayManager } from './overlays/OverlayManager';
 import type { OverlayMountId } from './overlays/OverlayPlacement';
 import { rulesetRegistry } from './rules/RulesetRegistry';
 import { registerRulesHostService } from './rules/RulesHostService';
-
+import { occurrenceService } from './overlays/occurrence/OccurrenceService';
 import {
   MessengerOverlay,
   useMessengerOverlay,
@@ -4108,12 +4108,12 @@ return (
 );
   })}
 
-  {occurrences.occurrences.length > 0 && (
-    <OccurrenceSurface
-      controller={occurrences}
-      simClock={simClock}
-    />
-  )}
+{occurrenceService.isPresentationActive() && (
+  <OccurrenceSurface
+    controller={occurrences}
+    simClock={simClock}
+  />
+)}
 </div>
 </main>
 

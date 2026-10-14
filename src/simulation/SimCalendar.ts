@@ -628,6 +628,23 @@ function ordinal(value: number): string
   }
 }
 
+export function formatSimulationMonthDay(
+  time: SimulationTime,
+  era: SimClockEra
+): string
+{
+  const calendar =
+    simulationTimeToCalendar(
+      time,
+      era
+    );
+
+  return (
+    `${calendar.monthName} ` +
+    `${calendar.day}`
+  );
+}
+
 export function formatSimulationDate(
   time: SimulationTime,
   era: SimClockEra

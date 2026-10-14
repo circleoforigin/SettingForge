@@ -117,13 +117,22 @@ export function useOccurrenceOverlay()
 
         setOccurrences(visibleOccurrences);
 
-        const refillPieceIds =
-          new Set([
-            ...travelProspectService
-              .getStorageCursorPieceIds(),
-            ...stationaryTimeProspectService
-              .getStorageCursorPieceIds(),
-          ]);
+const refillPieceIds =
+  new Set([
+    ...travelProspectService
+      .getProspects()
+      .map(
+        (prospect) =>
+          prospect.pieceId
+      ),
+
+    ...stationaryTimeProspectService
+      .getProspects()
+      .map(
+        (prospect) =>
+          prospect.pieceId
+      ),
+  ]);
 
         for (const pieceId of refillPieceIds)
         {

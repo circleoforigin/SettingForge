@@ -267,9 +267,7 @@ export class OccurrenceProcessor
       return false;
     }
 
-    simulationClockService.setTime(
-      targetTime
-    );
+    simulationClockService.setTime(targetTime);
 
     occurrenceCoordinator.clear();
     stationaryTimeProspectService.clear();
@@ -413,37 +411,32 @@ export class OccurrenceProcessor
 
     if (!stationaryOperationActive)
     {
-      const positions =
-        travelProspectService.resolvePositionsAt(simulationTime);
+        const positions = travelProspectService.resolvePositionsAt(simulationTime);
 
-for (const position of positions)
-{
-  const result =
-    await hostEventBroker.requestModule<{
-      routeComplete?: boolean;
-    }>(
-      'regions',
-      'Regions.CommitTravelPosition',
-      {
-        pieceId: position.pieceId,
-        routeLegId:
-          position.routeLegId,
-        distanceFromLegStart:
-          position.distanceFromLegStart,
-      }
-    );
+        for (const position of positions)
+        {
+            const result =
+                await hostEventBroker.requestModule<{
+                    routeComplete?: boolean;
+                }>(
+                    'regions',
+                    'Regions.CommitTravelPosition',
+                    {
+                        pieceId: position.pieceId,
+                        routeLegId: position.routeLegId,
+                        distanceFromLegStart: position.distanceFromLegStart,
+                    }
+                );
 
-  if (result?.routeComplete)
-  {
-    travelProspectService
-      .markRouteComplete(
-        position.pieceId
-      );
-  }
-}
+                if (result?.routeComplete)
+                {
+                    travelProspectService.markRouteComplete(position.pieceId);
+                }
+            }
     }
 
     simulationClockService.setTime(simulationTime);
+    occurrenceService.expireGlobalThrough(simulationTime);
   }
 
   async handleOccurrence(
@@ -485,12 +478,12 @@ await this.commitThrough(target);
 occurrenceService.consumeVisible(count);
 
 if (
-  travelProspectService
-    .areAllRoutesComplete()
+  travelProspectService.areAllRoutesComplete() &&
+  occurrenceService.getVisibleOccurrences().length === 0 &&
+  occurrenceService.getCount() === 0
 )
 {
-  occurrenceService
-    .clearOperationOccurrences();
+  occurrenceService.clearOperationOccurrences();
 
   occurrenceCoordinator.clear();
   travelProspectService.clear();
