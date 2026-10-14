@@ -100,10 +100,20 @@ export function useOccurrenceOverlay()
           // requires presentation or interaction.
         }
 
-const visibleOccurrences =
-  occurrenceService.getVisibleNext(
-    maxQueued
-  );
+        if (
+          !occurrenceService
+            .isPresentationActive()
+        )
+        {
+          setOccurrences([]);
+
+          return;
+        }
+
+        const visibleOccurrences =
+          occurrenceService.getVisibleNext(
+            maxQueued
+          );
 
         setOccurrences(visibleOccurrences);
 

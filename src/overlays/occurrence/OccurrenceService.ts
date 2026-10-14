@@ -110,6 +110,22 @@ beginPresentation(
   this.presentationThroughTime =
     throughTime;
 
+console.log(
+  '[Occurrence Presentation]',
+  {
+    throughTime:
+      this.presentationThroughTime,
+    globalQueue:
+      this.globalQueue.map(
+        (occurrence) => ({
+          title: occurrence.title,
+          time:
+            occurrence.simulationTime,
+        })
+      ),
+  }
+);
+
   this.notify();
 }
 
@@ -313,6 +329,23 @@ fillVisible(
                 this.presentationThroughTime
             )
         );
+
+        console.log(
+  '[Occurrence Fill]',
+  {
+    presentationThroughTime:
+      this.presentationThroughTime,
+
+    candidates:
+      globalCandidates.map(
+        (occurrence) => ({
+          title: occurrence.title,
+          time:
+            occurrence.simulationTime,
+        })
+      ),
+  }
+);
 
       const queues: Occurrence[][] = [
         globalCandidates,

@@ -213,11 +213,19 @@ const requestProgressTime = (
     return;
   }
 
-  const startTime =
-    simulationClockService.getTime();
+  const startTime = simulationClockService.getTime();
 
-  const duration =
-    targetTime - startTime;
+  const duration = targetTime - startTime;
+
+  console.log(
+  '[SimClock Progress]',
+  {
+    committedTime,
+    startTime,
+    targetTime,
+    duration,
+  }
+);
 
   if (duration <= 0)
   {
