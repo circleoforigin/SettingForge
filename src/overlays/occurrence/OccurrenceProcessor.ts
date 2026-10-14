@@ -416,18 +416,31 @@ export class OccurrenceProcessor
       const positions =
         travelProspectService.resolvePositionsAt(simulationTime);
 
-      for (const position of positions)
+for (const position of positions)
+{
+  const result =
+    await hostEventBroker.requestModule<{
+      routeComplete?: boolean;
+    }>(
+      'regions',
+      'Regions.CommitTravelPosition',
       {
-        await hostEventBroker.requestModule(
-          'regions',
-          'Regions.CommitTravelPosition',
-          {
-            pieceId: position.pieceId,
-            routeLegId: position.routeLegId,
-            distanceFromLegStart: position.distanceFromLegStart,
-          }
-        );
+        pieceId: position.pieceId,
+        routeLegId:
+          position.routeLegId,
+        distanceFromLegStart:
+          position.distanceFromLegStart,
       }
+    );
+
+  if (result?.routeComplete)
+  {
+    travelProspectService
+      .markRouteComplete(
+        position.pieceId
+      );
+  }
+}
     }
 
     simulationClockService.setTime(simulationTime);
@@ -467,11 +480,25 @@ export class OccurrenceProcessor
 
     const target = visible[count - 1];
 
-    await this.commitThrough(target);
+await this.commitThrough(target);
 
-    occurrenceService.consumeVisible(count);
+occurrenceService.consumeVisible(count);
 
-    return true;
+if (
+  travelProspectService
+    .areAllRoutesComplete()
+)
+{
+  occurrenceService
+    .clearOperationOccurrences();
+
+  occurrenceCoordinator.clear();
+  travelProspectService.clear();
+
+  return true;
+}
+
+return true;
   }
 
   clearOccurrences(): void

@@ -19,10 +19,28 @@ function compareOccurrences(
   right: Occurrence
 ): number
 {
-  return (
+  const timeDifference =
     left.simulationTime -
-      right.simulationTime ||
-    left.id.localeCompare(right.id)
+    right.simulationTime;
+
+  if (timeDifference !== 0)
+  {
+    return timeDifference;
+  }
+
+  const leftIsFinish =
+    left.displayLabel === 'F';
+
+  const rightIsFinish =
+    right.displayLabel === 'F';
+
+  if (leftIsFinish !== rightIsFinish)
+  {
+    return leftIsFinish ? 1 : -1;
+  }
+
+  return left.id.localeCompare(
+    right.id
   );
 }
 
@@ -100,6 +118,18 @@ subscribe(listener: OccurrenceListener): () => void
   {
     this.listeners.delete(listener);
   };
+}
+
+addVisible(
+  occurrence: Occurrence
+): void
+{
+  insertOccurrence(
+    this.visibleOccurrences,
+    occurrence
+  );
+
+  this.notify();
 }
 
 beginPresentation(

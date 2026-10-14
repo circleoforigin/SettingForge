@@ -27,6 +27,10 @@ import { occurrenceProcessor } from '../occurrence/OccurrenceProcessor';
 import { occurrenceService } from '../occurrence/OccurrenceService';
 import { rebuildGlobalOccurrences } from '../../simulation/SimClockGlobalOccurrences';
 import { occurrenceCoordinator } from '../occurrence/OccurrenceCoordinator';
+import {
+  OccurrenceReactions,
+  type Occurrence,
+} from '@settingforge/module-sdk';
 
 type DateFormatField =
   | 'monthName'
@@ -233,10 +237,28 @@ const requestProgressTime = (
     return;
   }
 
-  stationaryTimeProspectService
-    .beginOperation(targetTime);
+  stationaryTimeProspectService.beginOperation(targetTime);
 
   occurrenceService.beginPresentation(targetTime);
+
+const progressCompleteOccurrence:
+  Occurrence = {
+    id: crypto.randomUUID(),
+    sourceModuleId: 'settingforge',
+    simulationTime: targetTime,
+    pieceId: null,
+    entityId: null,
+    sectorId: null,
+    type: 'almanac',
+    displayLabel: 'F',
+    title: 'Progress Complete',
+    description:
+      'The requested time progression is complete.',
+    reaction:
+      OccurrenceReactions.Notify,
+  };
+
+occurrenceService.addVisible(progressCompleteOccurrence);
 
   hostEventBroker.broadcast(
     'Simulation.TimeProspected',

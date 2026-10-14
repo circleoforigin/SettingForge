@@ -269,6 +269,31 @@ export class TravelProspectService
       pieceId
     );
   }
+
+areAllRoutesComplete(): boolean
+{
+  if (this.prospects.size === 0)
+  {
+    return false;
+  }
+
+  for (
+    const pieceId
+    of this.prospects.keys()
+  )
+  {
+    if (
+      !this.completedPieces.has(
+        pieceId
+      )
+    )
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
   
   getLatestCursor(
     pieceId: string
