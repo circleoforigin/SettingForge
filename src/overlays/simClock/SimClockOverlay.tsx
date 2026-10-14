@@ -141,25 +141,24 @@ export function useSimClockOverlay()
     ) ??
     settings.eras[0];
 
-  useEffect(() =>
+useEffect(() =>
+{
+  if (!activeEra)
   {
-    if (!activeEra)
-    {
-      return;
-    }
+    return;
+  }
 
-    rebuildGlobalOccurrences(
-      committedTime,
-      {
-        markers: settings.markers,
-        era: activeEra,
-      }
-    );
-  }, [
-    committedTime,
-    activeEra,
-    settings.markers,
-  ]);
+  rebuildGlobalOccurrences(
+    simulationClockService.getTime(),
+    {
+      markers: settings.markers,
+      era: activeEra,
+    }
+  );
+}, [
+  activeEra,
+  settings.markers,
+]);
 
   const updateActiveEra = (
     update: (

@@ -436,20 +436,25 @@ export class OccurrenceProcessor
     }
 
     simulationClockService.setTime(simulationTime);
-    occurrenceService.expireGlobalThrough(simulationTime);
   }
 
-  async handleOccurrence(
-    occurrence: Occurrence
-  ): Promise<void>
-  {
-    await this.commitThrough(occurrence);
+async handleOccurrence(
+  occurrence: Occurrence
+): Promise<void>
+{
+  await this.commitThrough(
+    occurrence
+  );
 
-    occurrenceService.clearOperationOccurrences();
-    occurrenceCoordinator.clear();
-    travelProspectService.clear();
-    stationaryTimeProspectService.clear();
-  }
+  occurrenceService.expireGlobalThrough(
+    occurrence.simulationTime
+  );
+
+  occurrenceService.clearOperationOccurrences();
+  occurrenceCoordinator.clear();
+  travelProspectService.clear();
+  stationaryTimeProspectService.clear();
+}
 
   async progressOccurrences(
     maximum: number

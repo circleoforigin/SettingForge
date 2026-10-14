@@ -688,10 +688,21 @@ consumeVisible(
       count
     );
 
+  for (const occurrence of consumed)
+  {
+    if (occurrence.pieceId)
+    {
+      continue;
+    }
+
+    this.globalQueue.shift();
+  }
+
   this.notify();
 
   return consumed;
 }
+
   replaceGlobal(
     occurrences: readonly Occurrence[]
   ): void

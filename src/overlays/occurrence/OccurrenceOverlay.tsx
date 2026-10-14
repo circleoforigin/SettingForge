@@ -120,18 +120,9 @@ export function useOccurrenceOverlay()
 const refillPieceIds =
   new Set([
     ...travelProspectService
-      .getProspects()
-      .map(
-        (prospect) =>
-          prospect.pieceId
-      ),
-
+      .getStorageCursorPieceIds(),
     ...stationaryTimeProspectService
-      .getProspects()
-      .map(
-        (prospect) =>
-          prospect.pieceId
-      ),
+      .getStorageCursorPieceIds(),
   ]);
 
         for (const pieceId of refillPieceIds)
