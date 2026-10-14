@@ -443,6 +443,102 @@ areAllRoutesComplete(): boolean
     return positions;
   }
 
+  commitPosition(
+  pieceId: string,
+  simulationTime: number,
+  routeLegId: string,
+  distanceFromLegStart: number,
+  routeLegComplete: boolean,
+  remainingRouteLegId?: string
+): void
+{
+  const prospect =
+    this.prospects.get(pieceId);
+
+  if (!prospect)
+  {
+    return;
+  }
+
+  prospect.intervals =
+    prospect.intervals.filter(
+      (interval) =>
+        interval.endTime >
+          simulationTime
+    );
+
+  if (!routeLegComplete)
+  {
+    for (const interval of prospect.intervals)
+    {
+      if (
+        interval.routeLegId !==
+          routeLegId
+      )
+      {
+        continue;
+      }
+
+      if (remainingRouteLegId)
+      {
+        interval.routeLegId =
+          remainingRouteLegId;
+      }
+
+      interval.startDistanceFromLegStart =
+        Math.max(
+          0,
+          interval.startDistanceFromLegStart -
+            distanceFromLegStart
+        );
+
+      interval.endDistanceFromLegStart =
+        Math.max(
+          0,
+          interval.endDistanceFromLegStart -
+            distanceFromLegStart
+        );
+    }
+  }
+
+  const cursor =
+    this.storageCursors.get(pieceId);
+
+  if (!cursor)
+  {
+    return;
+  }
+
+  if (
+    cursor.simulationTime <=
+      simulationTime
+  )
+  {
+    this.storageCursors.delete(pieceId);
+
+    return;
+  }
+
+  if (
+    !routeLegComplete &&
+    cursor.routeLegId === routeLegId
+  )
+  {
+    if (remainingRouteLegId)
+    {
+      cursor.routeLegId =
+        remainingRouteLegId;
+    }
+
+    cursor.distanceFromLegStart =
+      Math.max(
+        0,
+        cursor.distanceFromLegStart -
+          distanceFromLegStart
+      );
+  }
+}
+
   clear(): void
   {
     this.prospects.clear();

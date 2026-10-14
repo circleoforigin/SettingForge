@@ -400,8 +400,7 @@ export class OccurrenceProcessor
   }
 
 private async commitThrough(
-  occurrence: Occurrence,
-  consumeRoute: boolean
+  occurrence: Occurrence
 ): Promise<void>
   {
     const simulationTime = occurrence.simulationTime;
@@ -416,19 +415,29 @@ private async commitThrough(
 
         for (const position of positions)
         {
-            const result =
-                await hostEventBroker.requestModule<{
-                    routeComplete?: boolean;
-                }>(
+const result =
+    await hostEventBroker.requestModule<{
+        routeComplete?: boolean;
+        routeLegComplete?: boolean;
+        remainingRouteLegId?: string;
+    }>(
                     'regions',
                     'Regions.CommitTravelPosition',
                   {
                     pieceId: position.pieceId,
                     routeLegId: position.routeLegId,
-                    distanceFromLegStart: position.distanceFromLegStart,
-                    consumeRoute,
+                    distanceFromLegStart: position.distanceFromLegStart
                     }
                 );
+
+                travelProspectService.commitPosition(
+  position.pieceId,
+  simulationTime,
+  position.routeLegId,
+  position.distanceFromLegStart,
+  result?.routeLegComplete === true,
+  result?.remainingRouteLegId
+);
 
                 if (result?.routeComplete)
                 {
@@ -445,8 +454,7 @@ async handleOccurrence(
 ): Promise<void>
 {
   await this.commitThrough(
-    occurrence,
-    true
+    occurrence
   );
 
   occurrenceService.expireGlobalThrough(occurrence.simulationTime);
@@ -480,11 +488,30 @@ async handleOccurrence(
     const target = visible[count - 1];
 
 await this.commitThrough(
-  target,
-  false
+  target
 );
 
 occurrenceService.consumeVisible(count);
+if (
+  stationaryTimeProspectService
+    .isOperationComplete() &&
+  stationaryTimeProspectService
+    .getTargetTime() !== undefined &&
+  simulationClockService.getTime() >=
+    stationaryTimeProspectService.getTargetTime()! &&
+  occurrenceService
+    .getVisibleOccurrences()
+    .length === 0 &&
+  occurrenceService.getCount() === 0
+)
+{
+  occurrenceService.clearOperationOccurrences();
+
+  occurrenceCoordinator.clear();
+  stationaryTimeProspectService.clear();
+
+  return true;
+}
 
 if (
   travelProspectService.areAllRoutesComplete() &&

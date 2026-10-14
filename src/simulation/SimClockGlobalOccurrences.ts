@@ -13,7 +13,7 @@ import type {
 } from './SimClockSettings';
 
 export const GLOBAL_OCCURRENCE_HORIZON_HOURS =
-  48;
+  100;
 
 export interface SimClockGlobalOccurrenceSettings
 {
@@ -21,7 +21,7 @@ export interface SimClockGlobalOccurrenceSettings
   era: SimClockEra;
 }
 
-function getHorizonEnd(
+export function getHorizonEnd(
   startTime: number,
   era: SimClockEra
 ): number
@@ -62,6 +62,50 @@ export function rebuildGlobalOccurrences(
     {
       startTime,
       endTime,
+    }
+  );
+}
+
+export function extendGlobalOccurrences(
+  currentTime: number,
+  settings: SimClockGlobalOccurrenceSettings
+): void
+{
+  const targetEnd =
+    getHorizonEnd(
+      currentTime,
+      settings.era
+    );
+
+  const globalQueue =
+    occurrenceService.getGlobalQueue();
+
+  const currentEnd =
+    globalQueue.length > 0
+      ? globalQueue[
+          globalQueue.length - 1
+        ].simulationTime
+      : currentTime;
+
+  if (currentEnd >= targetEnd)
+  {
+    return;
+  }
+
+  occurrenceService.addGlobal(
+    generateSimClockOccurrences(
+      currentEnd,
+      targetEnd,
+      settings.markers,
+      settings.era
+    )
+  );
+
+  hostEventBroker.broadcast(
+    'SimClock.BuildGlobal',
+    {
+      startTime: currentEnd,
+      endTime: targetEnd,
     }
   );
 }
