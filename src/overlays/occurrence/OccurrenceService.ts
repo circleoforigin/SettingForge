@@ -278,8 +278,7 @@ if (removed > 0)
   }
 
 fillVisible(
-  maximum: number,
-  throughTime?: number
+  maximum: number
 ): Occurrence[]
   {
     const limit =
@@ -308,9 +307,10 @@ fillVisible(
               occurrence.id
             ) &&
             (
-              throughTime === undefined ||
+              this.presentationThroughTime ===
+                undefined ||
               occurrence.simulationTime <=
-                throughTime
+                this.presentationThroughTime
             )
         );
 
@@ -375,13 +375,11 @@ fillVisible(
   }
 
   getVisibleNext(
-    maximum: number,
-    throughTime?: number
+    maximum: number
   ): Occurrence[]
   {
     return this.fillVisible(
-      maximum,
-      throughTime
+      maximum
     );
   }
 

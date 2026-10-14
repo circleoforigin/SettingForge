@@ -224,9 +224,10 @@ const requestProgressTime = (
     return;
   }
 
-  occurrenceService.beginPresentation(targetTime);
   stationaryTimeProspectService
     .beginOperation(targetTime);
+
+  occurrenceService.beginPresentation(targetTime);
 
   hostEventBroker.broadcast(
     'Simulation.TimeProspected',

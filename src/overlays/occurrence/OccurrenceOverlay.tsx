@@ -102,9 +102,7 @@ export function useOccurrenceOverlay()
 
 const visibleOccurrences =
   occurrenceService.getVisibleNext(
-    maxQueued,
-    occurrenceService
-      .getPresentationThroughTime()
+    maxQueued
   );
 
         setOccurrences(visibleOccurrences);
