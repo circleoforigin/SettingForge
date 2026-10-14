@@ -399,9 +399,10 @@ export class OccurrenceProcessor
     return true;
   }
 
-  private async commitThrough(
-    occurrence: Occurrence
-  ): Promise<void>
+private async commitThrough(
+  occurrence: Occurrence,
+  consumeRoute: boolean
+): Promise<void>
   {
     const simulationTime = occurrence.simulationTime;
 
@@ -421,10 +422,11 @@ export class OccurrenceProcessor
                 }>(
                     'regions',
                     'Regions.CommitTravelPosition',
-                    {
-                        pieceId: position.pieceId,
-                        routeLegId: position.routeLegId,
-                        distanceFromLegStart: position.distanceFromLegStart,
+                  {
+                    pieceId: position.pieceId,
+                    routeLegId: position.routeLegId,
+                    distanceFromLegStart: position.distanceFromLegStart,
+                    consumeRoute,
                     }
                 );
 
@@ -443,12 +445,11 @@ async handleOccurrence(
 ): Promise<void>
 {
   await this.commitThrough(
-    occurrence
+    occurrence,
+    true
   );
 
-  occurrenceService.expireGlobalThrough(
-    occurrence.simulationTime
-  );
+  occurrenceService.expireGlobalThrough(occurrence.simulationTime);
 
   occurrenceService.clearOperationOccurrences();
   occurrenceCoordinator.clear();
@@ -478,7 +479,10 @@ async handleOccurrence(
 
     const target = visible[count - 1];
 
-await this.commitThrough(target);
+await this.commitThrough(
+  target,
+  false
+);
 
 occurrenceService.consumeVisible(count);
 
