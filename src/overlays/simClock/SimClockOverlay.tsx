@@ -26,6 +26,7 @@ import { stationaryTimeProspectService } from '../../simulation/StationaryTimePr
 import { occurrenceProcessor } from '../occurrence/OccurrenceProcessor';
 import { occurrenceService } from '../occurrence/OccurrenceService';
 import { rebuildGlobalOccurrences } from '../../simulation/SimClockGlobalOccurrences';
+import { occurrenceCoordinator } from '../occurrence/OccurrenceCoordinator';
 
 type DateFormatField =
   | 'monthName'
@@ -398,18 +399,62 @@ const progressToMarkerAfter = (
 const requestTravel = () =>
 {
   travelProspectService.clear();
-  occurrenceService.beginPresentation();
 
   void hostEventBroker
-    .requestModule(
+    .requestModule<{
+      accepted?: boolean;
+      prospectedCount?: number;
+    }>(
       'regions',
       'Regions.Travel',
       {
-        startTime: simulationClockService.getTime(),
+        startTime:
+          simulationClockService.getTime(),
       }
     )
+    .then((result) =>
+    {
+      if (
+        !result?.accepted ||
+        !result.prospectedCount
+      )
+      {
+        occurrenceService
+          .clearOperationOccurrences();
+
+        occurrenceCoordinator.clear();
+        travelProspectService.clear();
+
+        return;
+      }
+
+      const throughTime =
+        travelProspectService
+          .getProspectedThroughTime();
+
+      if (throughTime === undefined)
+      {
+        occurrenceService
+          .clearOperationOccurrences();
+
+        occurrenceCoordinator.clear();
+        travelProspectService.clear();
+
+        return;
+      }
+
+      occurrenceService.beginPresentation(
+        throughTime
+      );
+    })
     .catch((error: unknown) =>
     {
+      occurrenceService
+        .clearOperationOccurrences();
+
+      occurrenceCoordinator.clear();
+      travelProspectService.clear();
+
       console.error(
         '[Simulation] Unable to begin Travel.',
         error

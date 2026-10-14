@@ -300,6 +300,37 @@ export class TravelProspectService
     };
   }
 
+  getProspectedThroughTime():
+  number | undefined
+{
+  let throughTime:
+    number | undefined;
+
+  for (
+    const prospect
+    of this.prospects.values()
+  )
+  {
+    for (
+      const interval
+      of prospect.intervals
+    )
+    {
+      if (
+        throughTime === undefined ||
+        interval.endTime >
+          throughTime
+      )
+      {
+        throughTime =
+          interval.endTime;
+      }
+    }
+  }
+
+  return throughTime;
+}
+
   resolvePositionsAt(
     simulationTime: number
   ): ResolvedTravelPosition[]

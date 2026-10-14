@@ -1,6 +1,7 @@
 import type { HostEventMessage } from '../../events/HostMessage';
 import type { OverlayEventHandler } from '../OverlayDefinition';
 import { occurrenceCoordinator } from './OccurrenceCoordinator';
+import { occurrenceService } from './OccurrenceService';
 import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 
@@ -25,7 +26,7 @@ function handleTravelLegProspected(
     return;
   }
 
-    if (
+  if (
     payload.routeLegId &&
     typeof payload.startTime === 'number' &&
     typeof payload.endTime === 'number' &&
@@ -47,6 +48,9 @@ function handleTravelLegProspected(
           payload.endDistanceFromLegStart,
       }
     );
+
+    occurrenceService
+        .setPresentationThroughTime(payload.endTime);
   }
 
   if (

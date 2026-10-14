@@ -129,6 +129,31 @@ console.log(
   this.notify();
 }
 
+setPresentationThroughTime(
+  throughTime: number
+): void
+{
+  if (!this.presentationActive)
+  {
+    return;
+  }
+
+  if (
+    this.presentationThroughTime !==
+      undefined &&
+    throughTime <=
+      this.presentationThroughTime
+  )
+  {
+    return;
+  }
+
+  this.presentationThroughTime =
+    throughTime;
+
+  this.notify();
+}
+
 getPresentationThroughTime():
   number | undefined
 {
