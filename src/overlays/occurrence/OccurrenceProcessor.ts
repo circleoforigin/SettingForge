@@ -241,21 +241,28 @@ export class OccurrenceProcessor
       return false;
     }
 
-    if (
-      occurrenceService.getCount() > 0 ||
-      occurrenceService
-        .getVisibleOccurrences()
-        .length > 0
-    )
-    {
-      return false;
-    }
-
     const targetTime =
       stationaryTimeProspectService
         .getTargetTime();
 
     if (targetTime === undefined)
+    {
+      return false;
+    }
+
+    const pendingBeforeTarget =
+      occurrenceService
+        .getVisibleOccurrences()
+        .some(
+          (occurrence) =>
+            occurrence.simulationTime <=
+              targetTime
+        );
+
+    if (
+      occurrenceService.getCount() > 0 ||
+      pendingBeforeTarget
+    )
     {
       return false;
     }

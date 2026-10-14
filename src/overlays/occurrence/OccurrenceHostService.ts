@@ -6,6 +6,7 @@ import { occurrenceCoordinator } from './OccurrenceCoordinator';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
 import { occurrenceProcessor } from './OccurrenceProcessor';
 import { occurrenceService } from './OccurrenceService';
+import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 
 type RegisterRequestHandler =
   (
@@ -88,7 +89,7 @@ export function registerOccurrenceHostService(
           }
         }
 
-         if (submission.pieceId === null)
+        if (submission.pieceId === null)
         {
           occurrenceService.addGlobal(
             occurrences.filter(
@@ -97,6 +98,32 @@ export function registerOccurrenceHostService(
                   'none'
             )
           );
+
+          const completed =
+            occurrences.some(
+              (occurrence) =>
+                occurrence.reaction ===
+                  'none'
+            );
+
+          if (
+            completed &&
+            message.sourceModuleId ===
+              'regions' &&
+            stationaryTimeProspectService
+              .isInitializing()
+          )
+          {
+            stationaryTimeProspectService
+              .finishInitialization(
+                stationaryTimeProspectService
+                  .getProspects()
+                  .length
+              );
+
+            occurrenceProcessor
+              .completeStationaryTimeIfReady();
+          }
         }
         else
         {

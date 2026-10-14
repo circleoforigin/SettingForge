@@ -82,6 +82,16 @@ export function useOccurrenceOverlay()
 
       try
       {
+        if (
+          !occurrenceService
+            .isPresentationActive()
+        )
+        {
+          setOccurrences([]);
+
+          return;
+        }
+
         while (
           await occurrenceProcessor.processSilent()
         )
@@ -90,10 +100,12 @@ export function useOccurrenceOverlay()
           // requires presentation or interaction.
         }
 
-        const visibleOccurrences =
-          occurrenceService.getVisibleNext(
-            maxQueued
-          );
+const visibleOccurrences =
+  occurrenceService.getVisibleNext(
+    maxQueued,
+    occurrenceService
+      .getPresentationThroughTime()
+  );
 
         setOccurrences(visibleOccurrences);
 
@@ -109,7 +121,7 @@ export function useOccurrenceOverlay()
         {
           await occurrenceProcessor.refillPiece(pieceId);
         }
-        
+
         occurrenceProcessor.completeStationaryTimeIfReady();
       }
       finally

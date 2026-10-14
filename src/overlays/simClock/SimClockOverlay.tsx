@@ -224,6 +224,7 @@ const requestProgressTime = (
     return;
   }
 
+  occurrenceService.beginPresentation(targetTime);
   stationaryTimeProspectService
     .beginOperation(targetTime);
 
@@ -388,6 +389,7 @@ const progressToMarkerAfter = (
 const requestTravel = () =>
 {
   travelProspectService.clear();
+  occurrenceService.beginPresentation();
 
   void hostEventBroker
     .requestModule(

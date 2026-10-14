@@ -89,6 +89,8 @@ private readonly globalQueue: Occurrence[] = [];
 private readonly pieceQueues = new Map<string, Occurrence[]>();
 private readonly visibleOccurrences: Occurrence[] = [];
 private readonly listeners = new Set<OccurrenceListener>();
+private presentationActive = false;
+private presentationThroughTime: number | undefined;
 
 subscribe(listener: OccurrenceListener): () => void
 {
@@ -98,6 +100,28 @@ subscribe(listener: OccurrenceListener): () => void
   {
     this.listeners.delete(listener);
   };
+}
+
+beginPresentation(
+  throughTime?: number
+): void
+{
+  this.presentationActive = true;
+  this.presentationThroughTime =
+    throughTime;
+
+  this.notify();
+}
+
+getPresentationThroughTime():
+  number | undefined
+{
+  return this.presentationThroughTime;
+}
+
+isPresentationActive(): boolean
+{
+  return this.presentationActive;
 }
 
 private notify(): void
@@ -253,7 +277,10 @@ if (removed > 0)
     return this.getNext(1)[0] ?? null;
   }
 
-   fillVisible(maximum: number): Occurrence[]
+fillVisible(
+  maximum: number,
+  throughTime?: number
+): Occurrence[]
   {
     const limit =
       Math.max(
@@ -279,6 +306,11 @@ if (removed > 0)
           (occurrence) =>
             !visibleIds.has(
               occurrence.id
+            ) &&
+            (
+              throughTime === undefined ||
+              occurrence.simulationTime <=
+                throughTime
             )
         );
 
@@ -342,21 +374,30 @@ if (removed > 0)
     );
   }
 
-  getVisibleNext(maximum: number): Occurrence[]
+  getVisibleNext(
+    maximum: number,
+    throughTime?: number
+  ): Occurrence[]
   {
-    return this.fillVisible(maximum);
+    return this.fillVisible(
+      maximum,
+      throughTime
+    );
   }
 
   clearOperationOccurrences(): void
   {
-    const hadOccurrences =
+    const changed =
+      this.presentationActive ||
       this.pieceQueues.size > 0 ||
       this.visibleOccurrences.length > 0;
 
+    this.presentationActive = false;
+    this.presentationThroughTime = undefined;
     this.pieceQueues.clear();
     this.visibleOccurrences.length = 0;
 
-    if (hadOccurrences)
+    if (changed)
     {
       this.notify();
     }
