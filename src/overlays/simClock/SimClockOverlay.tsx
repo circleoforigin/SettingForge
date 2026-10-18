@@ -23,7 +23,7 @@ import {
 } from '../../simulation/SimCalendar';
 import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
-import { occurrenceProcessor } from '../occurrence/OccurrenceProcessor';
+
 import { occurrenceService } from '../occurrence/OccurrenceService';
 import {
   extendGlobalOccurrences,

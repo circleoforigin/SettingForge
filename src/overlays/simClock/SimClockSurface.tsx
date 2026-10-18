@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { occurrenceService } from '../occurrence/OccurrenceService';
 import type { OverlaySurfaceProps } from '../OverlayDefinition';
 import { SimClockValueControl } from './SimClockValueControl';
 import type { SimClockOverlayController } from './SimClockOverlay';
@@ -25,6 +26,29 @@ export function SimClockSurface({
 {
   const [expanded, setExpanded] =
     useState(false);
+
+  const [
+    occurrenceActive,
+    setOccurrenceActive,
+  ] = useState(
+    occurrenceService.isPresentationActive()
+  );
+
+  useEffect(() =>
+  {
+    return occurrenceService.subscribe(() =>
+    {
+      const active =
+        occurrenceService.isPresentationActive();
+
+      setOccurrenceActive(active);
+
+      if (active)
+      {
+        setExpanded(false);
+      }
+    });
+  }, []);
 
   const [progressPresetIndex, setProgressPresetIndex] =
     useState(0);
@@ -127,12 +151,18 @@ export function SimClockSurface({
       className="sim-clock-surface"
       data-mount={mountId}
     >
-      {!expanded && (
+      {(!expanded || occurrenceActive) && (
         <button
           type="button"
           className="sim-clock-summary"
+          disabled={occurrenceActive}
           onClick={() =>
           {
+            if (occurrenceActive)
+            {
+              return;
+            }
+
             controller.setPendingTime(
               controller.committedTime
             );
@@ -152,7 +182,7 @@ export function SimClockSurface({
         </button>
       )}
 
-      {expanded && (
+      {expanded && !occurrenceActive && (
         <>
           <div className="sim-clock-progression">
             <div className="sim-clock-progression-column">

@@ -1526,6 +1526,8 @@
   line-height: 1.25;
 
   cursor: pointer;
+  
+  font-weight: 600;
 }
 
 .occurrence-summary.expanded
@@ -1533,6 +1535,7 @@
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
+  
 }
 
 .occurrence-timestamp {

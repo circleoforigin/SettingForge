@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
 import type { Occurrence } from '@settingforge/module-sdk';
 import { occurrenceService } from './OccurrenceService';
+import { hostEventBroker } from '../../events/HostEventBroker';
 import { occurrenceProcessor } from './OccurrenceProcessor';
 import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
+
+export interface OccurrencePieceAppearance
+{
+  fillColor: string;
+  borderColor: string;
+}
 
 export const OCCURRENCE_MAX_QUEUED_OPTIONS = [
   1,
@@ -22,6 +29,9 @@ export function useOccurrenceOverlay()
   const [progressCount, setProgressCountState] = useState(1);
 
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
+
+  const [pieceAppearances, setPieceAppearances] =
+    useState<Record<string, OccurrencePieceAppearance>>({});
 
   const setMaxQueued = (
     maximum: number
@@ -154,12 +164,84 @@ const refillPieceIds =
     );
   }, [maxQueued]);
 
+    useEffect(() =>
+  {
+    let cancelled = false;
+
+    const pieceIds = [
+      ...new Set(
+        occurrences
+          .map((occurrence) => occurrence.pieceId)
+          .filter((pieceId): pieceId is string =>
+            typeof pieceId === 'string'
+          )
+      ),
+    ];
+
+    if (pieceIds.length === 0)
+    {
+      setPieceAppearances({});
+      return;
+    }
+
+    const loadAppearances = async () =>
+    {
+      const results = await Promise.allSettled(
+        pieceIds.map(async (pieceId) =>
+        {
+          const appearance =
+            await hostEventBroker.requestModule<
+              OccurrencePieceAppearance
+            >(
+              'regions',
+              'Regions.GetPieceAppearance',
+              { pieceId }
+            );
+
+          return {
+            pieceId,
+            appearance,
+          };
+        })
+      );
+
+      if (cancelled)
+      {
+        return;
+      }
+
+      const appearances:
+        Record<string, OccurrencePieceAppearance> = {};
+
+      for (const result of results)
+      {
+        if (result.status !== 'fulfilled')
+        {
+          continue;
+        }
+
+        appearances[result.value.pieceId] =
+          result.value.appearance;
+      }
+
+      setPieceAppearances(appearances);
+    };
+
+    void loadAppearances();
+
+    return () =>
+    {
+      cancelled = true;
+    };
+  }, [occurrences]);
+
   return {
     maxQueued,
     setMaxQueued,
     progressCount,
     setProgressCount,
     occurrences,
+    pieceAppearances,
   };
 }
 

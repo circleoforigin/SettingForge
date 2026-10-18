@@ -558,6 +558,20 @@ export const srd521Ruleset:
 
       interactions: [
       {
+        target: 'Regions.Map',
+        schemaId: 'srd521.regions.map',
+        fields: [
+          {
+            id: 'countsTowardDailyTravel',
+            label: 'Counts Daily Travel',
+            type: 'boolean',
+            defaultValue: true,
+            description:
+              'Determines whether travel on this map consumes the daily travel allowance.',
+          },
+        ],
+      },
+      {
         target: 'Regions.Section',
         schemaId: 'srd521.regions.section',
         fields: [

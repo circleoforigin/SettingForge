@@ -3667,11 +3667,7 @@ async function removeModuleFromWorld(
           [
             'Times New Roman',
             '"Times New Roman", serif',
-          ],
-          [
-            'Courier New',
-            '"Courier New", monospace',
-          ],
+          ],          
         ].map(([label, font]) => (
           <button
             key={font}

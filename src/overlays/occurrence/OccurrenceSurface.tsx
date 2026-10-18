@@ -1,4 +1,8 @@
-import { useState } from 'react';
+import {
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react';
 import type {
   Occurrence,
   OccurrenceType,
@@ -37,6 +41,24 @@ export function OccurrenceSurface({
   simClock,
 }: OccurrenceSurfaceProps)
 {
+    const surfaceRef =
+    useRef<HTMLDivElement>(null);
+
+  const dragRef = useRef<{
+    pointerId: number;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
+
+  const [position, setPosition] =
+    useState<{
+      x: number;
+      y: number;
+    } | null>(null);
+
+  const [dragging, setDragging] =
+    useState(false);
+
   const [
     expandedOccurrenceIds,
     setExpandedOccurrenceIds,
@@ -129,9 +151,159 @@ export function OccurrenceSurface({
     );
   };
 
+    const startDrag = (
+    event: ReactPointerEvent<HTMLDivElement>
+  ) =>
+  {
+    if (event.button !== 0)
+    {
+      return;
+    }
+
+    if (
+      (event.target as HTMLElement).closest(
+        'button, input, select, label, a'
+      )
+    )
+    {
+      return;
+    }
+
+    const surface = surfaceRef.current;
+
+    if (!surface)
+    {
+      return;
+    }
+
+    const rect =
+      surface.getBoundingClientRect();
+
+    dragRef.current = {
+      pointerId: event.pointerId,
+      offsetX: event.clientX - rect.left,
+      offsetY: event.clientY - rect.top,
+    };
+
+    event.currentTarget.setPointerCapture(
+      event.pointerId
+    );
+
+    setPosition({
+      x: rect.left,
+      y: rect.top,
+    });
+
+    setDragging(true);
+
+    event.preventDefault();
+  };
+
+  const moveDrag = (
+    event: ReactPointerEvent<HTMLDivElement>
+  ) =>
+  {
+    const drag = dragRef.current;
+
+    if (
+      !drag ||
+      drag.pointerId !== event.pointerId
+    )
+    {
+      return;
+    }
+
+    const surface = surfaceRef.current;
+
+    if (!surface)
+    {
+      return;
+    }
+
+    const maxX = Math.max(
+      0,
+      window.innerWidth - surface.offsetWidth
+    );
+
+    const maxY = Math.max(
+      0,
+      window.innerHeight - surface.offsetHeight
+    );
+
+    setPosition({
+      x: Math.max(
+        0,
+        Math.min(
+          maxX,
+          event.clientX - drag.offsetX
+        )
+      ),
+      y: Math.max(
+        0,
+        Math.min(
+          maxY,
+          event.clientY - drag.offsetY
+        )
+      ),
+    });
+  };
+
+  const stopDrag = (
+    event: ReactPointerEvent<HTMLDivElement>
+  ) =>
+  {
+    if (
+      dragRef.current?.pointerId !==
+      event.pointerId
+    )
+    {
+      return;
+    }
+
+    dragRef.current = null;
+    setDragging(false);
+
+    if (
+      event.currentTarget.hasPointerCapture(
+        event.pointerId
+      )
+    )
+    {
+      event.currentTarget.releasePointerCapture(
+        event.pointerId
+      );
+    }
+  };
+
   return (
-    <div className="occurrence-surface">
-               <div className="occurrence-header">
+    <div
+      ref={surfaceRef}
+      className="occurrence-surface"
+      style={
+        position
+          ? {
+              position: 'fixed',
+              left: position.x,
+              top: position.y,
+              right: 'auto',
+              bottom: 'auto',
+              transform: 'none',
+            }
+          : undefined
+      }
+    >
+<div
+  className="occurrence-header"
+  onPointerDown={startDrag}
+  onPointerMove={moveDrag}
+  onPointerUp={stopDrag}
+  onPointerCancel={stopDrag}
+  style={{
+    cursor: dragging ? 'grabbing' : 'grab',
+    touchAction: 'none',
+    userSelect: 'none',
+  }}
+>
           <strong>Occurrences</strong>
 
           <div className="occurrence-header-controls">
@@ -211,22 +383,36 @@ export function OccurrenceSurface({
           {controller.occurrences.map(
             (occurrence) =>
             {
-                const expanded =
+              const expanded =
                 expandedOccurrenceIds.has(
                   occurrence.id
                 );
+
+              const appearance = occurrence.pieceId
+                ? controller.pieceAppearances[occurrence.pieceId]
+                : undefined;
 
               return (
                 <div
                   key={occurrence.id}
                   className={[
                     'occurrence-entry',
-                    expanded
-                      ? 'expanded'
-                      : '',
+                    expanded ? 'expanded' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
+style={appearance
+  ? {
+      backgroundImage:
+        `linear-gradient(
+          to right,
+          ${appearance.fillColor} 0%,
+          color-mix(in srgb, ${appearance.fillColor} 70%, transparent) 20%,
+          color-mix(in srgb, ${appearance.fillColor} 35%, transparent) 45%,
+          transparent 75%
+        )`,
+    }
+  : undefined}
                 >
                   <div className="occurrence-entry-main">
                     <div className="occurrence-type">
