@@ -16,17 +16,26 @@ const sdkRoot = process.env.SETTINGFORGE_SDK_DIR ||
 const modules = [
   {
     id: 'sacscape',
-    sourceRoot: process.env.SETTINGFORGE_SACSCAPE_DIR ||
+    sourceRoot:
+      process.env.SETTINGFORGE_SACSCAPE_DIR ||
       path.join(projectsRoot, 'Soundforge'),
   },
   {
     id: 'regions',
-    sourceRoot: process.env.SETTINGFORGE_REGIONS_DIR ||
+    sourceRoot:
+      process.env.SETTINGFORGE_REGIONS_DIR ||
       path.join(projectsRoot, 'Regions'),
   },
   {
+    id: 'journal',
+    sourceRoot:
+      process.env.SETTINGFORGE_JOURNAL_DIR ||
+      path.join(projectsRoot, 'Journal'),
+  },
+  {
     id: 'equipment',
-    sourceRoot: process.env.SETTINGFORGE_EQUIPMENT_DIR ||
+    sourceRoot:
+      process.env.SETTINGFORGE_EQUIPMENT_DIR ||
       path.join(projectsRoot, 'Equipment'),
   },
 ];
