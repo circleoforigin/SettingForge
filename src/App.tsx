@@ -1085,6 +1085,7 @@ if (!loadQueueRef.current) {
         );
 
         overlayManager.clear();
+        enableCoreOverlays();
         setActiveOverlays(overlayManager.getAllActive());
 
         const coreOverlay = overlayRegistry.get('sim-clock');
