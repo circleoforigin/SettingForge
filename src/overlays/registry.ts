@@ -3,6 +3,7 @@ import type { OverlayDefinition } from './OverlayDefinition';
 import { MessengerSurface } from './messenger/MessengerSurface';
 import { SimClockSurface } from './simClock/SimClockSurface';
 import { occurrenceEventHandlers } from './occurrence/OccurrenceEvents';
+import { EnvironmentSurface } from './environment/EnvironmentSurface';
 
 export const overlayRegistry =
   new OverlayRegistry();
@@ -39,6 +40,22 @@ const simClockOverlay: OverlayDefinition = {
   Surface: SimClockSurface,
 };
 
+const environmentOverlay: OverlayDefinition = {
+  id: 'environment',
+  name: 'Environment',
+  description:
+    'Persistent environmental conditions and seasonal controls.',
+  version: '0.1.0',
+  layout: 'positioned',
+  allowedMounts: [
+    'bottom-left',
+    'bottom-center',
+    'bottom-right',
+  ],
+  defaultMount: 'bottom-right',
+  Surface: EnvironmentSurface,
+};
+
 const occurrenceOverlay: OverlayDefinition = {
   id: 'occurrences',
   name: 'Occurrences',
@@ -55,6 +72,10 @@ overlayRegistry.register(
 
 overlayRegistry.register(
   simClockOverlay
+);
+
+overlayRegistry.register(
+  environmentOverlay
 );
 
 overlayRegistry.register(

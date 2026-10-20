@@ -112,6 +112,14 @@ interface SaveAllResult {
 type CloseTarget = 'world' | 'application';
 
 const TRANSIENT_NOTICE_DURATION_MS = 8000;
+const CORE_OVERLAY_IDS = new Set([
+  'sim-clock',
+  'environment',
+  'celestial',
+]);
+
+const isCoreOverlay = (overlayId: string): boolean =>
+  CORE_OVERLAY_IDS.has(overlayId);
 
 function App()
 {
@@ -164,6 +172,11 @@ function App()
     enabled: boolean
   ) =>
   {
+    if (isCoreOverlay(overlayId) && !enabled)
+    {
+      return;
+    }
+
     const overlay =
       overlayRegistry.get(overlayId);
 
@@ -197,6 +210,30 @@ function App()
       setWorldRuntimeDirty(true);
     }
   };
+
+  const enableCoreOverlays = () =>
+{
+  for (const overlayId of CORE_OVERLAY_IDS)
+  {
+    const overlay =
+      overlayRegistry.get(overlayId);
+
+    if (
+      !overlay ||
+      overlay.layout !== 'positioned' ||
+      overlayManager.isActive(overlayId)
+    )
+    {
+      continue;
+    }
+
+    overlayManager.enable(
+      overlay.id,
+      overlay.defaultMount,
+      overlay.allowedMounts
+    );
+  }
+};
 
 const setOverlayMount = (
   overlayId: string,
@@ -1049,6 +1086,17 @@ if (!loadQueueRef.current) {
 
         overlayManager.clear();
         setActiveOverlays(overlayManager.getAllActive());
+
+        const coreOverlay = overlayRegistry.get('sim-clock');
+
+        if (coreOverlay?.layout === 'positioned')
+        {
+          overlayManager.enable(
+            coreOverlay.id,
+            coreOverlay.defaultMount,
+            coreOverlay.allowedMounts
+          );
+        }
 
         void worldRepository
           .saveWorld(world)
@@ -2228,7 +2276,7 @@ async function handleLoadWorld(worldId: string) {
         overlay.allowedMounts
       );
     }
-
+    enableCoreOverlays();
     setActiveOverlays(overlayManager.getAllActive());
 
     setActiveWorld(world);
@@ -3740,6 +3788,8 @@ async function removeModuleFromWorld(
         </div>
 
         <div className="dropdown-menu overlay-submenu">
+          {!isCoreOverlay(overlay.id) && (
+          <>
           <button
             type="button"
             className="dropdown-item"
@@ -3759,8 +3809,9 @@ async function removeModuleFromWorld(
               : ''}
             Enabled
           </button>
-
           <div className="dropdown-separator" />
+          </>
+          )}
 
           <div className="overlay-menu-entry">
             <div className="dropdown-item overlay-menu-label">
