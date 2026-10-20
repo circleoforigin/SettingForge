@@ -483,6 +483,18 @@ const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
 const [activeWorld, setActiveWorld] = useState<World | null>(null);
 const [worldRuntimeDirty, setWorldRuntimeDirty] = useState(false);
 activeWorldRef.current = activeWorld;
+
+useEffect(() =>
+{
+  return environmentService.subscribe(() =>
+  {
+    if (activeWorldRef.current)
+    {
+      setWorldRuntimeDirty(true);
+    }
+  });
+}, []);
+
 const availableRulesets = rulesetRegistry.getAll();
 
 const handleSelectRuleset = async (
@@ -4136,6 +4148,14 @@ async function removeModuleFromWorld(
       return null;
     }
 
+    if (
+      overlay.id === 'messenger' ||
+      overlay.id === 'sim-clock'
+    )
+    {
+      return null;
+    }
+
     if (overlay.id === 'messenger')
 {
   return (
@@ -4182,11 +4202,29 @@ return (
 </div>
 </main>
 
-{!isOverlayEnabled('sim-clock') && (
-  <SimClockOverlay
-    controller={simClock}
-  />
-)}
+<MessengerOverlay
+  controller={messenger}
+  mountId={
+    activeOverlays.find(
+      (overlay) =>
+        overlay.overlayId === 'messenger' &&
+        expandedBottomOverlays[overlay.mountId] ===
+          'messenger'
+    )?.mountId
+  }
+/>
+
+<SimClockOverlay
+  controller={simClock}
+  mountId={
+    activeOverlays.find(
+      (overlay) =>
+        overlay.overlayId === 'sim-clock' &&
+        expandedBottomOverlays[overlay.mountId] ===
+          'sim-clock'
+    )?.mountId
+  }
+/>
 
 {showNewWorldDialog && (
   <div className="dialog-backdrop">

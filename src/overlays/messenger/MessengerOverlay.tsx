@@ -68,11 +68,13 @@ export function MessengerOverlay({
 
   return (
     <>
-      <MessengerSurface
-        mountId={mountId}
-        placement={placement}
-        tabs={tabs}
-      />
+{mountId && (
+  <MessengerSurface
+    mountId={mountId}
+    placement={placement}
+    tabs={tabs}
+  />
+)}
 
       {settingsOpen && (
         <div className="dialog-backdrop">
