@@ -1,5 +1,9 @@
 import type { SimClockSettings } from '../simulation/SimClockSettings';
 import type { OverlayMountId } from '../overlays/OverlayPlacement';
+import type {
+  EnvironmentSettings,
+  EnvironmentState,
+} from '../simulation/EnvironmentSettings';
 
 export interface WorldModuleReference {
   moduleId: string;
@@ -27,6 +31,9 @@ export interface WorldSimulationState
 {
   time: number;
   simClockSettings: SimClockSettings;
+
+  environmentSettings?: EnvironmentSettings;
+  environmentState?: EnvironmentState;
 }
 
 export interface World {

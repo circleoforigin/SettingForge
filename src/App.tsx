@@ -29,6 +29,7 @@ import { OccurrenceSurface } from './overlays/occurrence/OccurrenceSurface';
 import { simulationClockService } from './simulation/SimulationClockService';
 import { createDefaultSimClockSettings } from './simulation/SimClockSettings';
 import { registerOccurrenceHostService } from './overlays/occurrence/OccurrenceHostService';
+import { environmentService } from './simulation/EnvironmentService';
 import {
   registerCapabilityHostService,
   sendCapabilityCatalogTo,
@@ -248,15 +249,19 @@ const captureWorldRuntimeState = (
   return {
     ...world,
 
-    simulation: {
-      time:
-        simulationClockService.getTime(),
+simulation: {
+  time:
+    simulationClockService.getTime(),
 
-      simClockSettings:
-        structuredClone(
-          simClock.settings
-        ),
-    },
+  simClockSettings:
+    structuredClone(simClock.settings),
+
+  environmentSettings:
+    environmentService.getSettings(),
+
+  environmentState:
+    environmentService.getState(),
+},
   
 
 overlays:
@@ -1017,6 +1022,8 @@ if (!loadQueueRef.current) {
           return;
         }
 
+        environmentService.restoreWorldState();
+
         const world: World = {
           id: operation.worldId,
           name: operation.worldName,
@@ -1024,9 +1031,10 @@ if (!loadQueueRef.current) {
 
           simulation: {
             time: 0,
-            simClockSettings:
-              createDefaultSimClockSettings(),
-          },
+            simClockSettings: createDefaultSimClockSettings(),
+            environmentSettings: environmentService.getSettings(),
+            environmentState: environmentService.getState(),
+          },        
 
           overlays: [],
 
@@ -1981,7 +1989,9 @@ async function handleDeleteWorld() {
         createDefaultSimClockSettings()
       );
 
-      overlayManager.clear();
+      environmentService.restoreWorldState();
+
+      overlayManager.clear(); 
       setActiveOverlays(overlayManager.getAllActive());
 
       setShowCloseWorldDialog(false);
@@ -2150,8 +2160,12 @@ async function handleLoadWorld(worldId: string) {
 
     simClock.restoreWorldState(
       simulation?.time ?? 0,
-      simulation?.simClockSettings ??
-        createDefaultSimClockSettings()
+      simulation?.simClockSettings ?? createDefaultSimClockSettings()
+    );
+
+    environmentService.restoreWorldState(
+      simulation?.environmentSettings,
+      simulation?.environmentState
     );
 
     overlayManager.clear();
@@ -2728,10 +2742,13 @@ async function finishClose(
 
   setActiveWorld(null);
   setWorldRuntimeDirty(false);
+
   simClock.restoreWorldState(
     0,
     createDefaultSimClockSettings()
   );
+
+  environmentService.restoreWorldState();
 
   overlayManager.clear();
   setActiveOverlays(overlayManager.getAllActive());
