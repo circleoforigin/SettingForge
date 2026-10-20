@@ -20,6 +20,8 @@ export interface EnvironmentSettings
 
   precipitationTypes: EnvironmentConditionType[];
   stormTypes: EnvironmentConditionType[];
+
+  displayFormat: string;
 }
 
 export interface EnvironmentState
@@ -53,6 +55,8 @@ export interface EnvironmentState
 
 export const DEFAULT_ENVIRONMENT_SETTINGS:
   EnvironmentSettings = {
+  displayFormat:
+    '{season} · {temperature}° · {precipitation}',
   seasons: [
     {
       id: 'winter',

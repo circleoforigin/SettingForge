@@ -36,9 +36,12 @@ export class EnvironmentService
     state?: EnvironmentState
   ): void
   {
-    this.settings = structuredClone(
-      settings ?? createDefaultEnvironmentSettings()
-    );
+    this.settings = {
+        ...createDefaultEnvironmentSettings(),
+        ...(settings
+            ? structuredClone(settings)
+            : {}),
+    };
 
     this.state = structuredClone(
       state ?? createDefaultEnvironmentState()

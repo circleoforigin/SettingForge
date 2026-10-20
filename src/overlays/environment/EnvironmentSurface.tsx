@@ -1,17 +1,11 @@
-
 import {
   useEffect,
   useState,
 } from 'react';
 
-import type {
-  OverlaySurfaceProps,
-} from '../OverlayDefinition';
-
-import {
-  environmentService,
-} from '../../simulation/EnvironmentService';
-
+import type { OverlaySurfaceProps } from '../OverlayDefinition';
+import { formatEnvironment } from '../../simulation/EnvironmentFormatter';
+import { environmentService } from '../../simulation/EnvironmentService';
 import type {
   EnvironmentSettings,
   EnvironmentState,
@@ -70,9 +64,12 @@ export function EnvironmentSurface({
           className="environment-summary"
           onClick={() => setExpanded(true)}
         >
-          {selectedSeason?.name ?? 'Environment'}
-          {' · '}
-          {environment.temperature}°
+        {formatEnvironment(
+          settings.displayFormat ??
+            '{season} · {temperature}°',
+          environment,
+          settings
+        )}
         </button>
       ) : (
         <div className="environment-expanded">

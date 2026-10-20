@@ -4147,15 +4147,7 @@ async function removeModuleFromWorld(
     {
       return null;
     }
-
-    if (
-      overlay.id === 'messenger' ||
-      overlay.id === 'sim-clock'
-    )
-    {
-      return null;
-    }
-
+    
     if (overlay.id === 'messenger')
 {
   return (
@@ -4202,29 +4194,18 @@ return (
 </div>
 </main>
 
-<MessengerOverlay
-  controller={messenger}
-  mountId={
-    activeOverlays.find(
-      (overlay) =>
-        overlay.overlayId === 'messenger' &&
-        expandedBottomOverlays[overlay.mountId] ===
-          'messenger'
-    )?.mountId
-  }
-/>
 
-<SimClockOverlay
-  controller={simClock}
-  mountId={
-    activeOverlays.find(
-      (overlay) =>
-        overlay.overlayId === 'sim-clock' &&
-        expandedBottomOverlays[overlay.mountId] ===
-          'sim-clock'
-    )?.mountId
-  }
-/>
+{messenger.settingsOpen && (
+  <MessengerOverlay
+    controller={messenger}
+  />
+)}
+
+{simClock.settingsOpen && (
+  <SimClockOverlay
+    controller={simClock}
+  />
+)}
 
 {showNewWorldDialog && (
   <div className="dialog-backdrop">
