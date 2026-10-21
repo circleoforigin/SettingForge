@@ -169,17 +169,19 @@ useEffect(() =>
         </button>
 ) : (
     <div className="environment-expanded">
-        <button
-            type="button"
-            className="environment-context-tab"
-            onClick={() => setExpanded(false)}
-            title="Retract Environment"
-          >
-            World Name
-          </button>
+      <button
+        type="button"
+        className="environment-context-tab"
+        onClick={() => setExpanded(false)}
+        title="Retract Environment"
+      >
+        World Name
+      </button>
+
+      <div className="environment-controls-grid">
+        <div className="environment-primary-controls">
           <div className="environment-control-row">
             <label>
-              <span>Season:</span>
               <select
                 value={draft.seasonId}
                 onChange={event =>
@@ -298,28 +300,6 @@ useEffect(() =>
                 ))}
               </select>
             </label>
-
-            <label>
-              <span>Storm:</span>
-              <select
-                value={draft.storm.typeId}
-                onChange={event =>
-                  updateDraft(current => ({
-                    ...current,
-                    storm: {
-                      ...current.storm,
-                      typeId: event.target.value,
-                    },
-                  }))
-                }
-              >
-                {settings.stormTypes.map(type => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
 
           <div className="environment-wind-row">
@@ -383,15 +363,47 @@ useEffect(() =>
               ))}
             </select>
 
-            <button
-              type="button"
-              className="environment-commit"
-              disabled={!hasChanges}
-              onClick={commit}
-            >
-              Commit
-            </button>
-          </div>          
+          </div>
+                  </div>
+
+        <div className="environment-special-weather">
+          <strong>Special Weather</strong>
+
+          <div className="environment-special-weather-list">
+            {settings.stormTypes
+              .filter(type => type.id !== 'none')
+              .map(type => (
+                <label key={type.id}>
+                  <input
+                    type="checkbox"
+                    checked={draft.storm.typeId === type.id}
+                    onChange={event =>
+                      updateDraft(current => ({
+                        ...current,
+                        storm: {
+                          ...current.storm,
+                          typeId: event.target.checked
+                            ? type.id
+                            : 'none',
+                        },
+                      }))
+                    }
+                  />
+                  <span>{type.name}</span>
+                </label>
+              ))}
+               </div>
+
+          <button
+            type="button"
+            className="environment-commit"
+            disabled={!hasChanges}
+            onClick={commit}
+          >
+            Commit
+          </button>
+        </div>
+      </div>
         </div>        
       )}
     </div>

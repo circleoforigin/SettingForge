@@ -13,6 +13,12 @@ export interface RulesetRequirement
   description?: string;
 }
 
+export interface RulesetDataDefinition
+{
+  id: string;
+  data: unknown;
+}
+
 export interface RulesetDefinition
 {
   id: string;
@@ -23,6 +29,7 @@ export interface RulesetDefinition
   requirements: RulesetRequirement[];
   functions?: RulesetFunctionDefinition[];
   interactions?: RulesetInteractionDefinition[];
+  definitions?: RulesetDataDefinition[];
 }
 
 export interface RulesetEntityFact<T = unknown>

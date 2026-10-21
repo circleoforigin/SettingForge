@@ -35,6 +35,13 @@ function cloneRuleset(
       ruleset.interactions
         ? [...ruleset.interactions]
         : undefined,
+
+    definitions:
+      ruleset.definitions
+        ? structuredClone(
+            ruleset.definitions
+          )
+        : undefined,
   };
 }
 
@@ -98,6 +105,41 @@ export class RulesetRegistry {
     return ruleset
       ? cloneRuleset(ruleset)
       : undefined;
+  }
+
+  getDefinition<T = unknown>(
+    rulesetId: string,
+    version: string,
+    definitionId: string
+  ): T | undefined
+  {
+    const ruleset =
+      this.rulesets.get(
+        rulesetKey(
+          rulesetId,
+          version
+        )
+      );
+
+    if (!ruleset)
+    {
+      return undefined;
+    }
+
+    const definition =
+      ruleset.definitions?.find(
+        (item) =>
+          item.id === definitionId
+      );
+
+    if (!definition)
+    {
+      return undefined;
+    }
+
+    return structuredClone(
+      definition.data
+    ) as T;
   }
 
   getAll(): RulesetDefinition[] {
