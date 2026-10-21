@@ -118,7 +118,36 @@ const ENVIRONMENT_DEFINITIONS:
     visibility: [],
     cloudCover: [],
     precipitation: [],
-    windStrength: [],
+    windStrength: [
+      {
+        id: 'light',
+        name: 'Light',
+        minimumSpeed: 0,
+        maximumSpeed: 10,
+        generationWeight: 0,
+      },
+      {
+        id: 'moderate',
+        name: 'Moderate',
+        minimumSpeed: 11,
+        maximumSpeed: 20,
+        generationWeight: 0,
+      },
+      {
+        id: 'strong',
+        name: 'Strong',
+        minimumSpeed: 21,
+        maximumSpeed: 30,
+        generationWeight: 0,
+      },
+      {
+        id: 'severe',
+        name: 'Severe',
+        minimumSpeed: 31,
+        maximumSpeed: 50,
+        generationWeight: 0,
+      },
+    ],
     windDirections: [],
     specialWeather: [],
   };
