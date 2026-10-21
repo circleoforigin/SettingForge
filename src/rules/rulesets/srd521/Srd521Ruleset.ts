@@ -1,4 +1,6 @@
 import type { RulesetDefinition } from '../../RulesetDefinition';
+import type { EnvironmentDefinitions } from '../../../simulation/EnvironmentDefinitions';
+import { ENVIRONMENT_DEFINITION_ID } from '../../../simulation/EnvironmentDefinitions';
 
 interface TravelRulesetData
 {
@@ -78,6 +80,48 @@ interface TerrainDefinition extends AreaProperties
 }
 
 export const SRD_521_RULESET_ID = 'srd-5.2.1';
+
+const ENVIRONMENT_DEFINITIONS:
+  EnvironmentDefinitions = {
+    seasons: [
+      {
+        id: 'winter',
+        name: 'Winter',
+        lowTemperature: 0,
+        highTemperature: 40,
+      },
+      {
+        id: 'spring',
+        name: 'Spring',
+        lowTemperature: 40,
+        highTemperature: 60,
+      },
+      {
+        id: 'summer',
+        name: 'Summer',
+        lowTemperature: 60,
+        highTemperature: 85,
+      },
+      {
+        id: 'autumn',
+        name: 'Autumn',
+        lowTemperature: 40,
+        highTemperature: 60,
+      },
+    ],
+
+    temperature: {
+      unit: 'fahrenheit',
+      rainSnowThreshold: 30,
+    },
+
+    visibility: [],
+    cloudCover: [],
+    precipitation: [],
+    windStrength: [],
+    windDirections: [],
+    specialWeather: [],
+  };
 
 const TERRAIN_DEFINITIONS:
   Record<string, TerrainDefinition> = {
@@ -474,7 +518,13 @@ export const srd521Ruleset:
     name: 'SRD 5.2.1',
     version: SRD_521_RULESET_VERSION,
     description: 'SettingForge rules implementation based on SRD 5.2.1.',
-    requirements: [],    
+    requirements: [],
+    definitions: [
+      {
+        id: ENVIRONMENT_DEFINITION_ID,
+        data: ENVIRONMENT_DEFINITIONS,
+      },
+    ],    
     functions: [
 {
   id: 'TravelTime',
