@@ -631,6 +631,159 @@
 }
 
 
+/* ---------- ENVIRONMENT CONTROLS ---------- */
+
+.environment-expanded {
+  gap: 8px;
+}
+
+.environment-context-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.environment-context {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+
+  background: #34363c;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.environment-close {
+  flex-shrink: 0;
+  padding: 3px 8px;
+
+  background: #34363c;
+  color: #d8d8d8;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.environment-control-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.environment-control-row label,
+.environment-wind-row label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.environment-control-row label > span,
+.environment-wind-row label > span {
+  flex-shrink: 0;
+}
+
+.environment-control-row select,
+.environment-control-row input,
+.environment-wind-row select {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  padding: 4px 5px;
+
+  background: #34363c;
+  color: #d8d8d8;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  font: inherit;
+  font-size: 11px;
+}
+
+.environment-control-row input[type='number'] {
+  max-width: 78px;
+}
+
+.environment-wind-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.environment-wind-row label {
+  flex: 1;
+}
+
+.environment-wind-row > select {
+  width: 65px;
+  flex-shrink: 0;
+}
+
+.environment-commit {
+  margin-left: auto;
+  padding: 5px 12px;
+
+  background: #50535b;
+  color: #ffffff;
+  border: 1px solid #666a73;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.environment-commit:hover:not(:disabled) {
+  background: #626671;
+}
+
+.environment-commit:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.environment-expanded {
+  position: relative;
+  padding-top: 12px;
+  margin-top: 22px;
+  border-radius: 0 0 6px 6px;
+}
+
+.environment-context-tab {
+  position: absolute;
+  bottom: 100%;
+  left: -1px;
+
+  box-sizing: border-box;
+  width: calc(100% + 1.5px);
+  height: 22px;
+
+  padding: 0 10px;
+
+  background: #2b2d31;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-bottom: 1px solid #45474e;
+  border-radius: 5px 5px 0 0;
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+
+  cursor: pointer;
+}
+
+.environment-context-tab:hover {
+  background: #3a3c41;
+  color: #ffffff;
+}
+
 /* ---------- SIMCLOCK ---------- */
 
 .sim-clock-surface {
