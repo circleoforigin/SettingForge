@@ -1018,6 +1018,138 @@
   width: 65px;
 }
 
+/* ---------- ENVIRONMENT SETTINGS ---------- */
+
+.environment-settings-dialog {
+  width: min(1000px, 94vw);
+  max-height: 85vh;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.environment-settings-content {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.environment-settings-section {
+  min-width: 0;
+  padding: 10px;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 5px;
+}
+
+.environment-settings-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 8px;
+}
+
+.environment-settings-section-header h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.environment-settings-section-header button {
+  min-width: 70px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.environment-settings-entry-list {
+  height: 160px;
+  min-height: 160px;
+
+  overflow-y: auto;
+
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  padding: 4px;
+}
+
+.environment-settings-entry {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 5px;
+
+  border: 1px solid transparent;
+  border-radius: 4px;
+
+  cursor: pointer;
+}
+
+.environment-settings-entry.selected {
+  background: rgba(122, 159, 208, 0.12);
+  border-color: #7a9fd0;
+}
+
+.environment-settings-entry input {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 24px;
+  font-size: 11px;
+}
+
+.environment-settings-entry input[type="text"] {
+  flex: 1 1 90px;
+  width: 90px;
+}
+
+.environment-settings-entry input[type="number"] {
+  flex: 0 1 55px;
+  width: 55px;
+}
+
+.environment-settings-entry label {
+  flex: 0 0 auto;
+
+  color: #b8bac0;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.environment-settings-temperature {
+  display: flex;
+  gap: 12px;
+  padding: 8px 4px;
+}
+
+.environment-settings-temperature label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  min-width: 0;
+  flex: 1;
+}
+
+.environment-settings-temperature input,
+.environment-settings-temperature select {
+  width: 100%;
+  box-sizing: border-box;
+  height: 24px;
+}
+
+@media (max-width: 750px) {
+  .environment-settings-content {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---------- SIMCLOCK ---------- */
 
 .sim-clock-surface {
