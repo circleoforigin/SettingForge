@@ -287,19 +287,12 @@ const captureWorldRuntimeState = (
     ...world,
 
 simulation: {
-  time:
-    simulationClockService.getTime(),
-
-  simClockSettings:
-    structuredClone(simClock.settings),
-
-  environmentSettings:
-    environmentService.getSettings(),
-
-  environmentState:
-    environmentService.getState(),
-},
-  
+  time: simulationClockService.getTime(),
+  simClockSettings: structuredClone(simClock.settings),
+  environmentSettings: environmentService.getSettings(),
+  environmentState: environmentService.getState(),
+  environmentDefinitionOverrides: environmentService.getDefinitionOverrides(),
+},  
 
 overlays:
   overlayRegistry

@@ -2,6 +2,7 @@ import type {
   EnvironmentSettings,
   EnvironmentState,
 } from './EnvironmentSettings';
+import type { EnvironmentDefinitions } from './EnvironmentDefinitions';
 
 export const ENVIRONMENT_FORMAT_FIELDS = [
   { value: 'season', label: 'Season', token: '{season}' },
@@ -23,36 +24,58 @@ export type EnvironmentFormatField =
 export function formatEnvironment(
   format: string,
   state: EnvironmentState,
-  settings: EnvironmentSettings
+  settings: EnvironmentSettings,
+  definitions?: EnvironmentDefinitions
 ): string
 {
   const season =
-    settings.seasons.find(
+    definitions?.seasons.find(
       item => item.id === state.seasonId
     )?.name ?? state.seasonId;
 
   const precipitation =
-    settings.precipitationTypes.find(
+    definitions?.precipitation.find(
       item => item.id === state.precipitation.typeId
     )?.name ?? state.precipitation.typeId;
 
   const storm =
-    settings.stormTypes.find(
+    definitions?.specialWeather.find(
       item => item.id === state.storm.typeId
     )?.name ?? state.storm.typeId;
+
+  const visibility =
+    definitions?.visibility.find(
+      item => item.id === state.visibility.typeId
+    )?.name ??
+    state.visibility.typeId ??
+    String(state.visibility.distance);
+
+  const cloudCover =
+    definitions?.cloudCover.find(
+      item => item.id === state.cloudCoverTypeId
+    )?.name ??
+    state.cloudCoverTypeId ??
+    String(state.cloudCover);
+
+  const windDirection =
+    definitions?.windDirections.find(
+      item => item.degrees === state.wind.direction
+    )?.name ??
+    String(state.wind.direction);
 
   const values: Record<EnvironmentFormatField, string> = {
     season,
     temperature: String(state.temperature),
-    visibility: String(state.visibility.distance),
+    visibility,
     fogIntensity: String(state.visibility.fogIntensity),
-    cloudCover: String(state.cloudCover),
+    cloudCover,
     precipitation,
-    precipitationIntensity: String(state.precipitation.intensity),
+    precipitationIntensity:
+      String(state.precipitation.intensity),
     storm,
     stormSeverity: String(state.storm.severity),
     windSpeed: String(state.wind.speed),
-    windDirection: String(state.wind.direction),
+    windDirection,
   };
 
   return ENVIRONMENT_FORMAT_FIELDS.reduce(

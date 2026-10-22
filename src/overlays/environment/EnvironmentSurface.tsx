@@ -1,62 +1,19 @@
-
 import {
   useEffect,
   useState,
 } from 'react';
-
-import type {
-  OverlaySurfaceProps,
-} from '../OverlayDefinition';
-
-import {
-  formatEnvironment,
-} from '../../simulation/EnvironmentFormatter';
-
-import {
-  environmentService,
-} from '../../simulation/EnvironmentService';
-
+import type { OverlaySurfaceProps } from '../OverlayDefinition';
+import { formatEnvironment } from '../../simulation/EnvironmentFormatter';
+import { environmentService } from '../../simulation/EnvironmentService';
 import type {
   EnvironmentSettings,
   EnvironmentState,
 } from '../../simulation/EnvironmentSettings';
-
-const VISIBILITY_OPTIONS = [
-  { label: 'Clear', distance: 10, fogIntensity: 0 },
-  { label: 'Light Fog', distance: 5, fogIntensity: 25 },
-  { label: 'Moderate Fog', distance: 2, fogIntensity: 50 },
-  { label: 'Dense Fog', distance: 0.5, fogIntensity: 75 },
-];
-
-const CLOUD_OPTIONS = [
-  { label: 'Clear', value: 0 },
-  { label: 'Partly Cloudy', value: 25 },
-  { label: 'Mostly Cloudy', value: 75 },
-  { label: 'Overcast', value: 100 },
-];
-
-const WIND_OPTIONS = [
-  { label: 'Calm', speed: 0 },
-  { label: 'Light', speed: 5 },
-  { label: 'Moderate', speed: 15 },
-  { label: 'Strong', speed: 30 },
-  { label: 'Severe', speed: 50 },
-];
-
-const WIND_DIRECTIONS = [
-  { label: 'N', value: 0 },
-  { label: 'NE', value: 45 },
-  { label: 'E', value: 90 },
-  { label: 'SE', value: 135 },
-  { label: 'S', value: 180 },
-  { label: 'SW', value: 225 },
-  { label: 'W', value: 270 },
-  { label: 'NW', value: 315 },
-];
+import type { EnvironmentDefinitions } from '../../simulation/EnvironmentDefinitions';
 
 function statesEqual(
-  a: EnvironmentState,
-  b: EnvironmentState
+  a: EnvironmentState | undefined,
+  b: EnvironmentState | undefined
 ): boolean
 {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -66,26 +23,28 @@ export function EnvironmentSurface({
   mountId = 'bottom-right',
 }: OverlaySurfaceProps)
 {
-  const [expanded, setExpanded] =
-    useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [definitions, setDefinitions] =
+    useState<EnvironmentDefinitions | undefined>(
+      () => environmentService.getDefinitions()
+    );
 
   const [settings, setSettings] =
     useState<EnvironmentSettings>(
       () => environmentService.getSettings()
     );
 
-  const [environment, setEnvironment] =
-    useState<EnvironmentState>(
-      () => environmentService.getState()
-    );
+const [environment, setEnvironment] =
+  useState<EnvironmentState | undefined>(
+    () => environmentService.getState()
+  );
 
-  const [draft, setDraft] =
-    useState<EnvironmentState>(
-      () => environmentService.getState()
-    );
+const [draft, setDraft] =
+  useState<EnvironmentState | undefined>(
+    () => environmentService.getState()
+  );
 
-  const [dirty, setDirty] =
-    useState(false);
+  const [dirty, setDirty] = useState(false);
 
 useEffect(() =>
 {
@@ -94,60 +53,78 @@ useEffect(() =>
     {
       setEnvironment(state);
       setSettings(nextSettings);
-
-      setDraft(current =>
-        statesEqual(current, environmentService.getState())
-          ? state
-          : current
-      );
+      setDefinitions(environmentService.getDefinitions());
+      setDraft(state);
+      setDirty(false);
     }
   );
 }, []);
 
-  const updateDraft = (
-    updater: (current: EnvironmentState) =>
-      EnvironmentState
-  ) =>
+const updateDraft = (
+  updater: (current: EnvironmentState) =>
+    EnvironmentState
+) =>
+{
+  setDraft(current =>
+    current ? updater(current) : current
+  );
+
+  if (draft)
   {
-    setDraft(updater);
     setDirty(true);
-  };
+  }
+};
 
   const hasChanges =
     dirty && !statesEqual(draft, environment);
 
-  const commit = () =>
+const commit = () =>
+{
+  if (!hasChanges || !draft)
   {
-    if (!hasChanges)
-    {
-      return;
-    }
+    return;
+  }
 
-    environmentService.setState(draft);
-    setDirty(false);
-  };
+  environmentService.setState(draft);
+  setDirty(false);
+};
 
-  const visibilityValue =
-    VISIBILITY_OPTIONS.findIndex(
-      option =>
-        option.distance === draft.visibility.distance &&
-        option.fogIntensity === draft.visibility.fogIntensity
-    );
+  const visibilityOptions = definitions?.visibility ?? [];
+  const visibilityValue = draft.visibility.typeId ?? '';
 
-  const cloudValue =
-    CLOUD_OPTIONS.findIndex(
-      option => option.value === draft.cloudCover
-    );
+  const cloudOptions = definitions?.cloudCover ?? [];
+  const cloudValue = draft.cloudCoverTypeId ?? '';
 
+  const windStrengths = definitions?.windStrength ?? [];
   const windValue =
-    WIND_OPTIONS.findIndex(
-      option => option.speed === draft.wind.speed
+    windStrengths.findIndex(
+      option =>
+        draft.wind.speed >= option.minimumSpeed &&
+        draft.wind.speed <= option.maximumSpeed
     );
+
+  const windDirections =
+    definitions?.windDirections ?? [];
 
   const directionValue =
-    WIND_DIRECTIONS.findIndex(
-      option => option.value === draft.wind.direction
+    windDirections.findIndex(
+      option =>
+        option.degrees === draft.wind.direction
     );
+
+    if (!environment || !draft)
+{
+  return (
+    <div
+      className="environment-surface"
+      data-mount={mountId}
+    >
+      <div className="environment-summary">
+        Environment unavailable
+      </div>
+    </div>
+  );
+}
 
   return (
     <div
@@ -160,12 +137,13 @@ useEffect(() =>
           className="environment-summary"
           onClick={() => setExpanded(true)}
         >
-          {formatEnvironment(
-            settings.displayFormat ??
-              '{season} · {temperature}°',
-            environment,
-            settings
-          )}
+{formatEnvironment(
+  settings.displayFormat ??
+    '{season} · {temperature}°',
+  environment,
+  settings,
+  definitions
+)}
         </button>
 ) : (
     <div className="environment-expanded">
@@ -191,7 +169,7 @@ useEffect(() =>
                   }))
                 }
               >
-                {settings.seasons.map(season => (
+                {definitions?.seasons.map(season => (
                   <option
                     key={season.id}
                     value={season.id}
@@ -221,60 +199,66 @@ useEffect(() =>
             <label>
               <span>Visibility:</span>
               <select
-                value={visibilityValue}
-                onChange={event =>
-                {
-                  const option =
-                    VISIBILITY_OPTIONS[Number(event.target.value)];
+  value={visibilityValue}
+  onChange={event =>
+  {
+    updateDraft(current => ({
+      ...current,
+      visibility: {
+        ...current.visibility,
+        typeId: event.target.value,
+      },
+    }));
+  }}
+>
+  {!visibilityOptions.some(
+    option => option.id === visibilityValue
+  ) && (
+    <option value={visibilityValue}>
+      {visibilityValue || 'Unspecified'}
+    </option>
+  )}
 
-                  if (!option) return;
-
-                  updateDraft(current => ({
-                    ...current,
-                    visibility: {
-                      distance: option.distance,
-                      fogIntensity: option.fogIntensity,
-                    },
-                  }));
-                }}
-              >
-                {visibilityValue === -1 && (
-                  <option value={-1}>Custom</option>
-                )}
-                {VISIBILITY_OPTIONS.map((option, index) => (
-                  <option key={index} value={index}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+  {visibilityOptions.map(option => (
+    <option
+      key={option.id}
+      value={option.id}
+    >
+      {option.name}
+    </option>
+  ))}
+</select>
             </label>
 
             <label>
               <span>Cloud Cover:</span>
               <select
-                value={cloudValue}
-                onChange={event =>
-                {
-                  const option =
-                    CLOUD_OPTIONS[Number(event.target.value)];
+  value={cloudValue}
+  onChange={event =>
+  {
+    updateDraft(current => ({
+      ...current,
+      cloudCoverTypeId: event.target.value,
+    }));
+  }}
+>
+  {!cloudOptions.some(
+    option => option.id === cloudValue
+  ) && (
+    <option value={cloudValue}>
+      {cloudValue || 'Unspecified'}
+    </option>
+  )}
 
-                  if (!option) return;
-
-                  updateDraft(current => ({
-                    ...current,
-                    cloudCover: option.value,
-                  }));
-                }}
-              >
-                {cloudValue === -1 && (
-                  <option value={-1}>Custom</option>
-                )}
-                {CLOUD_OPTIONS.map((option, index) => (
-                  <option key={index} value={index}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+  {cloudOptions.map(option => (
+    <option
+      key={option.id}
+      value={option.id}
+    >
+      {option.name}
+    </option>
+  ))}
+</select>
             </label>
           </div>
 
@@ -293,11 +277,11 @@ useEffect(() =>
                   }))
                 }
               >
-                {settings.precipitationTypes.map(type => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
+{definitions?.precipitation.map(type => (
+  <option key={type.id} value={type.id}>
+    {type.name}
+  </option>
+))}
               </select>
             </label>
           </div>
@@ -306,62 +290,70 @@ useEffect(() =>
             <label>
               <span>Wind:</span>
               <select
-                value={windValue}
-                onChange={event =>
-                {
-                  const option =
-                    WIND_OPTIONS[Number(event.target.value)];
+  value={windValue}
+  onChange={event =>
+  {
+    const option =
+      windStrengths[Number(event.target.value)];
 
-                  if (!option) return;
+    if (!option)
+    {
+      return;
+    }
 
-                  updateDraft(current => ({
-                    ...current,
-                    wind: {
-                      ...current.wind,
-                      speed: option.speed,
-                    },
-                  }));
-                }}
-              >
-                {windValue === -1 && (
-                  <option value={-1}>Custom</option>
-                )}
-                {WIND_OPTIONS.map((option, index) => (
-                  <option key={index} value={index}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+    updateDraft(current => ({
+      ...current,
+      wind: {
+        ...current.wind,
+        speed: option.minimumSpeed,
+      },
+    }));
+  }}
+>
+  {windValue === -1 && (
+    <option value={-1}>Custom</option>
+  )}
+
+  {windStrengths.map((option, index) => (
+    <option key={option.id} value={index}>
+      {option.name}
+    </option>
+  ))}
+</select>
             </label>
 
-            <select
-              aria-label="Wind Direction"
-              value={directionValue}
-              onChange={event =>
-              {
-                const option =
-                  WIND_DIRECTIONS[Number(event.target.value)];
+<select
+  aria-label="Wind Direction"
+  value={directionValue}
+  onChange={event =>
+  {
+    const option =
+      windDirections[Number(event.target.value)];
 
-                if (!option) return;
+    if (!option)
+    {
+      return;
+    }
 
-                updateDraft(current => ({
-                  ...current,
-                  wind: {
-                    ...current.wind,
-                    direction: option.value,
-                  },
-                }));
-              }}
-            >
-              {directionValue === -1 && (
-                <option value={-1}>Custom</option>
-              )}
-              {WIND_DIRECTIONS.map((option, index) => (
-                <option key={index} value={index}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+    updateDraft(current => ({
+      ...current,
+      wind: {
+        ...current.wind,
+        direction: option.degrees,
+      },
+    }));
+  }}
+>
+  {directionValue === -1 && (
+    <option value={-1}>Custom</option>
+  )}
+
+  {windDirections.map((option, index) => (
+    <option key={option.id} value={index}>
+      {option.name}
+    </option>
+  ))}
+</select>
 
           </div>
                   </div>
@@ -370,8 +362,7 @@ useEffect(() =>
           <strong>Special Weather</strong>
 
           <div className="environment-special-weather-list">
-            {settings.stormTypes
-              .filter(type => type.id !== 'none')
+            {(definitions?.specialWeather ?? [])
               .map(type => (
                 <label key={type.id}>
                   <input

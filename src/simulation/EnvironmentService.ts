@@ -1,6 +1,4 @@
 import {
-  createDefaultEnvironmentSettings,
-  createDefaultEnvironmentState,
   type EnvironmentSettings,
   type EnvironmentState,
 } from './EnvironmentSettings';
@@ -10,16 +8,20 @@ import type {
   EnvironmentDefinitionOverrides,
 } from './EnvironmentDefinitions';
 import { resolveEffectiveEnvironmentDefinitions } from './EnvironmentDefinitionResolver';
+import { createInitialEnvironmentState } from './EnvironmentStateFactory';
 
 type EnvironmentListener = (
-  state: EnvironmentState,
+  state: EnvironmentState | undefined,
   settings: EnvironmentSettings
 ) => void;
 
 export class EnvironmentService
 {
-  private settings = createDefaultEnvironmentSettings();
-  private state = createDefaultEnvironmentState();
+  private settings: EnvironmentSettings = {
+    displayFormat: '',
+  };
+
+  private state: EnvironmentState | undefined;
   private definitions: EnvironmentDefinitions | undefined;
   private ruleset: WorldRulesetReference | undefined;
   private definitionOverrides: EnvironmentDefinitionOverrides = {};
@@ -44,8 +46,7 @@ export class EnvironmentService
     overrides: EnvironmentDefinitionOverrides
   ): void
   {
-    this.definitionOverrides =
-      structuredClone(overrides);
+    this.definitionOverrides = structuredClone(overrides);
 
     this.definitions =
       resolveEffectiveEnvironmentDefinitions(
@@ -65,14 +66,23 @@ export class EnvironmentService
       ? structuredClone(ruleset)
       : undefined;
 
-    this.definitionOverrides =
-      structuredClone(overrides ?? {});
+    this.definitionOverrides = structuredClone(overrides ?? {});
 
     this.definitions =
       resolveEffectiveEnvironmentDefinitions(
         this.ruleset,
         this.definitionOverrides
       );
+
+    if (!this.definitions)
+    {
+        this.state = undefined;
+    }
+
+    if (this.definitions && !this.state)
+    {
+        this.state = createInitialEnvironmentState(this.definitions);
+    }
 
     this.notify();
   }
@@ -82,29 +92,28 @@ export class EnvironmentService
     return structuredClone(this.settings);
   }
 
-  getState(): EnvironmentState
-  {
-    return structuredClone(this.state);
-  }
+getState(): EnvironmentState | undefined
+{
+  return this.state
+    ? structuredClone(this.state)
+    : undefined;
+}
 
-  restoreWorldState(
-    settings?: EnvironmentSettings,
-    state?: EnvironmentState
-  ): void
-  {
-    this.settings = {
-        ...createDefaultEnvironmentSettings(),
-        ...(settings
-            ? structuredClone(settings)
-            : {}),
-    };
+restoreWorldState(
+  settings?: EnvironmentSettings,
+  state?: EnvironmentState
+): void
+{
+  this.settings = structuredClone(
+    settings ?? { displayFormat: '' }
+  );
 
-    this.state = structuredClone(
-      state ?? createDefaultEnvironmentState()
-    );
+  this.state = state
+    ? structuredClone(state)
+    : undefined;
 
-    this.notify();
-  }
+  this.notify();
+}
 
   setSettings(settings: EnvironmentSettings): void
   {
