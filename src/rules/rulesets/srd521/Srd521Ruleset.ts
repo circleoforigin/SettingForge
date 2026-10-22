@@ -115,8 +115,41 @@ const ENVIRONMENT_DEFINITIONS:
       rainSnowThreshold: 30,
     },
 
-    visibility: [],
-    cloudCover: [],
+    visibility: [
+      {
+        id: 'clear',
+        name: 'Clear',
+        generationWeight: 0,
+      },
+      {
+        id: 'haze',
+        name: 'Haze',
+        generationWeight: 0,
+      },
+      {
+        id: 'fog',
+        name: 'Fog',
+        generationWeight: 0,
+      },
+    ],
+
+    cloudCover: [
+      {
+        id: 'clear',
+        name: 'Clear',
+        generationWeight: 0,
+      },
+      {
+        id: 'partly-cloudy',
+        name: 'Partly Cloudy',
+        generationWeight: 0,
+      },
+      {
+        id: 'overcast',
+        name: 'Overcast',
+        generationWeight: 0,
+      },
+    ],
     precipitation: [],
     windStrength: [
       {
@@ -148,7 +181,48 @@ const ENVIRONMENT_DEFINITIONS:
         generationWeight: 0,
       },
     ],
-    windDirections: [],
+    windDirections: [
+      {
+        id: 'north',
+        name: 'North',
+        degrees: 0,
+      },
+      {
+        id: 'northeast',
+        name: 'Northeast',
+        degrees: 45,
+      },
+      {
+        id: 'east',
+        name: 'East',
+        degrees: 90,
+      },
+      {
+        id: 'southeast',
+        name: 'Southeast',
+        degrees: 135,
+      },
+      {
+        id: 'south',
+        name: 'South',
+        degrees: 180,
+      },
+      {
+        id: 'southwest',
+        name: 'Southwest',
+        degrees: 225,
+      },
+      {
+        id: 'west',
+        name: 'West',
+        degrees: 270,
+      },
+      {
+        id: 'northwest',
+        name: 'Northwest',
+        degrees: 315,
+      },
+    ],
     specialWeather: [],
   };
 
