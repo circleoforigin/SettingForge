@@ -149,8 +149,8 @@ const directionValue =
           onClick={() => setExpanded(true)}
         >
 {formatEnvironment(
-  settings.displayFormat ??
-    '{season} · {temperature}°',
+  settings.displayFormat ||
+    '{season} · {temperature}',
   environment,
   settings,
   definitions

@@ -931,98 +931,13 @@
   font-size: 11px;  
 }
 
-.environment-settings-dialog {
-  width: min(900px, 90vw);
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.environment-settings-content {
-  overflow-y: auto;
-  min-height: 0;
-  display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.environment-settings-content section {
-  padding: 12px;
-  border: 1px solid var(--border-color, #555);
-  border-radius: 6px;
-}
-
-.environment-settings-content h3 {
-  margin-top: 0;
-}
-
-@media (max-width: 650px) {
-  .environment-settings-content {
-    grid-template-columns: 1fr;
-  }
-}
-
-.environment-settings-section {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.environment-settings-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.environment-settings-section-header h3 {
-  margin: 0;
-}
-
-.environment-settings-section-header button {
-  min-width: 78px;
-}
-
-.environment-settings-entry-list {
-  height: 160px;
-  min-height: 160px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 4px;
-}
-
-.environment-settings-entry {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.environment-settings-entry.selected {
-  border-color: #7a9fd0;
-  background: rgba(122, 159, 208, 0.12);
-}
-
-.environment-settings-entry input {
-  min-width: 0;
-}
-
-.environment-settings-entry input[type="number"] {
-  width: 65px;
-}
-
 /* ---------- ENVIRONMENT SETTINGS ---------- */
 
 .environment-settings-dialog {
-  width: min(1000px, 94vw);
-  max-height: 85vh;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 96vw;
+  max-height: 90vh;
 
   display: flex;
   flex-direction: column;
@@ -1030,64 +945,145 @@
 
 .environment-settings-content {
   display: grid;
-  grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, max-content);
+  grid-template-rows: auto auto auto;
 
-  gap: 12px;
+  gap: 8px;
+  align-items: start;
+  justify-content: start;
+
   min-height: 0;
-  overflow-y: auto;
+  overflow: auto;
 }
+
+/* Explicit positions, independent of JSX order */
+
+/* Row 1: Seasons | Visibility | Special Weather */
+
+.environment-settings-content > :nth-child(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.environment-settings-content > :nth-child(3) {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.environment-settings-content > :nth-child(7) {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+/* Row 2: Wind Strength | Cloud Cover */
+
+.environment-settings-content > :nth-child(6) {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.environment-settings-content > :nth-child(4) {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+/* Row 3: Temperature + Descriptive Tag | Precipitation */
+
+.environment-settings-content > :nth-child(2) {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.environment-settings-content > :nth-child(5) {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+/* Individual sections */
 
 .environment-settings-section {
+  box-sizing: border-box;
+  width: max-content;
   min-width: 0;
-  padding: 10px;
 
-  background: #2b2d31;
-  border: 1px solid #45474e;
-  border-radius: 5px;
+  padding: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
+
+/* Header aligns with row controls */
 
 .environment-settings-section-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 
-  gap: 8px;
+  height: 22px;
+  gap: 4px;
+  padding: 0 3px;
 }
 
 .environment-settings-section-header h3 {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 20px;
 }
 
 .environment-settings-section-header button {
-  min-width: 70px;
-  height: 24px;
+  height: 20px;
+  min-width: 52px;
+
+  padding: 0 5px;
+
+  font-size: 11px;
   cursor: pointer;
 }
 
-.environment-settings-entry-list {
-  height: 160px;
-  min-height: 160px;
+/* Exactly four visible rows */
 
-  overflow-y: auto;
+.environment-settings-entry-list {
+  box-sizing: border-box;
+
+  height: 106px;
+  min-height: 106px;
 
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 
-  padding: 4px;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+
+  padding: 2px 0;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 4px;
 }
 
+/* Individual entry */
+
 .environment-settings-entry {
+  box-sizing: border-box;
+
+  flex: 0 0 24px;
+  height: 24px;
+
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: flex-start;
+  gap: 3px;
 
-  padding: 5px;
+  padding: 1px 3px;
 
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 3px;
 
   cursor: pointer;
 }
@@ -1097,21 +1093,43 @@
   border-color: #7a9fd0;
 }
 
+/* Input controls */
+
 .environment-settings-entry input {
   box-sizing: border-box;
+
   min-width: 0;
-  height: 24px;
+  height: 20px;
+
+  padding: 0 3px;
+
   font-size: 11px;
 }
 
 .environment-settings-entry input[type="text"] {
-  flex: 1 1 90px;
-  width: 90px;
+  flex: 0 0 110px;
+  width: 110px;
 }
 
 .environment-settings-entry input[type="number"] {
-  flex: 0 1 55px;
-  width: 55px;
+  flex: 0 0 6ch;
+  width: 6ch;
+
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* Remove number spinners to preserve digit space */
+
+.environment-settings-entry
+input[type="number"]::-webkit-inner-spin-button,
+.environment-settings-entry
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .environment-settings-entry label {
@@ -1122,32 +1140,194 @@
   white-space: nowrap;
 }
 
+/* Compact Temperature controls */
+
+.environment-settings-temperature-section {
+  width: max-content;
+}
+
 .environment-settings-temperature {
   display: flex;
-  gap: 12px;
-  padding: 8px 4px;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 3px;
 }
 
 .environment-settings-temperature label {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 4px;
 
-  min-width: 0;
-  flex: 1;
+  font-size: 11px;
 }
 
+.environment-settings-temperature select {
+  width: 100px;
+  height: 22px;
+}
+
+.environment-settings-temperature input {
+  box-sizing: border-box;
+  width: 6ch;
+  height: 22px;
+  text-align: right;
+}
+
+/* Narrow displays scroll rather than stretch */
+
+@media (max-width: 800px) {
+  .environment-settings-content {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+.environment-settings-entry input,
 .environment-settings-temperature input,
 .environment-settings-temperature select {
-  width: 100%;
-  box-sizing: border-box;
-  height: 24px;
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font: inherit;
+  font-size: 11px;
 }
 
-@media (max-width: 750px) {
-  .environment-settings-content {
-    grid-template-columns: 1fr;
-  }
+.environment-settings-entry input:hover,
+.environment-settings-temperature input:hover,
+.environment-settings-temperature select:hover {
+  border-color: #666a73;
+}
+
+.environment-settings-entry input:focus,
+.environment-settings-temperature input:focus,
+.environment-settings-temperature select:focus {
+  background: #3c4048;
+  border-color: #7a9fd0;
+  outline: none;
+}
+
+.environment-settings-description-section {
+  width: 250px;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.environment-settings-description-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.environment-settings-description-controls input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 22px;
+
+  padding: 0 5px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font-size: 11px;
+}
+
+.environment-settings-description-controls select {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+
+  background: #34363c;
+  color: #d8d8d8;
+
+  border: 1px solid #45474e;
+  border-radius: 3px;
+
+  font-size: 11px;
+}
+
+.environment-settings-description-controls button {
+  height: 22px;
+  font-size: 11px;
+}
+
+.environment-settings-description-preview {
+  box-sizing: border-box;
+  height: 22px;
+  min-height: 22px;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 5px;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+
+  font-size: 11px;
+  text-align: center;
+}
+
+.environment-settings-description-preview > span:first-child {
+  color: #aeb0b6;
+}
+
+.environment-settings-temperature-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: max-content;
+  max-width: 100%;
+}
+
+.environment-settings-temperature-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 24px;
+}
+
+.environment-settings-temperature-heading h3 {
+  margin: 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.environment-settings-temperature-heading
+.environment-settings-temperature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+}
+
+.environment-settings-description-section {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+
+.environment-settings-temperature select {
+  width: 48px;
+  min-width: 48px;
+  height: 22px;
+}
+
+.environment-settings-temperature {
+  gap: 8px;
 }
 
 /* ---------- SIMCLOCK ---------- */

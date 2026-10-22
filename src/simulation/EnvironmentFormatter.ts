@@ -10,9 +10,7 @@ export const ENVIRONMENT_FORMAT_FIELDS = [
   { value: 'visibility', label: 'Visibility', token: '{visibility}' },
   { value: 'cloudCover', label: 'Cloud Cover', token: '{cloudCover}' },
   { value: 'precipitation', label: 'Precipitation', token: '{precipitation}' },
-  { value: 'precipitationIntensity', label: 'Precipitation Intensity', token: '{precipitationIntensity}' },
   { value: 'storm', label: 'Storm', token: '{storm}' },
-  { value: 'stormSeverity', label: 'Storm Severity', token: '{stormSeverity}' },
   { value: 'windSpeed', label: 'Wind Speed', token: '{windSpeed}' },
   { value: 'windDirection', label: 'Wind Direction', token: '{windDirection}' },
 ] as const;
@@ -62,14 +60,11 @@ const cloudCover =
 
   const values: Record<EnvironmentFormatField, string> = {
     season,
-    temperature: String(state.temperature),
+    temperature: `${state.temperature}°`,
     visibility,
     cloudCover,
     precipitation,
-    precipitationIntensity:
-      String(state.precipitation.intensity),
     storm,
-    stormSeverity: String(state.storm.severity),
     windSpeed: String(state.wind.speed),
     windDirection,
   };

@@ -9,10 +9,11 @@ import type {
   EnvironmentDefinitions,
   EnvironmentNamedDefinition,
 } from '../../simulation/EnvironmentDefinitions';
-
 import {
-  EnvironmentSettingsSection,
-} from './EnvironmentSettingsSection';
+  ENVIRONMENT_FORMAT_FIELDS,
+  formatEnvironment,
+} from '../../simulation/EnvironmentFormatter';
+import { EnvironmentSettingsSection } from './EnvironmentSettingsSection';
 
 type WeightedEntry =
   EnvironmentNamedDefinition & {
@@ -97,13 +98,23 @@ export function EnvironmentSettingsDialog({
       () => environmentService.getDefinitions()
     );
 
+    const [displayFormat, setDisplayFormat] =
+  useState(
+    () => environmentService.getSettings().displayFormat
+  );
+
+const [formatField, setFormatField] =
+  useState<string>('');
+
+const [previewState, setPreviewState] =
+  useState(() => environmentService.getState());
+
   useEffect(() =>
   {
     return environmentService.subscribe(() =>
     {
-      setDraft(
-        environmentService.getDefinitions()
-      );
+      setDraft(environmentService.getDefinitions());
+      setPreviewState(environmentService.getState());
     });
   }, []);
 
@@ -163,7 +174,7 @@ const updateCategory = <
                     }
                   />
 
-                  <label>Low</label>
+                  <label>L:</label>
 
                   <input
                     type="number"
@@ -177,7 +188,7 @@ const updateCategory = <
                     }
                   />
 
-                  <label>High</label>
+                  <label>H:</label>
 
                   <input
                     type="number"
@@ -211,51 +222,117 @@ const updateCategory = <
               )}
             />
 
-            <section className="environment-settings-section">
-              <div className="environment-settings-section-header">
-                <h3>Temperature</h3>
-              </div>
+            <section className="environment-settings-temperature-section">
+  <div className="environment-settings-temperature-heading">
+    <h3>Temperature</h3>
 
-              <div className="environment-settings-temperature">
-                <label>
-                  Unit
-                  <select
-                    value={draft.temperature.unit}
-                    onChange={event =>
-                      updateCategory('temperature', {
-                        ...draft.temperature,
-                        unit: event.target.value as
-                          'fahrenheit' | 'celsius',
-                      })
-                    }
-                  >
-                    <option value="fahrenheit">
-                      Fahrenheit
-                    </option>
-                    <option value="celsius">
-                      Celsius
-                    </option>
-                  </select>
-                </label>
+    <div className="environment-settings-temperature">
+      <label>
+        Unit
+        <select
+          value={draft.temperature.unit}
+          onChange={event =>
+            updateCategory('temperature', {
+              ...draft.temperature,
+              unit: event.target.value as
+                'fahrenheit' | 'celsius',
+            })
+          }
+        >
+<option value="fahrenheit">°F</option>
+<option value="celsius">°C</option>
+        </select>
+      </label>
 
-                <label>
-                  Rain/Snow Threshold
-                  <input
-                    type="number"
-                    value={
-                      draft.temperature.rainSnowThreshold
-                    }
-                    onChange={event =>
-                      updateCategory('temperature', {
-                        ...draft.temperature,
-                        rainSnowThreshold:
-                          Number(event.target.value),
-                      })
-                    }
-                  />
-                </label>
-              </div>
-            </section>
+      <label>
+        Rain/Snow Threshold
+        <input
+          type="number"
+          value={draft.temperature.rainSnowThreshold}
+          onChange={event =>
+            updateCategory('temperature', {
+              ...draft.temperature,
+              rainSnowThreshold: Number(event.target.value),
+            })
+          }
+        />
+      </label>
+    </div>
+  </div>
+
+  <div className="environment-settings-description-section">
+    <div className="environment-settings-section-header">
+      <h3>Descriptive Tag</h3>
+    </div>
+
+    <div className="environment-settings-description-controls">
+      <input
+        type="text"
+        aria-label="Environment display format"
+        placeholder="{season} · {temperature}"
+        value={displayFormat}
+        onChange={event =>
+          setDisplayFormat(event.target.value)
+        }
+      />
+
+      <select
+        aria-label="Insert environment field"
+        value={formatField}
+        onChange={event =>
+        {
+          const field =
+            ENVIRONMENT_FORMAT_FIELDS.find(
+              item => item.value === event.target.value
+            );
+
+          if (field)
+          {
+            setDisplayFormat(current =>
+              current + field.token
+            );
+          }
+
+          setFormatField('');
+        }}
+      >
+        <option value="">Insert field...</option>
+
+        {ENVIRONMENT_FORMAT_FIELDS.map(field => (
+          <option key={field.value} value={field.value}>
+            {field.label}
+          </option>
+        ))}
+      </select>
+
+      <button
+        type="button"
+        onClick={() =>
+        {
+          environmentService.setSettings({
+            ...environmentService.getSettings(),
+            displayFormat,
+          });
+        }}
+      >
+        Apply
+      </button>
+    </div>
+
+    <div className="environment-settings-description-preview">
+      <span>
+        {previewState
+          ? formatEnvironment(
+              displayFormat,
+              previewState,
+              environmentService.getSettings(),
+              draft
+            )
+          : 'Environment unavailable'}
+      </span>
+    </div>
+  </div>
+</section>
 
             {renderWeightedSection(
               'Visibility',
@@ -320,7 +397,7 @@ const updateCategory = <
                     }
                   />
 
-                  <label>Min</label>
+                  <label>L:</label>
 
                   <input
                     type="number"
@@ -334,7 +411,7 @@ const updateCategory = <
                     }
                   />
 
-                  <label>Max</label>
+                  <label>H:</label>
 
                   <input
                     type="number"
@@ -368,21 +445,39 @@ const updateCategory = <
               )}
             />
 
-            {renderWeightedSection(
-              'Special Weather',
-              draft.specialWeather,
-              entries =>
-                updateCategory('specialWeather', entries),
-              () =>
-                createEntry({
-                  name: 'New Special Weather',
-                  description: '',
-                  generationWeight: 0,
-                  requirements: [],
-                  effects: [],
-                }),
-              0
-            )}
+{renderWeightedSection(
+  'Special Weather',
+  draft.specialWeather,
+  entries =>
+  {
+    updateCategory(
+      'specialWeather',
+      entries.map(entry =>
+      {
+        const existing =
+          draft.specialWeather.find(
+            item => item.id === entry.id
+          );
+
+        return {
+          ...existing,
+          ...entry,
+          requirements: existing?.requirements ?? [],
+          effects: existing?.effects ?? [],
+        };
+      })
+    );
+  },
+  () =>
+    createEntry({
+      name: 'New Special Weather',
+      description: '',
+      generationWeight: 0,
+      requirements: [],
+      effects: [],
+    }),
+  0
+)}
           </div>
         )}
 
