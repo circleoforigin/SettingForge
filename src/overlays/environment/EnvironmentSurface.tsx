@@ -89,29 +89,40 @@ const commit = () =>
   setDirty(false);
 };
 
-  const visibilityOptions = definitions?.visibility ?? [];
-  const visibilityValue = draft.visibility.typeId ?? '';
+const visibilityOptions =
+  definitions?.visibility ?? [];
 
-  const cloudOptions = definitions?.cloudCover ?? [];
-  const cloudValue = draft.cloudCoverTypeId ?? '';
+const visibilityValue =
+  draft?.visibility.typeId ?? '';
 
-  const windStrengths = definitions?.windStrength ?? [];
-  const windValue =
-    windStrengths.findIndex(
-      option =>
-        draft.wind.speed >= option.minimumSpeed &&
-        draft.wind.speed <= option.maximumSpeed
-    );
+const cloudOptions =
+  definitions?.cloudCover ?? [];
 
-  const windDirections =
-    definitions?.windDirections ?? [];
+const cloudValue =
+  draft?.cloudCoverTypeId ?? '';
 
-  const directionValue =
-    windDirections.findIndex(
-      option =>
-        option.degrees === draft.wind.direction
-    );
+const windStrengths =
+  definitions?.windStrength ?? [];
 
+const windValue =
+  draft
+    ? windStrengths.findIndex(
+        option =>
+          draft.wind.speed >= option.minimumSpeed &&
+          draft.wind.speed <= option.maximumSpeed
+      )
+    : -1;
+
+const windDirections =
+  definitions?.windDirections ?? [];
+
+const directionValue =
+  draft
+    ? windDirections.findIndex(
+        option =>
+          option.degrees === draft.wind.direction
+      )
+    : -1;
     if (!environment || !draft)
 {
   return (
@@ -211,13 +222,6 @@ const commit = () =>
     }));
   }}
 >
-  {!visibilityOptions.some(
-    option => option.id === visibilityValue
-  ) && (
-    <option value={visibilityValue}>
-      {visibilityValue || 'Unspecified'}
-    </option>
-  )}
 
   {visibilityOptions.map(option => (
     <option
@@ -242,13 +246,6 @@ const commit = () =>
     }));
   }}
 >
-  {!cloudOptions.some(
-    option => option.id === cloudValue
-  ) && (
-    <option value={cloudValue}>
-      {cloudValue || 'Unspecified'}
-    </option>
-  )}
 
   {cloudOptions.map(option => (
     <option

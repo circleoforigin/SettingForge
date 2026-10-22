@@ -8,7 +8,6 @@ export const ENVIRONMENT_FORMAT_FIELDS = [
   { value: 'season', label: 'Season', token: '{season}' },
   { value: 'temperature', label: 'Temperature', token: '{temperature}' },
   { value: 'visibility', label: 'Visibility', token: '{visibility}' },
-  { value: 'fogIntensity', label: 'Fog Intensity', token: '{fogIntensity}' },
   { value: 'cloudCover', label: 'Cloud Cover', token: '{cloudCover}' },
   { value: 'precipitation', label: 'Precipitation', token: '{precipitation}' },
   { value: 'precipitationIntensity', label: 'Precipitation Intensity', token: '{precipitationIntensity}' },
@@ -43,19 +42,17 @@ export function formatEnvironment(
       item => item.id === state.storm.typeId
     )?.name ?? state.storm.typeId;
 
-  const visibility =
-    definitions?.visibility.find(
-      item => item.id === state.visibility.typeId
-    )?.name ??
-    state.visibility.typeId ??
-    String(state.visibility.distance);
+const visibility =
+  definitions?.visibility.find(
+    item => item.id === state.visibility.typeId
+  )?.name ??
+  state.visibility.typeId;
 
-  const cloudCover =
-    definitions?.cloudCover.find(
-      item => item.id === state.cloudCoverTypeId
-    )?.name ??
-    state.cloudCoverTypeId ??
-    String(state.cloudCover);
+const cloudCover =
+  definitions?.cloudCover.find(
+    item => item.id === state.cloudCoverTypeId
+  )?.name ??
+  state.cloudCoverTypeId;
 
   const windDirection =
     definitions?.windDirections.find(
@@ -67,7 +64,6 @@ export function formatEnvironment(
     season,
     temperature: String(state.temperature),
     visibility,
-    fogIntensity: String(state.visibility.fogIntensity),
     cloudCover,
     precipitation,
     precipitationIntensity:

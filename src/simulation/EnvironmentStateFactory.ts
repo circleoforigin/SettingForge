@@ -34,14 +34,11 @@ export function createInitialEnvironmentState(
         ? 10
         : 50,
 
-    visibility: {
-      typeId: visibility.id,
-      distance: 0,
-      fogIntensity: 0,
-    },
+visibility: {
+  typeId: visibility.id,
+},
 
-    cloudCover: 0,
-    cloudCoverTypeId: cloudCover.id,
+cloudCoverTypeId: cloudCover.id,
 
     precipitation: {
       typeId: precipitation.id,

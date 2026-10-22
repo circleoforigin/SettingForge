@@ -11,12 +11,9 @@ export interface EnvironmentState
 
   visibility: {
     typeId: string;
-    distance: number;
-    fogIntensity: number;
   };
 
-  cloudCover: number;
-  cloudCoverTypeId?: string;
+  cloudCoverTypeId: string;
 
   precipitation: {
     typeId: string;
