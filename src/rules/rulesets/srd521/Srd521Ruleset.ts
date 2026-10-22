@@ -150,7 +150,23 @@ const ENVIRONMENT_DEFINITIONS:
         generationWeight: 0,
       },
     ],
-    precipitation: [],
+    precipitation: [
+      {
+        id: 'none',
+        name: 'None',
+        generationWeight: 0,
+      },
+      {
+        id: 'light',
+        name: 'Light',
+        generationWeight: 0,
+      },
+      {
+        id: 'heavy',
+        name: 'Heavy',
+        generationWeight: 0,
+      },
+    ],
     windStrength: [
       {
         id: 'light',

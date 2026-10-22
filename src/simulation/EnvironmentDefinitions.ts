@@ -82,6 +82,33 @@ export interface EnvironmentConditionEffect
   value: string | number | boolean;
 }
 
+export interface EnvironmentGenerationModifier
+{
+  targetId: string;
+  weightMultiplier: number;
+}
+
+export interface EnvironmentSeasonGeneration
+{
+  seasonId: string;
+
+  visibility: EnvironmentGenerationModifier[];
+  cloudCover: EnvironmentGenerationModifier[];
+  precipitation: EnvironmentGenerationModifier[];
+  windStrength: EnvironmentGenerationModifier[];
+  specialWeather: EnvironmentGenerationModifier[];
+}
+
+export interface EnvironmentWeatherGeneration
+{
+  enabled: boolean;
+
+  minimumUpdateMinutes: number;
+  maximumUpdateMinutes: number;
+
+  seasonalGeneration: EnvironmentSeasonGeneration[];
+}
+
 export interface EnvironmentDefinitions
 {
   seasons: EnvironmentSeasonDefinition[];
@@ -92,4 +119,6 @@ export interface EnvironmentDefinitions
   windStrength: EnvironmentWindStrengthDefinition[];
   windDirections: EnvironmentWindDirectionDefinition[];
   specialWeather: EnvironmentSpecialWeatherDefinition[];
+
+  generation?: EnvironmentWeatherGeneration;
 }
