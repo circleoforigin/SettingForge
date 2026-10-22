@@ -108,9 +108,36 @@ restoreWorldState(
     settings ?? { displayFormat: '' }
   );
 
-  this.state = state
-    ? structuredClone(state)
-    : undefined;
+if (state)
+{
+  const saved = state as EnvironmentState & {
+    storm?: {
+      typeId?: string;
+      severity?: number;
+    };
+  };
+
+  const restored = structuredClone(saved);
+
+  this.state = {
+    seasonId: restored.seasonId,
+    temperature: restored.temperature,
+    visibility: restored.visibility,
+    cloudCoverTypeId: restored.cloudCoverTypeId,
+    precipitation: {
+      typeId: restored.precipitation.typeId,
+    },
+    specialWeatherTypeId:
+      restored.specialWeatherTypeId ??
+      restored.storm?.typeId ??
+      'none',
+    wind: restored.wind,
+  };
+}
+else
+{
+  this.state = undefined;
+}
 
   this.notify();
 }

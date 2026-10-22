@@ -17,13 +17,9 @@ export interface EnvironmentState
 
   precipitation: {
     typeId: string;
-    intensity: number;
   };
 
-  storm: {
-    typeId: string;
-    severity: number;
-  };
+  specialWeatherTypeId: string;
 
   wind: {
     speed: number;

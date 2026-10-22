@@ -364,18 +364,17 @@ const directionValue =
                 <label key={type.id}>
                   <input
                     type="checkbox"
-                    checked={draft.storm.typeId === type.id}
+                    checked={draft.specialWeatherTypeId === type.id}
                     onChange={event =>
-                      updateDraft(current => ({
-                        ...current,
-                        storm: {
-                          ...current.storm,
-                          typeId: event.target.checked
-                            ? type.id
-                            : 'none',
-                        },
-                      }))
-                    }
+{
+  updateDraft(current => ({
+    ...current,
+    specialWeatherTypeId:
+      event.target.checked
+        ? type.id
+        : 'none',
+  }));
+}}
                   />
                   <span>{type.name}</span>
                 </label>

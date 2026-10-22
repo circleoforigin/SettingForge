@@ -10,7 +10,7 @@ export const ENVIRONMENT_FORMAT_FIELDS = [
   { value: 'visibility', label: 'Visibility', token: '{visibility}' },
   { value: 'cloudCover', label: 'Cloud Cover', token: '{cloudCover}' },
   { value: 'precipitation', label: 'Precipitation', token: '{precipitation}' },
-  { value: 'storm', label: 'Storm', token: '{storm}' },
+  { value: 'specialWeather', label: 'Special Weather', token: '{specialWeather}' },
   { value: 'windSpeed', label: 'Wind Speed', token: '{windSpeed}' },
   { value: 'windDirection', label: 'Wind Direction', token: '{windDirection}' },
 ] as const;
@@ -35,10 +35,12 @@ export function formatEnvironment(
       item => item.id === state.precipitation.typeId
     )?.name ?? state.precipitation.typeId;
 
-  const storm =
-    definitions?.specialWeather.find(
-      item => item.id === state.storm.typeId
-    )?.name ?? state.storm.typeId;
+const specialWeather =
+  state.specialWeatherTypeId === 'none'
+    ? 'None'
+    : definitions?.specialWeather.find(
+        item => item.id === state.specialWeatherTypeId
+      )?.name ?? state.specialWeatherTypeId;
 
 const visibility =
   definitions?.visibility.find(
@@ -64,7 +66,7 @@ const cloudCover =
     visibility,
     cloudCover,
     precipitation,
-    storm,
+    specialWeather,
     windSpeed: String(state.wind.speed),
     windDirection,
   };

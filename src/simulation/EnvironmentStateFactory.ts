@@ -40,15 +40,11 @@ visibility: {
 
 cloudCoverTypeId: cloudCover.id,
 
-    precipitation: {
-      typeId: precipitation.id,
-      intensity: 0,
-    },
+precipitation: {
+  typeId: precipitation.id,
+},
 
-    storm: {
-      typeId: 'none',
-      severity: 0,
-    },
+specialWeatherTypeId: 'none',
 
     wind: {
       speed: windStrength.minimumSpeed,
