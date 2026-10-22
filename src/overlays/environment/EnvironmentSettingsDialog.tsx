@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -93,6 +94,30 @@ export function EnvironmentSettingsDialog({
   onClose,
 }: EnvironmentSettingsDialogProps)
 {
+  const formatInputRef =
+  useRef<HTMLInputElement>(null);
+
+const formatSelectionRef =
+  useRef({
+    start: 0,
+    end: 0,
+  });
+
+const rememberFormatSelection = () =>
+{
+  const input = formatInputRef.current;
+
+  if (!input)
+  {
+    return;
+  }
+
+  formatSelectionRef.current = {
+    start: input.selectionStart ?? 0,
+    end: input.selectionEnd ?? 0,
+  };
+};
+
   const [draft, setDraft] =
     useState<EnvironmentDefinitions | undefined>(
       () => environmentService.getDefinitions()
@@ -267,34 +292,69 @@ const updateCategory = <
 
     <div className="environment-settings-description-controls">
       <input
+        ref={formatInputRef}
         type="text"
         aria-label="Environment display format"
         placeholder="{season} · {temperature}"
         value={displayFormat}
         onChange={event =>
-          setDisplayFormat(event.target.value)
-        }
+        {
+          setDisplayFormat(event.target.value);
+          rememberFormatSelection();
+        }}
+        onClick={rememberFormatSelection}
+        onKeyUp={rememberFormatSelection}
+        onSelect={rememberFormatSelection}
       />
 
       <select
         aria-label="Insert environment field"
         value={formatField}
-        onChange={event =>
-        {
-          const field =
-            ENVIRONMENT_FORMAT_FIELDS.find(
-              item => item.value === event.target.value
-            );
+onChange={event =>
+{
+  const field =
+    ENVIRONMENT_FORMAT_FIELDS.find(
+      item => item.value === event.target.value
+    );
 
-          if (field)
-          {
-            setDisplayFormat(current =>
-              current + field.token
-            );
-          }
+  if (field)
+  {
+    const { start, end } =
+      formatSelectionRef.current;
 
-          setFormatField('');
-        }}
+    const nextFormat =
+      displayFormat.slice(0, start) +
+      field.token +
+      displayFormat.slice(end);
+
+    const nextPosition =
+      start + field.token.length;
+
+    setDisplayFormat(nextFormat);
+
+    formatSelectionRef.current = {
+      start: nextPosition,
+      end: nextPosition,
+    };
+
+    requestAnimationFrame(() =>
+    {
+      const input = formatInputRef.current;
+
+      if (input)
+      {
+        input.focus();
+
+        input.setSelectionRange(
+          nextPosition,
+          nextPosition
+        );
+      }
+    });
+  }
+
+  setFormatField('');
+}}
       >
         <option value="">Insert field...</option>
 

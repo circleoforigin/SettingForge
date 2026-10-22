@@ -119,11 +119,23 @@ if (state)
 
   const restored = structuredClone(saved);
 
+  const defaults = this.definitions
+    ? createInitialEnvironmentState(this.definitions)
+    : undefined;
+
   this.state = {
     seasonId: restored.seasonId,
     temperature: restored.temperature,
-    visibility: restored.visibility,
-    cloudCoverTypeId: restored.cloudCoverTypeId,
+    visibility: {
+        typeId:
+            restored.visibility?.typeId ??
+            defaults?.visibility.typeId ??
+            '',
+        },
+    cloudCoverTypeId:
+        restored.cloudCoverTypeId ??
+        defaults?.cloudCoverTypeId ??
+        '',
     precipitation: {
       typeId: restored.precipitation.typeId,
     },

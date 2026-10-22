@@ -42,6 +42,13 @@ const specialWeather =
         item => item.id === state.specialWeatherTypeId
       )?.name ?? state.specialWeatherTypeId;
 
+      console.log('Environment format:', {
+  visibilityId: state.visibility?.typeId,
+  cloudCoverId: state.cloudCoverTypeId,
+  visibilityDefinitions: definitions?.visibility,
+  cloudCoverDefinitions: definitions?.cloudCover,
+});
+
 const visibility =
   definitions?.visibility.find(
     item => item.id === state.visibility.typeId
@@ -62,7 +69,11 @@ const cloudCover =
 
   const values: Record<EnvironmentFormatField, string> = {
     season,
-    temperature: `${state.temperature}°`,
+    temperature: `${state.temperature}°${
+        definitions?.temperature.unit === 'celsius'
+            ? 'C'
+            : 'F'
+    }`,
     visibility,
     cloudCover,
     precipitation,
