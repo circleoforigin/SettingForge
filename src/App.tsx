@@ -518,6 +518,10 @@ const handleSelectRuleset = async (
         }
       );
 
+    environmentService.setRuleset(
+      updatedWorld.ruleset
+    );
+
     setActiveWorld(updatedWorld);
 
     setWorldSaveNotice({
@@ -2228,6 +2232,8 @@ async function handleLoadWorld(worldId: string) {
       simulation?.environmentSettings,
       simulation?.environmentState
     );
+
+    environmentService.setRuleset(world.ruleset);
 
     overlayManager.clear();
 

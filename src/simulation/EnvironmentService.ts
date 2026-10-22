@@ -4,6 +4,9 @@ import {
   type EnvironmentSettings,
   type EnvironmentState,
 } from './EnvironmentSettings';
+import type { WorldRulesetReference } from '../models/World';
+import type { EnvironmentDefinitions } from './EnvironmentDefinitions';
+import { resolveEnvironmentDefinitions } from './EnvironmentDefinitionResolver';
 
 type EnvironmentListener = (
   state: EnvironmentState,
@@ -12,14 +15,27 @@ type EnvironmentListener = (
 
 export class EnvironmentService
 {
-  private settings =
-    createDefaultEnvironmentSettings();
+  private settings = createDefaultEnvironmentSettings();
+  private state = createDefaultEnvironmentState();
+  private definitions: EnvironmentDefinitions | undefined;
+  private listeners = new Set<EnvironmentListener>();
 
-  private state =
-    createDefaultEnvironmentState();
+  getDefinitions(): EnvironmentDefinitions | undefined
+  {
+    return this.definitions
+      ? structuredClone(this.definitions)
+      : undefined;
+  }
 
-  private listeners =
-    new Set<EnvironmentListener>();
+  setRuleset(
+    ruleset: WorldRulesetReference | undefined
+  ): void
+  {
+    this.definitions =
+      resolveEnvironmentDefinitions(ruleset);
+
+    this.notify();
+  }
 
   getSettings(): EnvironmentSettings
   {
