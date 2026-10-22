@@ -19,26 +19,16 @@ type WeightedEntry =
     generationWeight: number;
   };
 
-function createEntry<T extends { id: string }>(
-  template: Omit<T, 'id'>
-): T
-{
-  return {
-    ...template,
-    id: crypto.randomUUID(),
-  } as T;
-}
-
-function renderWeightedSection<T extends WeightedEntry>(
+function renderWeightedSection(
   title: string,
-  entries: T[],
-  onChange: (entries: T[]) => void,
-  create: () => T,
+  entries: WeightedEntry[],
+  onChange: (entries: WeightedEntry[]) => void,
+  create: () => WeightedEntry,
   minimumEntries = 1
 )
 {
   return (
-    <EnvironmentSettingsSection
+    <EnvironmentSettingsSection<WeightedEntry>
       title={title}
       entries={entries}
       onChange={onChange}
@@ -51,10 +41,11 @@ function renderWeightedSection<T extends WeightedEntry>(
             aria-label={`${title} name`}
             value={entry.name}
             onChange={event =>
+            {
               update({
                 name: event.target.value,
-              } as Partial<T>)
-            }
+              });
+            }}
           />
 
           <label>Weight</label>
@@ -65,19 +56,32 @@ function renderWeightedSection<T extends WeightedEntry>(
             aria-label={`${entry.name} weight`}
             value={entry.generationWeight}
             onChange={event =>
+            {
               update({
                 generationWeight: Math.max(
                   0,
                   Number(event.target.value)
                 ),
-              } as Partial<T>)
-            }
+              });
+            }}
           />
         </>
       )}
     />
   );
 }
+
+function createEntry<T extends object>(
+  template: T
+): T & { id: string }
+{
+  return {
+    ...template,
+    id: crypto.randomUUID(),
+  };
+}
+
+
 
 interface EnvironmentSettingsDialogProps
 {
@@ -103,9 +107,9 @@ export function EnvironmentSettingsDialog({
     });
   }, []);
 
-  const updateCategory = <
-    K extends keyof EnvironmentDefinitions
-  >(
+const updateCategory = <
+  K extends keyof EnvironmentDefinitions,
+>(
     category: K,
     value: EnvironmentDefinitions[K]
   ) =>
