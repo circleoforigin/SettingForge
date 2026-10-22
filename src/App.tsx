@@ -2234,7 +2234,10 @@ async function handleLoadWorld(worldId: string) {
       simulation?.environmentState
     );
 
-    environmentService.setRuleset(world.ruleset);
+    environmentService.setRuleset(
+      world.ruleset,
+      simulation?.environmentDefinitionOverrides
+    );
 
     overlayManager.clear();
 

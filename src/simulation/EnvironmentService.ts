@@ -5,8 +5,11 @@ import {
   type EnvironmentState,
 } from './EnvironmentSettings';
 import type { WorldRulesetReference } from '../models/World';
-import type { EnvironmentDefinitions } from './EnvironmentDefinitions';
-import { resolveEnvironmentDefinitions } from './EnvironmentDefinitionResolver';
+import type {
+  EnvironmentDefinitions,
+  EnvironmentDefinitionOverrides,
+} from './EnvironmentDefinitions';
+import { resolveEffectiveEnvironmentDefinitions } from './EnvironmentDefinitionResolver';
 
 type EnvironmentListener = (
   state: EnvironmentState,
@@ -18,6 +21,8 @@ export class EnvironmentService
   private settings = createDefaultEnvironmentSettings();
   private state = createDefaultEnvironmentState();
   private definitions: EnvironmentDefinitions | undefined;
+  private ruleset: WorldRulesetReference | undefined;
+  private definitionOverrides: EnvironmentDefinitionOverrides = {};
   private listeners = new Set<EnvironmentListener>();
 
   getDefinitions(): EnvironmentDefinitions | undefined
@@ -27,12 +32,47 @@ export class EnvironmentService
       : undefined;
   }
 
-  setRuleset(
-    ruleset: WorldRulesetReference | undefined
+    getDefinitionOverrides():
+    EnvironmentDefinitionOverrides
+  {
+    return structuredClone(
+      this.definitionOverrides
+    );
+  }
+
+  setDefinitionOverrides(
+    overrides: EnvironmentDefinitionOverrides
   ): void
   {
+    this.definitionOverrides =
+      structuredClone(overrides);
+
     this.definitions =
-      resolveEnvironmentDefinitions(ruleset);
+      resolveEffectiveEnvironmentDefinitions(
+        this.ruleset,
+        this.definitionOverrides
+      );
+
+    this.notify();
+  }
+
+  setRuleset(
+    ruleset: WorldRulesetReference | undefined,
+    overrides?: EnvironmentDefinitionOverrides
+  ): void
+  {
+    this.ruleset = ruleset
+      ? structuredClone(ruleset)
+      : undefined;
+
+    this.definitionOverrides =
+      structuredClone(overrides ?? {});
+
+    this.definitions =
+      resolveEffectiveEnvironmentDefinitions(
+        this.ruleset,
+        this.definitionOverrides
+      );
 
     this.notify();
   }
