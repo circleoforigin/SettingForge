@@ -2055,8 +2055,9 @@ async function handleDeleteWorld() {
       );
 
       environmentService.restoreWorldState();
+      environmentService.setRuleset(undefined);
 
-      overlayManager.clear(); 
+      overlayManager.clear();
       setActiveOverlays(overlayManager.getAllActive());
 
       setShowCloseWorldDialog(false);
@@ -2816,6 +2817,7 @@ async function finishClose(
   );
 
   environmentService.restoreWorldState();
+  environmentService.setRuleset(undefined);
 
   overlayManager.clear();
   setActiveOverlays(overlayManager.getAllActive());

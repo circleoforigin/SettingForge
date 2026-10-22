@@ -122,3 +122,18 @@ export interface EnvironmentDefinitions
 
   generation?: EnvironmentWeatherGeneration;
 }
+
+export interface EnvironmentDefinitionOverrides
+{
+  seasons?: Partial<EnvironmentSeasonDefinition>[];
+  temperature?: Partial<EnvironmentTemperatureDefinition>;
+
+  visibility?: Partial<EnvironmentVisibilityDefinition>[];
+  cloudCover?: Partial<EnvironmentCloudCoverDefinition>[];
+  precipitation?: Partial<EnvironmentPrecipitationDefinition>[];
+  windStrength?: Partial<EnvironmentWindStrengthDefinition>[];
+  windDirections?: Partial<EnvironmentWindDirectionDefinition>[];
+  specialWeather?: Partial<EnvironmentSpecialWeatherDefinition>[];
+
+  generation?: Partial<EnvironmentWeatherGeneration>;
+}

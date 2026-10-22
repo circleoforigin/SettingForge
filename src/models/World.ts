@@ -4,6 +4,7 @@ import type {
   EnvironmentSettings,
   EnvironmentState,
 } from '../simulation/EnvironmentSettings';
+import type { EnvironmentDefinitionOverrides } from '../simulation/EnvironmentDefinitions';
 
 export interface WorldModuleReference {
   moduleId: string;
@@ -34,6 +35,8 @@ export interface WorldSimulationState
 
   environmentSettings?: EnvironmentSettings;
   environmentState?: EnvironmentState;
+
+  environmentDefinitionOverrides?: EnvironmentDefinitionOverrides;
 }
 
 export interface World {
