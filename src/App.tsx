@@ -30,6 +30,7 @@ import { simulationClockService } from './simulation/SimulationClockService';
 import { createDefaultSimClockSettings } from './simulation/SimClockSettings';
 import { registerOccurrenceHostService } from './overlays/occurrence/OccurrenceHostService';
 import { environmentService } from './simulation/EnvironmentService';
+import { EnvironmentSettingsDialog } from './overlays/environment/EnvironmentSettingsDialog';
 import {
   registerCapabilityHostService,
   sendCapabilityCatalogTo,
@@ -473,6 +474,10 @@ loadQueueRef.current?.completeModule(
   
 const [fileMenuOpen, setFileMenuOpen] = useState(false);
 const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
+const [
+  environmentSettingsOpen,
+  setEnvironmentSettingsOpen,
+] = useState(false);
 const [activeWorld, setActiveWorld] = useState<World | null>(null);
 const [worldRuntimeDirty, setWorldRuntimeDirty] = useState(false);
 activeWorldRef.current = activeWorld;
@@ -3928,6 +3933,11 @@ async function removeModuleFromWorld(
                   true
                 );
               }
+
+              if (overlay.id === 'environment')
+              {
+                setEnvironmentSettingsOpen(true);
+              }
             }}
           >
             Settings...
@@ -4208,6 +4218,14 @@ return (
 {simClock.settingsOpen && (
   <SimClockOverlay
     controller={simClock}
+  />
+)}
+
+{environmentSettingsOpen && (
+  <EnvironmentSettingsDialog
+    onClose={() =>
+      setEnvironmentSettingsOpen(false)
+    }
   />
 )}
 
