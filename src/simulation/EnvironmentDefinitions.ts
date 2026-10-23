@@ -88,6 +88,23 @@ export interface EnvironmentGenerationModifier
   weightMultiplier: number;
 }
 
+export interface EnvironmentWeightVector
+{
+  targetId: string;
+  delta: number;
+}
+
+export interface EnvironmentSeasonWeightVectors
+{
+  seasonId: string;
+
+  visibility: EnvironmentWeightVector[];
+  cloudCover: EnvironmentWeightVector[];
+  precipitation: EnvironmentWeightVector[];
+  windStrength: EnvironmentWeightVector[];
+  specialWeather: EnvironmentWeightVector[];
+}
+
 export interface EnvironmentSeasonGeneration
 {
   seasonId: string;
@@ -127,7 +144,7 @@ export interface EnvironmentDefinitionOverrides
 {
   seasons?: Partial<EnvironmentSeasonDefinition>[];
   temperature?: Partial<EnvironmentTemperatureDefinition>;
-
+  seasonalWeightVectors?: EnvironmentSeasonWeightVectors[];
   visibility?: Partial<EnvironmentVisibilityDefinition>[];
   cloudCover?: Partial<EnvironmentCloudCoverDefinition>[];
   precipitation?: Partial<EnvironmentPrecipitationDefinition>[];
