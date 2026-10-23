@@ -136,4 +136,14 @@ export interface EnvironmentDefinitionOverrides
   specialWeather?: Partial<EnvironmentSpecialWeatherDefinition>[];
 
   generation?: Partial<EnvironmentWeatherGeneration>;
+  replacements?: Partial<Pick<
+  EnvironmentDefinitions,
+  | 'seasons'
+  | 'visibility'
+  | 'cloudCover'
+  | 'precipitation'
+  | 'windStrength'
+  | 'windDirections'
+  | 'specialWeather'
+>>;
 }

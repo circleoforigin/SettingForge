@@ -79,10 +79,46 @@ export class EnvironmentService
         this.state = undefined;
     }
 
-    if (this.definitions && !this.state)
-    {
-        this.state = createInitialEnvironmentState(this.definitions);
-    }
+if (this.definitions)
+{
+  const defaults =
+    createInitialEnvironmentState(this.definitions);
+
+  if (!this.state)
+  {
+    this.state = defaults;
+  }
+  else
+  {
+    const visibilityId =
+      this.state.visibility?.typeId;
+
+    const cloudCoverId =
+      this.state.cloudCoverTypeId;
+
+    this.state = {
+      ...this.state,
+
+      visibility: {
+        typeId:
+          visibilityId &&
+          this.definitions.visibility.some(
+            item => item.id === visibilityId
+          )
+            ? visibilityId
+            : defaults.visibility.typeId,
+      },
+
+      cloudCoverTypeId:
+        cloudCoverId &&
+        this.definitions.cloudCover.some(
+          item => item.id === cloudCoverId
+        )
+          ? cloudCoverId
+          : defaults.cloudCoverTypeId,
+    };
+  }
+}
 
     this.notify();
   }

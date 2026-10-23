@@ -11,8 +11,7 @@ export const ENVIRONMENT_FORMAT_FIELDS = [
   { value: 'cloudCover', label: 'Cloud Cover', token: '{cloudCover}' },
   { value: 'precipitation', label: 'Precipitation', token: '{precipitation}' },
   { value: 'specialWeather', label: 'Special Weather', token: '{specialWeather}' },
-  { value: 'windSpeed', label: 'Wind Speed', token: '{windSpeed}' },
-  { value: 'windDirection', label: 'Wind Direction', token: '{windDirection}' },
+  { value: 'wind', label: 'Wind', token: '{wind}' },
 ] as const;
 
 export type EnvironmentFormatField =
@@ -30,10 +29,27 @@ export function formatEnvironment(
       item => item.id === state.seasonId
     )?.name ?? state.seasonId;
 
-  const precipitation =
-    definitions?.precipitation.find(
-      item => item.id === state.precipitation.typeId
-    )?.name ?? state.precipitation.typeId;
+const precipitationDefinition =
+  definitions?.precipitation.find(
+    item => item.id === state.precipitation.typeId
+  );
+
+const precipitationName =
+  precipitationDefinition?.name ??
+  state.precipitation.typeId;
+
+const isDry =
+  state.precipitation.typeId === 'none';
+
+const precipitation =
+  isDry
+    ? precipitationName
+    : `${precipitationName} ${
+        state.temperature <=
+        (definitions?.temperature.rainSnowThreshold ?? 32)
+          ? 'Snow'
+          : 'Rain'
+      }`;
 
 const specialWeather =
   state.specialWeatherTypeId === 'none'
@@ -41,13 +57,6 @@ const specialWeather =
     : definitions?.specialWeather.find(
         item => item.id === state.specialWeatherTypeId
       )?.name ?? state.specialWeatherTypeId;
-
-      console.log('Environment format:', {
-  visibilityId: state.visibility?.typeId,
-  cloudCoverId: state.cloudCoverTypeId,
-  visibilityDefinitions: definitions?.visibility,
-  cloudCoverDefinitions: definitions?.cloudCover,
-});
 
 const visibility =
   definitions?.visibility.find(
@@ -67,6 +76,11 @@ const cloudCover =
     )?.name ??
     String(state.wind.direction);
 
+  const wind =
+    state.wind.speed === 0
+        ? 'Still'
+        : `${state.wind.speed} mph ${windDirection}`;
+
   const values: Record<EnvironmentFormatField, string> = {
     season,
     temperature: `${state.temperature}°${
@@ -78,8 +92,7 @@ const cloudCover =
     cloudCover,
     precipitation,
     specialWeather,
-    windSpeed: String(state.wind.speed),
-    windDirection,
+    wind,
   };
 
   return ENVIRONMENT_FORMAT_FIELDS.reduce(

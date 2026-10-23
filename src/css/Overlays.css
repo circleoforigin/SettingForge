@@ -945,7 +945,7 @@
 
 .environment-settings-content {
   display: grid;
-  grid-template-columns: repeat(3, max-content);
+  grid-template-columns: 320px 215px 155px;
   grid-template-rows: auto auto auto;
 
   gap: 8px;

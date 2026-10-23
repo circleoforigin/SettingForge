@@ -23,6 +23,7 @@ interface EnvironmentSettingsSectionProps<
     entry: T,
     update: (changes: Partial<T>) => void
   ) => ReactNode;
+  headerAction?: ReactNode;
 }
 
 export function EnvironmentSettingsSection<
@@ -34,6 +35,7 @@ export function EnvironmentSettingsSection<
   createEntry,
   onChange,
   renderEntry,
+  headerAction,
 }: EnvironmentSettingsSectionProps<T>)
 {
   const [selectedId, setSelectedId] =
@@ -119,6 +121,8 @@ export function EnvironmentSettingsSection<
     >
       <div className="environment-settings-section-header">
         <h3>{title}</h3>
+
+        {headerAction}
 
         <button
           type="button"

@@ -103,6 +103,31 @@ const formatSelectionRef =
     end: 0,
   });
 
+const precipitationInputRef =
+  useRef<HTMLInputElement | null>(null);
+
+const precipitationSelectionRef = useRef({
+  start: 0,
+  end: 0,
+});
+
+const [activePrecipitationId, setActivePrecipitationId] =
+  useState<string | null>(null);
+
+const rememberPrecipitationSelection = (
+  input: HTMLInputElement,
+  id: string
+) =>
+{
+  precipitationInputRef.current = input;
+  setActivePrecipitationId(id);
+
+  precipitationSelectionRef.current = {
+    start: input.selectionStart ?? 0,
+    end: input.selectionEnd ?? 0,
+  };
+};
+
 const rememberFormatSelection = () =>
 {
   const input = formatInputRef.current;
@@ -134,14 +159,13 @@ const [formatField, setFormatField] =
 const [previewState, setPreviewState] =
   useState(() => environmentService.getState());
 
-  useEffect(() =>
+useEffect(() =>
+{
+  return environmentService.subscribe(() =>
   {
-    return environmentService.subscribe(() =>
-    {
-      setDraft(environmentService.getDefinitions());
-      setPreviewState(environmentService.getState());
-    });
-  }, []);
+    setPreviewState(environmentService.getState());
+  });
+}, []);
 
 const updateCategory = <
   K extends keyof EnvironmentDefinitions,
@@ -159,6 +183,95 @@ const updateCategory = <
         : current
     );
   };
+
+  const insertPrecipitationType = () =>
+{
+  if (!draft || !activePrecipitationId)
+  {
+    return;
+  }
+
+  const entry = draft.precipitation.find(
+    item => item.id === activePrecipitationId
+  );
+
+  if (!entry)
+  {
+    return;
+  }
+
+  const token = '{type}';
+
+  const { start, end } =
+    precipitationSelectionRef.current;
+
+  const nextName =
+    entry.name.slice(0, start) +
+    token +
+    entry.name.slice(end);
+
+  const nextPosition = start + token.length;
+
+  updateCategory(
+    'precipitation',
+    draft.precipitation.map(item =>
+      item.id === entry.id
+        ? { ...item, name: nextName }
+        : item
+    )
+  );
+
+  precipitationSelectionRef.current = {
+    start: nextPosition,
+    end: nextPosition,
+  };
+
+  requestAnimationFrame(() =>
+  {
+    const input = precipitationInputRef.current;
+
+    if (input)
+    {
+      input.focus();
+      input.setSelectionRange(
+        nextPosition,
+        nextPosition
+      );
+    }
+  });
+};
+
+  const saveDefinitions = () =>
+{
+  if (!draft)
+  {
+    return;
+  }
+
+  const existing =
+    environmentService.getDefinitionOverrides();
+
+  environmentService.setDefinitionOverrides({
+    ...existing,
+
+    temperature: structuredClone(
+      draft.temperature
+    ),
+
+    replacements: {
+      ...existing.replacements,
+
+      seasons: structuredClone(draft.seasons),
+      visibility: structuredClone(draft.visibility),
+      cloudCover: structuredClone(draft.cloudCover),
+      precipitation: structuredClone(draft.precipitation),
+      windStrength: structuredClone(draft.windStrength),
+      specialWeather: structuredClone(draft.specialWeather),
+    },
+  });
+
+  onClose();
+};
 
   return (
     <div className="dialog-backdrop">
@@ -418,17 +531,109 @@ onChange={event =>
                 })
             )}
 
-            {renderWeightedSection(
-              'Precipitation',
-              draft.precipitation,
-              entries =>
-                updateCategory('precipitation', entries),
-              () =>
-                createEntry({
-                  name: 'New Precipitation',
-                  generationWeight: 0,
-                })
-            )}
+<EnvironmentSettingsSection
+  title="Precipitation"
+  entries={draft.precipitation}
+  onChange={entries =>
+    updateCategory('precipitation', entries)
+  }
+  createEntry={() =>
+    createEntry({
+      name: 'New Precipitation',
+      generationWeight: 0,
+    })
+  }
+  headerAction={
+    <button
+      type="button"
+      disabled={!activePrecipitationId}
+      onMouseDown={event =>
+      {
+        event.preventDefault();
+      }}
+      onClick={insertPrecipitationType}
+    >
+      {'{type}'}
+    </button>
+  }
+  renderEntry={(entry, update) => (
+    <>
+      <input
+        type="text"
+        aria-label="Precipitation name"
+        value={entry.name}
+        onFocus={event =>
+          rememberPrecipitationSelection(
+            event.currentTarget,
+            entry.id
+          )
+        }
+        onClick={event =>
+          rememberPrecipitationSelection(
+            event.currentTarget,
+            entry.id
+          )
+        }
+        onKeyUp={event =>
+          rememberPrecipitationSelection(
+            event.currentTarget,
+            entry.id
+          )
+        }
+        onSelect={event =>
+          rememberPrecipitationSelection(
+            event.currentTarget,
+            entry.id
+          )
+        }
+        onChange={event =>
+        {
+          update({
+            name: event.target.value,
+          });
+
+          rememberPrecipitationSelection(
+            event.currentTarget,
+            entry.id
+          );
+        }}
+        onBlur={event =>
+        {
+          const nextFocus = event.relatedTarget;
+
+          if (
+            nextFocus instanceof HTMLElement &&
+            nextFocus.closest(
+              '.environment-settings-section-header'
+            )
+          )
+          {
+            return;
+          }
+
+          setActivePrecipitationId(null);
+        }}
+      />
+
+      <label>Weight</label>
+
+      <input
+        type="number"
+        min="0"
+        aria-label={`${entry.name} weight`}
+        value={entry.generationWeight}
+        onChange={event =>
+          update({
+            generationWeight: Math.max(
+              0,
+              Number(event.target.value)
+            ),
+          })
+        }
+      />
+    </>
+  )}
+/>
 
             <EnvironmentSettingsSection
               title="Wind Strength"
@@ -541,14 +746,22 @@ onChange={event =>
           </div>
         )}
 
-        <div className="dialog-actions">
-          <button
-            type="button"
-            onClick={onClose}
-          >
-            Close
-          </button>
-        </div>
+<div className="dialog-actions">
+  <button
+    type="button"
+    onClick={onClose}
+  >
+    Close
+  </button>
+
+  <button
+    type="button"
+    onClick={saveDefinitions}
+    disabled={!draft}
+  >
+    Save
+  </button>
+</div>
       </div>
     </div>
   );

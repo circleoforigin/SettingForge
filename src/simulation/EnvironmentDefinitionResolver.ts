@@ -69,44 +69,58 @@ export function resolveEffectiveEnvironmentDefinitions(
   }
 
   return {
-    ...definitions,
+  ...definitions,
 
-    seasons: mergeNamedDefinitions(
+  seasons:
+    overrides.replacements?.seasons ??
+    mergeNamedDefinitions(
       definitions.seasons,
       overrides.seasons
     ),
 
-    temperature: {
-      ...definitions.temperature,
-      ...overrides.temperature,
-    },
+  temperature: {
+    ...definitions.temperature,
+    ...overrides.temperature,
+  },
 
-    visibility: mergeNamedDefinitions(
+  visibility:
+    overrides.replacements?.visibility ??
+    mergeNamedDefinitions(
       definitions.visibility,
       overrides.visibility
     ),
 
-    cloudCover: mergeNamedDefinitions(
+  cloudCover:
+    overrides.replacements?.cloudCover ??
+    mergeNamedDefinitions(
       definitions.cloudCover,
       overrides.cloudCover
     ),
 
-    precipitation: mergeNamedDefinitions(
+  precipitation:
+    overrides.replacements?.precipitation ??
+    mergeNamedDefinitions(
       definitions.precipitation,
       overrides.precipitation
     ),
 
-    windStrength: mergeNamedDefinitions(
+  windStrength:
+    overrides.replacements?.windStrength ??
+    mergeNamedDefinitions(
       definitions.windStrength,
       overrides.windStrength
     ),
 
-    windDirections: mergeNamedDefinitions(
+  windDirections:
+    overrides.replacements?.windDirections ??
+    mergeNamedDefinitions(
       definitions.windDirections,
       overrides.windDirections
     ),
 
-    specialWeather: mergeNamedDefinitions(
+  specialWeather:
+    overrides.replacements?.specialWeather ??
+    mergeNamedDefinitions(
       definitions.specialWeather,
       overrides.specialWeather
     ),
