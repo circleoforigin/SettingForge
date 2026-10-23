@@ -955,7 +955,6 @@
   min-height: 0;
   overflow: auto;
 }
-
 /* Explicit positions, independent of JSX order */
 
 /* Row 1: Seasons | Visibility | Special Weather */
@@ -1003,7 +1002,7 @@
 
 .environment-settings-section {
   box-sizing: border-box;
-  width: max-content;
+  width: 100%;
   min-width: 0;
 
   padding: 0;
@@ -1050,8 +1049,8 @@
 .environment-settings-entry-list {
   box-sizing: border-box;
 
-  height: 106px;
-  min-height: 106px;
+  height: 108px;
+  min-height: 108px;
 
   display: flex;
   flex-direction: column;
@@ -1328,6 +1327,27 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .environment-settings-temperature {
   gap: 8px;
+}
+
+.environment-settings-static-value
+{
+  flex: 1;
+  min-width: 100px;
+  width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  margin-left: 5px;
+}
+
+.environment-settings-static-number
+{
+  display: inline-block;
+  min-width: 3ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
 }
 
 /* ---------- SIMCLOCK ---------- */

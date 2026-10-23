@@ -34,12 +34,9 @@ function renderWeightedSection(
       onChange={onChange}
       renderEntry={(entry, update) => (
         <>
-          <input
-            type="text"
-            aria-label={`${title} name`}
-            value={entry.name}
-            readOnly
-          />
+<span className="environment-settings-static-value">
+  {entry.name}
+</span>
 
           <label>Weight</label>
 
@@ -100,7 +97,13 @@ const rememberFormatSelection = () =>
       () => environmentService.getDefinitions()
     );
 
-    const [displayFormat, setDisplayFormat] =
+  const [selectedSeasonId, setSelectedSeasonId] =
+  useState<string | undefined>(
+    () => environmentService.getDefinitions()
+      ?.seasons[0]?.id
+  );
+
+  const [displayFormat, setDisplayFormat] =
   useState(
     () => environmentService.getSettings().displayFormat
   );
@@ -165,44 +168,30 @@ const saveDefinitions = () =>
         ) : (
           <div className="environment-settings-content">
             <EnvironmentSettingsSection
-              title="Seasons"
+              title="Seasons - select one to edit seasonal weights"
               entries={draft.seasons}
+              selectedId={selectedSeasonId}
+              onSelect={setSelectedSeasonId}
               onChange={entries =>
                 updateCategory('seasons', entries)
               }              
 renderEntry={entry => (
   <>
-    <input
-      type="text"
-      aria-label="Season name"
-      value={entry.name}
-      readOnly
-    />
+    <span className="environment-settings-static-value">
+      {entry.name}
+    </span>
 
     <label>L:</label>
-    <input
-      type="number"
-      aria-label="Low temperature"
-      value={entry.lowTemperature}
-      readOnly
-    />
+
+    <span className="environment-settings-static-number">
+      {entry.lowTemperature}
+    </span>
 
     <label>H:</label>
-    <input
-      type="number"
-      aria-label="High temperature"
-      value={entry.highTemperature}
-      readOnly
-    />
 
-    <label>Weight</label>
-    <input
-      type="number"
-      min="0"
-      aria-label="Season weight"
-      value={entry.generationWeight ?? 0}
-      readOnly
-    />
+    <span className="environment-settings-static-number">
+      {entry.highTemperature}
+    </span>
   </>
 )}
             />
@@ -381,68 +370,42 @@ onChange={event =>
               onChange={entries =>
                 updateCategory('windStrength', entries)
               }              
-              renderEntry={(entry, update) => (
-                <>
-                  <input
-                    type="text"
-                    aria-label="Wind strength name"
-                    value={entry.name}
-                    readOnly
-                    onChange={event =>
-                      update({
-                        name: event.target.value,
-                      })
-                    }
-                  />
+renderEntry={(entry, update) => (
+  <>
+    <span className="environment-settings-static-value">
+      {entry.name}
+    </span>
 
-                  <label>L:</label>
+    <label>L:</label>
 
-                  <input
-                    type="number"
-                    aria-label="Minimum wind speed"
-                    value={entry.minimumSpeed}
-                    readOnly
-                    onChange={event =>
-                      update({
-                        minimumSpeed:
-                          Number(event.target.value),
-                      })
-                    }
-                  />
+    <span className="environment-settings-static-number">
+      {entry.minimumSpeed}
+    </span>
 
-                  <label>H:</label>
+    <label>H:</label>
 
-                  <input
-                    type="number"
-                    aria-label="Maximum wind speed"
-                    value={entry.maximumSpeed}
-                    readOnly
-                    onChange={event =>
-                      update({
-                        maximumSpeed:
-                          Number(event.target.value),
-                      })
-                    }
-                  />
+    <span className="environment-settings-static-number">
+      {entry.maximumSpeed}
+    </span>
 
-                  <label>Weight</label>
+    <label>Weight</label>
 
-                  <input
-                    type="number"
-                    min="0"
-                    aria-label="Wind strength weight"
-                    value={entry.generationWeight}
-                    onChange={event =>
-                      update({
-                        generationWeight: Math.max(
-                          0,
-                          Number(event.target.value) || 0
-                        ),
-                      })
-                    }
-                  />
-                </>
-              )}
+    <input
+      type="number"
+      min="0"
+      aria-label="Wind strength weight"
+      value={entry.generationWeight}
+      onChange={event =>
+        update({
+          generationWeight: Math.max(
+            0,
+            Number(event.target.value) || 0
+          ),
+        })
+      }
+    />
+  </>
+)}
             />
 
 {renderWeightedSection(

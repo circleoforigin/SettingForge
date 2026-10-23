@@ -152,8 +152,8 @@ const ENVIRONMENT_DEFINITIONS:
     ],
     precipitation: [
       {
-        id: 'none',
-        name: 'None',
+        id: 'dry',
+        name: 'Dry',
         generationWeight: 0,
       },
       {
