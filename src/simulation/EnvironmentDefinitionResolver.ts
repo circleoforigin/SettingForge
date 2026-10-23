@@ -6,34 +6,6 @@ import type {
   EnvironmentDefinitionOverrides,
 } from './EnvironmentDefinitions';
 
-function mergeNamedDefinitions<
-  T extends { id: string }
->(
-  definitions: T[],
-  overrides: Partial<T>[] | undefined
-): T[]
-{
-  if (!overrides?.length)
-  {
-    return definitions;
-  }
-
-  return definitions.map((definition) =>
-  {
-    const override = overrides.find(
-      (candidate) =>
-        candidate.id === definition.id
-    );
-
-    return override
-      ? {
-          ...definition,
-          ...override,
-        }
-      : definition;
-  });
-}
-
 export function resolveEnvironmentDefinitions(
   ruleset: WorldRulesetReference | undefined
 ): EnvironmentDefinitions | undefined
@@ -63,66 +35,12 @@ export function resolveEffectiveEnvironmentDefinitions(
     return undefined;
   }
 
-  if (!overrides)
-  {
-    return definitions;
-  }
-
   return {
-  ...definitions,
+    ...structuredClone(definitions),
 
-  seasons:
-    overrides.replacements?.seasons ??
-    mergeNamedDefinitions(
-      definitions.seasons,
-      overrides.seasons
-    ),
-
-  temperature: {
-    ...definitions.temperature,
-    ...overrides.temperature,
-  },
-
-  visibility:
-    overrides.replacements?.visibility ??
-    mergeNamedDefinitions(
-      definitions.visibility,
-      overrides.visibility
-    ),
-
-  cloudCover:
-    overrides.replacements?.cloudCover ??
-    mergeNamedDefinitions(
-      definitions.cloudCover,
-      overrides.cloudCover
-    ),
-
-  precipitation:
-    overrides.replacements?.precipitation ??
-    mergeNamedDefinitions(
-      definitions.precipitation,
-      overrides.precipitation
-    ),
-
-  windStrength:
-    overrides.replacements?.windStrength ??
-    mergeNamedDefinitions(
-      definitions.windStrength,
-      overrides.windStrength
-    ),
-
-  windDirections:
-    overrides.replacements?.windDirections ??
-    mergeNamedDefinitions(
-      definitions.windDirections,
-      overrides.windDirections
-    ),
-
-  specialWeather:
-    overrides.replacements?.specialWeather ??
-    mergeNamedDefinitions(
-      definitions.specialWeather,
-      overrides.specialWeather
-    ),
+    temperature: {
+      ...definitions.temperature,
+      ...overrides?.temperature,
+    },
   };
 }

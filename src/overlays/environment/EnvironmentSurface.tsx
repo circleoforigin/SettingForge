@@ -3,7 +3,10 @@ import {
   useState,
 } from 'react';
 import type { OverlaySurfaceProps } from '../OverlayDefinition';
-import { formatEnvironment } from '../../simulation/EnvironmentFormatter';
+import {
+  formatEnvironment,
+  formatPrecipitationName,
+} from '../../simulation/EnvironmentFormatter';
 import { environmentService } from '../../simulation/EnvironmentService';
 import type {
   EnvironmentSettings,
@@ -276,7 +279,11 @@ const directionValue =
               >
 {definitions?.precipitation.map(type => (
   <option key={type.id} value={type.id}>
-    {type.name}
+    {formatPrecipitationName(
+      type.name,
+      draft.temperature,
+      definitions
+    )}
   </option>
 ))}
               </select>

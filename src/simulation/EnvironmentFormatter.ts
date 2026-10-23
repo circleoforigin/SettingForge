@@ -55,16 +55,11 @@ const precipitationName =
   precipitationDefinition?.name ??
   state.precipitation.typeId;
 
-const precipitationType =
-  state.temperature <=
-  (definitions?.temperature.rainSnowThreshold ?? 32)
-    ? 'Snow'
-    : 'Rain';
-
 const precipitation =
-  precipitationName.replaceAll(
-    '{type}',
-    precipitationType
+  formatPrecipitationName(
+    precipitationName,
+    state.temperature,
+    definitions
   );
 
 const specialWeather =
