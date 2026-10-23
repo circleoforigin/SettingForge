@@ -24,9 +24,7 @@ type WeightedEntry =
 function renderWeightedSection(
   title: string,
   entries: WeightedEntry[],
-  onChange: (entries: WeightedEntry[]) => void,
-  create: () => WeightedEntry,
-  minimumEntries = 1
+  onChange: (entries: WeightedEntry[]) => void
 )
 {
   return (
@@ -34,20 +32,13 @@ function renderWeightedSection(
       title={title}
       entries={entries}
       onChange={onChange}
-      createEntry={create}
-      minimumEntries={minimumEntries}
       renderEntry={(entry, update) => (
         <>
           <input
             type="text"
             aria-label={`${title} name`}
             value={entry.name}
-            onChange={event =>
-            {
-              update({
-                name: event.target.value,
-              });
-            }}
+            readOnly
           />
 
           <label>Weight</label>
@@ -58,33 +49,19 @@ function renderWeightedSection(
             aria-label={`${entry.name} weight`}
             value={entry.generationWeight}
             onChange={event =>
-            {
               update({
                 generationWeight: Math.max(
                   0,
-                  Number(event.target.value)
+                  Number(event.target.value) || 0
                 ),
-              });
-            }}
+              })
+            }
           />
         </>
       )}
     />
   );
 }
-
-function createEntry<T extends object>(
-  template: T
-): T & { id: string }
-{
-  return {
-    ...template,
-    id: crypto.randomUUID(),
-  };
-}
-
-
-
 interface EnvironmentSettingsDialogProps
 {
   onClose: () => void;
@@ -102,31 +79,6 @@ const formatSelectionRef =
     start: 0,
     end: 0,
   });
-
-const precipitationInputRef =
-  useRef<HTMLInputElement | null>(null);
-
-const precipitationSelectionRef = useRef({
-  start: 0,
-  end: 0,
-});
-
-const [activePrecipitationId, setActivePrecipitationId] =
-  useState<string | null>(null);
-
-const rememberPrecipitationSelection = (
-  input: HTMLInputElement,
-  id: string
-) =>
-{
-  precipitationInputRef.current = input;
-  setActivePrecipitationId(id);
-
-  precipitationSelectionRef.current = {
-    start: input.selectionStart ?? 0,
-    end: input.selectionEnd ?? 0,
-  };
-};
 
 const rememberFormatSelection = () =>
 {
@@ -184,90 +136,17 @@ const updateCategory = <
     );
   };
 
-  const insertPrecipitationType = () =>
-{
-  if (!draft || !activePrecipitationId)
-  {
-    return;
-  }
-
-  const entry = draft.precipitation.find(
-    item => item.id === activePrecipitationId
-  );
-
-  if (!entry)
-  {
-    return;
-  }
-
-  const token = '{type}';
-
-  const { start, end } =
-    precipitationSelectionRef.current;
-
-  const nextName =
-    entry.name.slice(0, start) +
-    token +
-    entry.name.slice(end);
-
-  const nextPosition = start + token.length;
-
-  updateCategory(
-    'precipitation',
-    draft.precipitation.map(item =>
-      item.id === entry.id
-        ? { ...item, name: nextName }
-        : item
-    )
-  );
-
-  precipitationSelectionRef.current = {
-    start: nextPosition,
-    end: nextPosition,
-  };
-
-  requestAnimationFrame(() =>
-  {
-    const input = precipitationInputRef.current;
-
-    if (input)
-    {
-      input.focus();
-      input.setSelectionRange(
-        nextPosition,
-        nextPosition
-      );
-    }
-  });
-};
-
-  const saveDefinitions = () =>
+const saveDefinitions = () =>
 {
   if (!draft)
   {
     return;
   }
 
-  const existing =
-    environmentService.getDefinitionOverrides();
-
   environmentService.setDefinitionOverrides({
-    ...existing,
-
     temperature: structuredClone(
       draft.temperature
     ),
-
-    replacements: {
-      ...existing.replacements,
-
-      seasons: structuredClone(draft.seasons),
-      visibility: structuredClone(draft.visibility),
-      cloudCover: structuredClone(draft.cloudCover),
-      precipitation: structuredClone(draft.precipitation),
-      windStrength: structuredClone(draft.windStrength),
-      specialWeather: structuredClone(draft.specialWeather),
-    },
   });
 
   onClose();
@@ -290,74 +169,42 @@ const updateCategory = <
               entries={draft.seasons}
               onChange={entries =>
                 updateCategory('seasons', entries)
-              }
-              createEntry={() =>
-                createEntry({
-                  name: 'New Season',
-                  lowTemperature: 0,
-                  highTemperature: 50,
-                  generationWeight: 0,
-                })
-              }
-              renderEntry={(entry, update) => (
-                <>
-                  <input
-                    type="text"
-                    aria-label="Season name"
-                    value={entry.name}
-                    onChange={event =>
-                      update({
-                        name: event.target.value,
-                      })
-                    }
-                  />
+              }              
+renderEntry={entry => (
+  <>
+    <input
+      type="text"
+      aria-label="Season name"
+      value={entry.name}
+      readOnly
+    />
 
-                  <label>L:</label>
+    <label>L:</label>
+    <input
+      type="number"
+      aria-label="Low temperature"
+      value={entry.lowTemperature}
+      readOnly
+    />
 
-                  <input
-                    type="number"
-                    aria-label="Low temperature"
-                    value={entry.lowTemperature}
-                    onChange={event =>
-                      update({
-                        lowTemperature:
-                          Number(event.target.value),
-                      })
-                    }
-                  />
+    <label>H:</label>
+    <input
+      type="number"
+      aria-label="High temperature"
+      value={entry.highTemperature}
+      readOnly
+    />
 
-                  <label>H:</label>
-
-                  <input
-                    type="number"
-                    aria-label="High temperature"
-                    value={entry.highTemperature}
-                    onChange={event =>
-                      update({
-                        highTemperature:
-                          Number(event.target.value),
-                      })
-                    }
-                  />
-
-                  <label>Weight</label>
-
-                  <input
-                    type="number"
-                    min="0"
-                    aria-label="Season weight"
-                    value={entry.generationWeight ?? 0}
-                    onChange={event =>
-                      update({
-                        generationWeight: Math.max(
-                          0,
-                          Number(event.target.value)
-                        ),
-                      })
-                    }
-                  />
-                </>
-              )}
+    <label>Weight</label>
+    <input
+      type="number"
+      min="0"
+      aria-label="Season weight"
+      value={entry.generationWeight ?? 0}
+      readOnly
+    />
+  </>
+)}
             />
 
             <section className="environment-settings-temperature-section">
@@ -507,154 +354,40 @@ onChange={event =>
   </div>
 </section>
 
-            {renderWeightedSection(
-              'Visibility',
-              draft.visibility,
-              entries =>
-                updateCategory('visibility', entries),
-              () =>
-                createEntry({
-                  name: 'New Visibility',
-                  generationWeight: 0,
-                })
-            )}
+{renderWeightedSection(
+  'Visibility',
+  draft.visibility,
+  entries =>
+    updateCategory('visibility', entries)
+)}
 
-            {renderWeightedSection(
-              'Cloud Cover',
-              draft.cloudCover,
-              entries =>
-                updateCategory('cloudCover', entries),
-              () =>
-                createEntry({
-                  name: 'New Cloud Cover',
-                  generationWeight: 0,
-                })
-            )}
+{renderWeightedSection(
+  'Cloud Cover',
+  draft.cloudCover,
+  entries =>
+    updateCategory('cloudCover', entries)
+)}
 
-<EnvironmentSettingsSection
-  title="Precipitation"
-  entries={draft.precipitation}
-  onChange={entries =>
+{renderWeightedSection(
+  'Precipitation',
+  draft.precipitation,
+  entries =>
     updateCategory('precipitation', entries)
-  }
-  createEntry={() =>
-    createEntry({
-      name: 'New Precipitation',
-      generationWeight: 0,
-    })
-  }
-  headerAction={
-    <button
-      type="button"
-      disabled={!activePrecipitationId}
-      onMouseDown={event =>
-      {
-        event.preventDefault();
-      }}
-      onClick={insertPrecipitationType}
-    >
-      {'{type}'}
-    </button>
-  }
-  renderEntry={(entry, update) => (
-    <>
-      <input
-        type="text"
-        aria-label="Precipitation name"
-        value={entry.name}
-        onFocus={event =>
-          rememberPrecipitationSelection(
-            event.currentTarget,
-            entry.id
-          )
-        }
-        onClick={event =>
-          rememberPrecipitationSelection(
-            event.currentTarget,
-            entry.id
-          )
-        }
-        onKeyUp={event =>
-          rememberPrecipitationSelection(
-            event.currentTarget,
-            entry.id
-          )
-        }
-        onSelect={event =>
-          rememberPrecipitationSelection(
-            event.currentTarget,
-            entry.id
-          )
-        }
-        onChange={event =>
-        {
-          update({
-            name: event.target.value,
-          });
-
-          rememberPrecipitationSelection(
-            event.currentTarget,
-            entry.id
-          );
-        }}
-        onBlur={event =>
-        {
-          const nextFocus = event.relatedTarget;
-
-          if (
-            nextFocus instanceof HTMLElement &&
-            nextFocus.closest(
-              '.environment-settings-section-header'
-            )
-          )
-          {
-            return;
-          }
-
-          setActivePrecipitationId(null);
-        }}
-      />
-
-      <label>Weight</label>
-
-      <input
-        type="number"
-        min="0"
-        aria-label={`${entry.name} weight`}
-        value={entry.generationWeight}
-        onChange={event =>
-          update({
-            generationWeight: Math.max(
-              0,
-              Number(event.target.value)
-            ),
-          })
-        }
-      />
-    </>
-  )}
-/>
+)}
 
             <EnvironmentSettingsSection
               title="Wind Strength"
               entries={draft.windStrength}
               onChange={entries =>
                 updateCategory('windStrength', entries)
-              }
-              createEntry={() =>
-                createEntry({
-                  name: 'New Wind Strength',
-                  minimumSpeed: 0,
-                  maximumSpeed: 10,
-                  generationWeight: 0,
-                })
-              }
+              }              
               renderEntry={(entry, update) => (
                 <>
                   <input
                     type="text"
                     aria-label="Wind strength name"
                     value={entry.name}
+                    readOnly
                     onChange={event =>
                       update({
                         name: event.target.value,
@@ -668,6 +401,7 @@ onChange={event =>
                     type="number"
                     aria-label="Minimum wind speed"
                     value={entry.minimumSpeed}
+                    readOnly
                     onChange={event =>
                       update({
                         minimumSpeed:
@@ -682,6 +416,7 @@ onChange={event =>
                     type="number"
                     aria-label="Maximum wind speed"
                     value={entry.maximumSpeed}
+                    readOnly
                     onChange={event =>
                       update({
                         maximumSpeed:
@@ -701,7 +436,7 @@ onChange={event =>
                       update({
                         generationWeight: Math.max(
                           0,
-                          Number(event.target.value)
+                          Number(event.target.value) || 0
                         ),
                       })
                     }
@@ -714,7 +449,6 @@ onChange={event =>
   'Special Weather',
   draft.specialWeather,
   entries =>
-  {
     updateCategory(
       'specialWeather',
       entries.map(entry =>
@@ -731,17 +465,7 @@ onChange={event =>
           effects: existing?.effects ?? [],
         };
       })
-    );
-  },
-  () =>
-    createEntry({
-      name: 'New Special Weather',
-      description: '',
-      generationWeight: 0,
-      requirements: [],
-      effects: [],
-    }),
-  0
+    )
 )}
           </div>
         )}

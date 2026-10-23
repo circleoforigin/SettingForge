@@ -1,7 +1,4 @@
 import {
-  useEffect,
-  useRef,
-  useState,
   type ReactNode,
 } from 'react';
 
@@ -16,14 +13,13 @@ interface EnvironmentSettingsSectionProps<
 {
   title: string;
   entries: T[];
-  minimumEntries?: number;
-  createEntry: () => T;
   onChange: (entries: T[]) => void;
   renderEntry: (
     entry: T,
     update: (changes: Partial<T>) => void
   ) => ReactNode;
-  headerAction?: ReactNode;
+  selectedId?: string;
+  onSelect?: (id: string) => void;
 }
 
 export function EnvironmentSettingsSection<
@@ -31,113 +27,16 @@ export function EnvironmentSettingsSection<
 >({
   title,
   entries,
-  minimumEntries = 1,
-  createEntry,
   onChange,
   renderEntry,
-  headerAction,
+  selectedId,
+  onSelect,
 }: EnvironmentSettingsSectionProps<T>)
 {
-  const [selectedId, setSelectedId] =
-    useState<string | null>(null);
-
-  const sectionRef =
-    useRef<HTMLElement>(null);
-
-  const selectedEntry =
-    entries.find(entry => entry.id === selectedId);
-
-  useEffect(() =>
-  {
-    if (
-      selectedId &&
-      !entries.some(entry => entry.id === selectedId)
-    )
-    {
-      setSelectedId(null);
-    }
-  }, [entries, selectedId]);
-
-  useEffect(() =>
-  {
-    const handlePointerDown = (event: PointerEvent) =>
-    {
-      if (
-        sectionRef.current &&
-        !sectionRef.current.contains(
-          event.target as Node
-        )
-      )
-      {
-        setSelectedId(null);
-      }
-    };
-
-    document.addEventListener(
-      'pointerdown',
-      handlePointerDown
-    );
-
-    return () =>
-    {
-      document.removeEventListener(
-        'pointerdown',
-        handlePointerDown
-      );
-    };
-  }, []);
-
-  const addEntry = () =>
-  {
-    const entry = createEntry();
-
-    onChange([...entries, entry]);
-    setSelectedId(null);
-  };
-
-  const removeEntry = () =>
-  {
-    if (
-      !selectedEntry ||
-      entries.length <= minimumEntries
-    )
-    {
-      return;
-    }
-
-    onChange(
-      entries.filter(entry =>
-        entry.id !== selectedEntry.id
-      )
-    );
-
-    setSelectedId(null);
-  };
-
   return (
-    <section
-      ref={sectionRef}
-      className="environment-settings-section"
-    >
+    <section className="environment-settings-section">
       <div className="environment-settings-section-header">
         <h3>{title}</h3>
-
-        {headerAction}
-
-        <button
-          type="button"
-          disabled={
-            !!selectedEntry &&
-            entries.length <= minimumEntries
-          }
-          onClick={
-            selectedEntry
-              ? removeEntry
-              : addEntry
-          }
-        >
-          {selectedEntry ? 'Remove' : 'Add'}
-        </button>
       </div>
 
       <div className="environment-settings-entry-list">
@@ -149,11 +48,10 @@ export function EnvironmentSettingsSection<
                 ? 'environment-settings-entry selected'
                 : 'environment-settings-entry'
             }
-            onPointerDown={() =>
-              setSelectedId(entry.id)
-            }
-            onFocusCapture={() =>
-              setSelectedId(entry.id)
+            onClick={
+              onSelect
+                ? () => onSelect(entry.id)
+                : undefined
             }
           >
             {renderEntry(
