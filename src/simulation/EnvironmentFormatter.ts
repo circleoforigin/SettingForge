@@ -17,6 +17,23 @@ export const ENVIRONMENT_FORMAT_FIELDS = [
 export type EnvironmentFormatField =
   typeof ENVIRONMENT_FORMAT_FIELDS[number]['value'];
 
+export function formatPrecipitationName(
+  name: string,
+  temperature: number,
+  definitions?: EnvironmentDefinitions
+): string
+{
+  const threshold =
+    definitions?.temperature.rainSnowThreshold ?? 32;
+
+  const type =
+    temperature <= threshold
+      ? 'Snow'
+      : 'Rain';
+
+  return name.replaceAll('{type}', type);
+}
+
 export function formatEnvironment(
   format: string,
   state: EnvironmentState,
@@ -38,18 +55,17 @@ const precipitationName =
   precipitationDefinition?.name ??
   state.precipitation.typeId;
 
-const isDry =
-  state.precipitation.typeId === 'none';
+const precipitationType =
+  state.temperature <=
+  (definitions?.temperature.rainSnowThreshold ?? 32)
+    ? 'Snow'
+    : 'Rain';
 
 const precipitation =
-  isDry
-    ? precipitationName
-    : `${precipitationName} ${
-        state.temperature <=
-        (definitions?.temperature.rainSnowThreshold ?? 32)
-          ? 'Snow'
-          : 'Rain'
-      }`;
+  precipitationName.replaceAll(
+    '{type}',
+    precipitationType
+  );
 
 const specialWeather =
   state.specialWeatherTypeId === 'none'
