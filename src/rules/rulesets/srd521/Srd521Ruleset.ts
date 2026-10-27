@@ -119,52 +119,47 @@ const ENVIRONMENT_DEFINITIONS:
       {
         id: 'clear',
         name: 'Clear',
-        generationWeight: 0,
+        generationWeight: 90,
       },
       {
         id: 'haze',
         name: 'Haze',
-        generationWeight: 0,
-      },
-      {
-        id: 'fog',
-        name: 'Fog',
-        generationWeight: 0,
+        generationWeight: 10,
       },
     ],
 
     cloudCover: [
       {
-        id: 'clear',
-        name: 'Clear',
-        generationWeight: 0,
+        id: 'clear-skies',
+        name: 'Clear Skies',
+        generationWeight: 45,
       },
       {
         id: 'partly-cloudy',
         name: 'Partly Cloudy',
-        generationWeight: 0,
+        generationWeight: 40,
       },
       {
         id: 'overcast',
         name: 'Overcast',
-        generationWeight: 0,
+        generationWeight: 15,
       },
     ],
     precipitation: [
       {
         id: 'dry',
         name: 'Dry',
-        generationWeight: 0,
+        generationWeight: 90,
       },
       {
         id: 'light',
         name: 'Light',
-        generationWeight: 0,
+        generationWeight: 8,
       },
       {
         id: 'heavy',
         name: 'Heavy',
-        generationWeight: 0,
+        generationWeight: 2,
       },
     ],
     windStrength: [
@@ -173,28 +168,28 @@ const ENVIRONMENT_DEFINITIONS:
         name: 'Light',
         minimumSpeed: 0,
         maximumSpeed: 10,
-        generationWeight: 0,
+        generationWeight: 65,
       },
       {
         id: 'moderate',
         name: 'Moderate',
         minimumSpeed: 11,
         maximumSpeed: 20,
-        generationWeight: 0,
+        generationWeight: 27,
       },
       {
         id: 'strong',
         name: 'Strong',
         minimumSpeed: 21,
         maximumSpeed: 30,
-        generationWeight: 0,
+        generationWeight: 7,
       },
       {
         id: 'severe',
         name: 'Severe',
         minimumSpeed: 31,
         maximumSpeed: 50,
-        generationWeight: 0,
+        generationWeight: 1,
       },
     ],
     windDirections: [
@@ -240,6 +235,98 @@ const ENVIRONMENT_DEFINITIONS:
       },
     ],
     specialWeather: [],
+
+    generation: {
+      enabled: true,
+
+      minimumUpdateMinutes: 180,
+      maximumUpdateMinutes: 1440,
+
+      seasonalWeightVectors: [
+        {
+          seasonId: 'winter',
+
+          visibility: [
+            { targetId: 'clear', delta: 2 },
+            { targetId: 'haze', delta: -2 },
+          ],
+
+          cloudCover: [
+            { targetId: 'clear', delta: -10 },
+            { targetId: 'overcast', delta: 10 },
+          ],
+
+          precipitation: [
+            { targetId: 'dry', delta: 2 },
+            { targetId: 'light', delta: -1 },
+            { targetId: 'heavy', delta: -1 },
+          ],
+
+          windStrength: [
+            { targetId: 'light', delta: -5 },
+            { targetId: 'moderate', delta: 3 },
+            { targetId: 'strong', delta: 2 },
+          ],
+
+          specialWeather: [],
+        },
+
+        {
+          seasonId: 'spring',
+
+          visibility: [
+            { targetId: 'clear', delta: -2 },
+            { targetId: 'haze', delta: 2 },
+          ],
+
+          cloudCover: [
+            { targetId: 'clear', delta: -5 },
+            { targetId: 'overcast', delta: 5 },
+          ],
+
+          precipitation: [
+            { targetId: 'dry', delta: -10 },
+            { targetId: 'light', delta: 7 },
+            { targetId: 'heavy', delta: 3 },
+          ],
+
+          windStrength: [
+            { targetId: 'light', delta: -10 },
+            { targetId: 'moderate', delta: 6 },
+            { targetId: 'strong', delta: 3 },
+            { targetId: 'severe', delta: 1 },
+          ],
+
+          specialWeather: [],
+        },
+
+        {
+          seasonId: 'summer',
+
+          visibility: [],
+
+          cloudCover: [
+            { targetId: 'clear', delta: 10 },
+            { targetId: 'partly-cloudy', delta: -5 },
+            { targetId: 'overcast', delta: -5 },
+          ],
+
+          precipitation: [
+            { targetId: 'dry', delta: 2 },
+            { targetId: 'light', delta: -1 },
+            { targetId: 'heavy', delta: -1 },
+          ],
+
+          windStrength: [
+            { targetId: 'light', delta: 5 },
+            { targetId: 'moderate', delta: -3 },
+            { targetId: 'strong', delta: -2 },
+          ],
+
+          specialWeather: [],
+        },
+      ],
+    },
   };
 
 const TERRAIN_DEFINITIONS:
@@ -738,6 +825,14 @@ export const srd521Ruleset:
             description:
               'Determines whether travel on this map consumes the daily travel allowance.',
           },
+          {
+            id: 'highAltitude',
+            label: 'High Altitude',
+            type: 'boolean',
+            defaultValue: false,
+            description:
+              'Indicates terrain at an altitude of 10,000 feet or higher, where SRD high-altitude travel rules apply.',
+          },
         ],
       },
       {
@@ -766,6 +861,14 @@ export const srd521Ruleset:
             defaultValue: false,
             description:
               'Movement through Difficult Terrain costs 1 extra foot for every foot moved.',
+          },
+          {
+            id: 'highAltitude',
+            label: 'High Altitude',
+            type: 'boolean',
+            defaultValue: false,
+            description:
+              'Indicates terrain at an altitude of 10,000 feet or higher, where SRD high-altitude travel rules apply.',
           },
         ],
 

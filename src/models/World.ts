@@ -42,6 +42,7 @@ export interface WorldSimulationState
 export interface World {
   id: string;
   name: string;
+  seed?: number;
   modules: WorldModuleReference[];
   ruleset?: WorldRulesetReference;
 

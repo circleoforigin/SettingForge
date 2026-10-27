@@ -5,10 +5,15 @@ import {
 } from 'react';
 
 import { environmentService } from '../../simulation/EnvironmentService';
-
+import {
+  createEnvironmentWeightVector,
+  resolveEnvironmentWeight,
+  type EnvironmentWeightCategory,
+} from '../../simulation/EnvironmentWeightResolver';
 import type {
   EnvironmentDefinitions,
   EnvironmentNamedDefinition,
+  EnvironmentSeasonWeightVectors,
 } from '../../simulation/EnvironmentDefinitions';
 import {
   ENVIRONMENT_FORMAT_FIELDS,
@@ -23,42 +28,91 @@ type WeightedEntry =
 
 function renderWeightedSection(
   title: string,
+  category: EnvironmentWeightCategory,
   entries: WeightedEntry[],
-  onChange: (entries: WeightedEntry[]) => void
+  seasonId: string | undefined,
+  rulesetVectors:
+    EnvironmentDefinitions['generation'],
+  worldVectors: EnvironmentSeasonWeightVectors[],
+  onWeightChange: (
+    seasonId: string,
+    category: EnvironmentWeightCategory,
+    targetId: string,
+    desiredWeight: number,
+    inheritedWeight: number
+  ) => void,
+  onRevert: () => void
 )
 {
   return (
     <EnvironmentSettingsSection<WeightedEntry>
       title={title}
       entries={entries}
-      onChange={onChange}
-      renderEntry={(entry, update) => (
-        <>
-<span className="environment-settings-static-value">
-  {entry.name}
-</span>
+      onChange={() => {}}
+      onRevert={onRevert}
+      renderEntry={entry =>
+      {
+        const inheritedWeight = seasonId
+          ? resolveEnvironmentWeight(
+              entry.generationWeight,
+              seasonId,
+              category,
+              entry.id,
+              rulesetVectors?.seasonalWeightVectors
+            )
+          : entry.generationWeight;
 
-          <label>Weight</label>
+        const effectiveWeight = seasonId
+          ? resolveEnvironmentWeight(
+              entry.generationWeight,
+              seasonId,
+              category,
+              entry.id,
+              rulesetVectors?.seasonalWeightVectors,
+              worldVectors
+            )
+          : inheritedWeight;
 
-          <input
-            type="number"
-            min="0"
-            aria-label={`${entry.name} weight`}
-            value={entry.generationWeight}
-            onChange={event =>
-              update({
-                generationWeight: Math.max(
-                  0,
-                  Number(event.target.value) || 0
-                ),
-              })
-            }
-          />
-        </>
-      )}
+        return (
+          <>
+            <span className="environment-settings-static-value">
+              {entry.name}
+            </span>
+
+            <label>Weight</label>
+
+            <input
+              type="number"
+              min="0"
+              aria-label={`${entry.name} weight`}
+              value={effectiveWeight}
+              disabled={!seasonId}
+              onChange={event =>
+              {
+                if (!seasonId)
+                {
+                  return;
+                }
+
+                onWeightChange(
+                  seasonId,
+                  category,
+                  entry.id,
+                  Math.max(
+                    0,
+                    Number(event.target.value) || 0
+                  ),
+                  inheritedWeight
+                );
+              }}
+            />
+          </>
+        );
+      }}
     />
   );
 }
+
 interface EnvironmentSettingsDialogProps
 {
   onClose: () => void;
@@ -92,12 +146,19 @@ const rememberFormatSelection = () =>
   };
 };
 
-  const [draft, setDraft] =
-    useState<EnvironmentDefinitions | undefined>(
-      () => environmentService.getDefinitions()
-    );
+const [draft, setDraft] =
+  useState<EnvironmentDefinitions | undefined>(
+    () => environmentService.getDefinitions()
+  );
 
-  const [selectedSeasonId, setSelectedSeasonId] =
+const [worldVectors, setWorldVectors] =
+  useState<EnvironmentSeasonWeightVectors[]>(
+    () =>
+      environmentService.getDefinitionOverrides()
+        .seasonalWeightVectors ?? []
+  );
+
+const [selectedSeasonId, setSelectedSeasonId] =
   useState<string | undefined>(
     () => environmentService.getDefinitions()
       ?.seasons[0]?.id
@@ -139,6 +200,89 @@ const updateCategory = <
     );
   };
 
+const updateWorldWeight = (
+  seasonId: string,
+  category: EnvironmentWeightCategory,
+  targetId: string,
+  desiredWeight: number,
+  inheritedWeight: number
+) =>
+{
+  const vector = createEnvironmentWeightVector(
+    targetId,
+    desiredWeight,
+    inheritedWeight
+  );
+
+  setWorldVectors(current =>
+  {
+    const seasons = structuredClone(current);
+
+    let season = seasons.find(
+      item => item.seasonId === seasonId
+    );
+
+    if (!season)
+    {
+      season = {
+        seasonId,
+        visibility: [],
+        cloudCover: [],
+        precipitation: [],
+        windStrength: [],
+        specialWeather: [],
+      };
+
+      seasons.push(season);
+    }
+
+    season[category] = season[category].filter(
+      item => item.targetId !== targetId
+    );
+
+    if (vector)
+    {
+      season[category].push(vector);
+    }
+
+    return seasons.filter(item =>
+      item.visibility.length > 0 ||
+      item.cloudCover.length > 0 ||
+      item.precipitation.length > 0 ||
+      item.windStrength.length > 0 ||
+      item.specialWeather.length > 0
+    );
+  });
+};
+
+const revertWorldCategory = (
+  seasonId: string,
+  category: EnvironmentWeightCategory
+) =>
+{
+  setWorldVectors(current =>
+    current
+      .map(season => {
+        if (season.seasonId !== seasonId)
+        {
+          return season;
+        }
+
+        return {
+          ...season,
+          [category]: [],
+        };
+      })
+      .filter(season =>
+        season.visibility.length > 0 ||
+        season.cloudCover.length > 0 ||
+        season.precipitation.length > 0 ||
+        season.windStrength.length > 0 ||
+        season.specialWeather.length > 0
+      )
+  );
+};
+
 const saveDefinitions = () =>
 {
   if (!draft)
@@ -147,9 +291,14 @@ const saveDefinitions = () =>
   }
 
   environmentService.setDefinitionOverrides({
+    ...environmentService.getDefinitionOverrides(),
+
     temperature: structuredClone(
       draft.temperature
     ),
+
+    seasonalWeightVectors:
+      structuredClone(worldVectors),
   });
 
   onClose();
@@ -345,90 +494,157 @@ onChange={event =>
 
 {renderWeightedSection(
   'Visibility',
+  'visibility',
   draft.visibility,
-  entries =>
-    updateCategory('visibility', entries)
+  selectedSeasonId,
+  draft.generation,
+  worldVectors,
+  updateWorldWeight,
+  () =>
+  {
+    if (selectedSeasonId)
+    {
+        revertWorldCategory(selectedSeasonId, 'visibility');
+    }
+  }
 )}
 
 {renderWeightedSection(
   'Cloud Cover',
+  'cloudCover',
   draft.cloudCover,
-  entries =>
-    updateCategory('cloudCover', entries)
+  selectedSeasonId,
+  draft.generation,
+  worldVectors,
+  updateWorldWeight,
+  () =>
+  {
+    if (selectedSeasonId)
+    {
+        revertWorldCategory(selectedSeasonId, 'cloudCover');
+    }
+  }
 )}
 
 {renderWeightedSection(
   'Precipitation',
+  'precipitation',
   draft.precipitation,
-  entries =>
-    updateCategory('precipitation', entries)
+  selectedSeasonId,
+  draft.generation,
+  worldVectors,
+  updateWorldWeight,
+  () =>
+  {
+    if (selectedSeasonId)
+    {
+        revertWorldCategory(selectedSeasonId, 'precipitation');
+    }
+  }
 )}
 
             <EnvironmentSettingsSection
-              title="Wind Strength"
-              entries={draft.windStrength}
-              onChange={entries =>
-                updateCategory('windStrength', entries)
-              }              
-renderEntry={(entry, update) => (
-  <>
-    <span className="environment-settings-static-value">
-      {entry.name}
-    </span>
+  title="Wind Strength"
+  entries={draft.windStrength}
+  onChange={() => {}}
+  onRevert={() =>
+  {
+    if (selectedSeasonId)
+    {
+      revertWorldCategory(
+        selectedSeasonId,
+        'windStrength'
+      );
+    }
+  }}
+  renderEntry={entry =>
+  {
+    const inheritedWeight = selectedSeasonId
+      ? resolveEnvironmentWeight(
+          entry.generationWeight,
+          selectedSeasonId,
+          'windStrength',
+          entry.id,
+          draft.generation?.seasonalWeightVectors
+        )
+      : entry.generationWeight;
 
-    <label>L:</label>
+    const effectiveWeight = selectedSeasonId
+      ? resolveEnvironmentWeight(
+          entry.generationWeight,
+          selectedSeasonId,
+          'windStrength',
+          entry.id,
+          draft.generation?.seasonalWeightVectors,
+          worldVectors
+        )
+      : inheritedWeight;
 
-    <span className="environment-settings-static-number">
-      {entry.minimumSpeed}
-    </span>
+    return (
+      <>
+        <span className="environment-settings-static-value">
+          {entry.name}
+        </span>
 
-    <label>H:</label>
+        <label>L:</label>
 
-    <span className="environment-settings-static-number">
-      {entry.maximumSpeed}
-    </span>
+        <span className="environment-settings-static-number">
+          {entry.minimumSpeed}
+        </span>
 
-    <label>Weight</label>
+        <label>H:</label>
 
-    <input
-      type="number"
-      min="0"
-      aria-label="Wind strength weight"
-      value={entry.generationWeight}
-      onChange={event =>
-        update({
-          generationWeight: Math.max(
-            0,
-            Number(event.target.value) || 0
-          ),
-        })
-      }
-    />
-  </>
-)}
-            />
+        <span className="environment-settings-static-number">
+          {entry.maximumSpeed}
+        </span>
+
+        <label>Weight</label>
+
+        <input
+          type="number"
+          min="0"
+          aria-label={`${entry.name} wind strength weight`}
+          value={effectiveWeight}
+          disabled={!selectedSeasonId}
+          onChange={event =>
+          {
+            if (!selectedSeasonId)
+            {
+              return;
+            }
+
+            updateWorldWeight(
+              selectedSeasonId,
+              'windStrength',
+              entry.id,
+              Math.max(
+                0,
+                Number(event.target.value) || 0
+              ),
+              inheritedWeight
+            );
+          }}
+        />
+      </>
+    );
+  }}
+/>
 
 {renderWeightedSection(
-  'Special Weather',
+  'Special',
+  'specialWeather',
   draft.specialWeather,
-  entries =>
-    updateCategory(
-      'specialWeather',
-      entries.map(entry =>
-      {
-        const existing =
-          draft.specialWeather.find(
-            item => item.id === entry.id
-          );
-
-        return {
-          ...existing,
-          ...entry,
-          requirements: existing?.requirements ?? [],
-          effects: existing?.effects ?? [],
-        };
-      })
-    )
+  selectedSeasonId,
+  draft.generation,
+  worldVectors,
+  updateWorldWeight,
+  () =>
+  {
+    if (selectedSeasonId)
+    {
+        revertWorldCategory(selectedSeasonId, 'specialWeather');
+    }
+  }
 )}
           </div>
         )}

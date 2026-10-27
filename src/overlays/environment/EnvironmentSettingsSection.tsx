@@ -20,6 +20,7 @@ interface EnvironmentSettingsSectionProps<
   ) => ReactNode;
   selectedId?: string;
   onSelect?: (id: string) => void;
+  onRevert?: () => void;
 }
 
 export function EnvironmentSettingsSection<
@@ -31,13 +32,23 @@ export function EnvironmentSettingsSection<
   renderEntry,
   selectedId,
   onSelect,
+  onRevert,
 }: EnvironmentSettingsSectionProps<T>)
 {
   return (
     <section className="environment-settings-section">
-      <div className="environment-settings-section-header">
-        <h3>{title}</h3>
-      </div>
+<div className="environment-settings-section-header">
+  <h3>{title}</h3>
+
+  {onRevert && (
+    <button
+      type="button"
+      onClick={onRevert}
+    >
+      Revert
+    </button>
+  )}
+</div>
 
       <div className="environment-settings-entry-list">
         {entries.map(entry => (
