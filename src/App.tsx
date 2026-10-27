@@ -1,5 +1,7 @@
 import './App.css';
 import './css/Overlays.css';
+import { createSeed } from '@settingforge/module-sdk';
+import { ensureWorldSeed } from './worlds/ensureWorldSeed';
 import { moduleRegistry } from './modules/registry';
 import { useEffect, useRef, useState } from 'react';
 import { hostEventBroker } from './events/HostEventBroker';
@@ -1078,6 +1080,7 @@ if (!loadQueueRef.current) {
         const world: World = {
           id: operation.worldId,
           name: operation.worldName,
+          seed: createSeed(operation.worldName),
           modules: operation.projectReferences,
 
           simulation: {
@@ -2212,15 +2215,33 @@ async function handleLoadWorld(worldId: string) {
   setWorldLoadError(null);
 
   try {
-    const world = await worldRepository.loadWorld(worldId);
+    let world = await worldRepository.loadWorld(worldId);
     if (generation !== worldLoadGenerationRef.current) return;
 
-        if (!world)
+    if (!world)
     {
       throw new Error('The selected World could not be found.');
     }
 
-    const simulation = world.simulation;
+    // Ensure older Worlds have a persistent seed.
+const seedResult = ensureWorldSeed(world);
+
+world = seedResult.world;
+
+if (seedResult.migrated)
+{
+  await worldRepository.saveWorld(world);
+
+  if (
+    generation !==
+    worldLoadGenerationRef.current
+  )
+  {
+    return;
+  }
+}
+
+const simulation = world.simulation;
 
     simClock.restoreWorldState(
       simulation?.time ?? 0,
