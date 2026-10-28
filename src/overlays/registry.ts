@@ -4,15 +4,14 @@ import { MessengerSurface } from './messenger/MessengerSurface';
 import { SimClockSurface } from './simClock/SimClockSurface';
 import { occurrenceEventHandlers } from './occurrence/OccurrenceEvents';
 import { EnvironmentSurface } from './environment/EnvironmentSurface';
+import { CelestialSurface } from './celestial/CelestialSurface';
 
-export const overlayRegistry =
-  new OverlayRegistry();
+export const overlayRegistry = new OverlayRegistry();
 
 const messengerOverlay: OverlayDefinition = {
   id: 'messenger',
   name: 'Messenger',
-  description:
-    'Persistent communications interface for host and player messaging.',
+  description: 'Persistent communications interface for host and player messaging.',
   version: '0.1.0',
   layout: 'positioned',
   allowedMounts: [
@@ -56,28 +55,32 @@ const environmentOverlay: OverlayDefinition = {
   Surface: EnvironmentSurface,
 };
 
+const celestialOverlay: OverlayDefinition = {
+  id: 'celestial',
+  name: 'Celestial',
+  description: 'Persistent celestial calendar and astronomical conditions interface.',
+  version: '0.1.0',
+  layout: 'positioned',
+  allowedMounts: [
+    'bottom-left',
+    'bottom-center',
+    'bottom-right',
+  ],
+  defaultMount: 'bottom-center',
+  Surface: CelestialSurface,
+};
+
 const occurrenceOverlay: OverlayDefinition = {
   id: 'occurrences',
   name: 'Occurrences',
-  description:
-    'Persistent interface for prospective simulation occurrences.',
+  description: 'Persistent interface for prospective simulation occurrences.',
   version: '0.1.0',
   layout: 'fixed',
   events: occurrenceEventHandlers,
 };
 
-overlayRegistry.register(
-  messengerOverlay
-);
-
-overlayRegistry.register(
-  simClockOverlay
-);
-
-overlayRegistry.register(
-  environmentOverlay
-);
-
-overlayRegistry.register(
-  occurrenceOverlay
-);
+overlayRegistry.register(messengerOverlay);
+overlayRegistry.register(simClockOverlay);
+overlayRegistry.register(environmentOverlay);
+overlayRegistry.register(celestialOverlay);
+overlayRegistry.register(occurrenceOverlay);
