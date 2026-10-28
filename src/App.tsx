@@ -3,6 +3,7 @@ import './css/Overlays.css';
 import { createSeed } from '@settingforge/module-sdk';
 import { ensureWorldSeed } from './worlds/ensureWorldSeed';
 import { moduleRegistry } from './modules/registry';
+import { registerWorldHostService } from './worlds/WorldHostService';
 import { useEffect, useRef, useState } from 'react';
 import { hostEventBroker } from './events/HostEventBroker';
 import { registerStorageHostServices} from './services/StorageHostService';
@@ -360,6 +361,14 @@ const unregisterRulesService =
     () => activeWorldRef.current
   );
 
+const unregisterWorldService =
+  registerWorldHostService(
+    hostEventBroker.registerRequestHandler.bind(
+      hostEventBroker
+    ),
+    () => activeWorldRef.current
+  );
+
 const unregisterOccurrenceService =
   registerOccurrenceHostService(
     hostEventBroker.registerRequestHandler.bind(
@@ -465,6 +474,7 @@ loadQueueRef.current?.completeModule(
   unregisterProjectLoaded();
   unregisterModuleReady();
   unregisterRulesService();
+  unregisterWorldService();
   unregisterOccurrenceService();
   unregisterCapabilityService();
   unregisterFileServices();
