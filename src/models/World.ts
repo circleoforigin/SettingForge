@@ -5,6 +5,7 @@ import type {
   EnvironmentState,
 } from '../simulation/EnvironmentSettings';
 import type { EnvironmentDefinitionOverrides } from '../simulation/EnvironmentDefinitions';
+import type { CelestialSettings } from '../simulation/CelestialSettings';
 
 export interface WorldModuleReference {
   moduleId: string;
@@ -32,6 +33,8 @@ export interface WorldSimulationState
 {
   time: number;
   simClockSettings: SimClockSettings;
+
+  celestialSettings?: CelestialSettings;
 
   environmentSettings?: EnvironmentSettings;
   environmentState?: EnvironmentState;

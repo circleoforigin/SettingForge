@@ -19,6 +19,7 @@ import type { OverlayMountId } from './overlays/OverlayPlacement';
 import { rulesetRegistry } from './rules/RulesetRegistry';
 import { registerRulesHostService } from './rules/RulesHostService';
 import { occurrenceService } from './overlays/occurrence/OccurrenceService';
+import { celestialService } from './simulation/CelestialService';
 import {
   MessengerOverlay,
   useMessengerOverlay,
@@ -296,6 +297,7 @@ simulation: {
   environmentSettings: environmentService.getSettings(),
   environmentState: environmentService.getState(),
   environmentDefinitionOverrides: environmentService.getDefinitionOverrides(),
+  celestialSettings: celestialService.getSettings(),
 },  
 
 overlays:
@@ -497,6 +499,17 @@ activeWorldRef.current = activeWorld;
 useEffect(() =>
 {
   return environmentService.subscribe(() =>
+  {
+    if (activeWorldRef.current)
+    {
+      setWorldRuntimeDirty(true);
+    }
+  });
+}, []);
+
+useEffect(() =>
+{
+  return celestialService.subscribe(() =>
   {
     if (activeWorldRef.current)
     {
@@ -1086,6 +1099,7 @@ if (!loadQueueRef.current) {
         }
 
         environmentService.restoreWorldState();
+        celestialService.restoreWorldState();
 
         const world: World = {
           id: operation.worldId,
@@ -1098,6 +1112,7 @@ if (!loadQueueRef.current) {
             simClockSettings: createDefaultSimClockSettings(),
             environmentSettings: environmentService.getSettings(),
             environmentState: environmentService.getState(),
+            celestialSettings: celestialService.getSettings(),
           },        
 
           overlays: [],
@@ -2066,6 +2081,8 @@ async function handleDeleteWorld() {
       );
 
       environmentService.restoreWorldState();
+      celestialService.restoreWorldState();
+      
       environmentService.setRuleset(undefined);
 
       overlayManager.clear();
@@ -2256,6 +2273,10 @@ const simulation = world.simulation;
     simClock.restoreWorldState(
       simulation?.time ?? 0,
       simulation?.simClockSettings ?? createDefaultSimClockSettings()
+    );
+
+    celestialService.restoreWorldState(
+      simulation?.celestialSettings
     );
 
     environmentService.restoreWorldState(
@@ -2849,6 +2870,7 @@ async function finishClose(
   );
 
   environmentService.restoreWorldState();
+  celestialService.restoreWorldState();
   environmentService.setRuleset(undefined);
 
   overlayManager.clear();
