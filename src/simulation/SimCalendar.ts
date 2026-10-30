@@ -58,7 +58,7 @@ function isLeapYear(
   return true;
 }
 
-function getMonthDays(
+export function getMonthDays(
   month: SimClockMonth,
   year: number,
   era: SimClockEra

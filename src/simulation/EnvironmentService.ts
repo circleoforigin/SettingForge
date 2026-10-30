@@ -74,50 +74,44 @@ export class EnvironmentService
         this.definitionOverrides
       );
 
-    if (!this.definitions)
-    {
-        this.state = undefined;
-    }
+const defaults =
+  createInitialEnvironmentState(
+    this.definitions
+  );
 
-if (this.definitions)
+if (!this.state)
 {
-  const defaults =
-    createInitialEnvironmentState(this.definitions);
+  this.state = defaults;
+}
+else
+{
+  const visibilityId =
+    this.state.visibility?.typeId;
 
-  if (!this.state)
-  {
-    this.state = defaults;
-  }
-  else
-  {
-    const visibilityId =
-      this.state.visibility?.typeId;
+  const cloudCoverId =
+    this.state.cloudCoverTypeId;
 
-    const cloudCoverId =
-      this.state.cloudCoverTypeId;
+  this.state = {
+    ...this.state,
 
-    this.state = {
-      ...this.state,
-
-      visibility: {
-        typeId:
-          visibilityId &&
-          this.definitions.visibility.some(
-            item => item.id === visibilityId
-          )
-            ? visibilityId
-            : defaults.visibility.typeId,
-      },
-
-      cloudCoverTypeId:
-        cloudCoverId &&
-        this.definitions.cloudCover.some(
-          item => item.id === cloudCoverId
+    visibility: {
+      typeId:
+        visibilityId &&
+        this.definitions.visibility.some(
+          item => item.id === visibilityId
         )
-          ? cloudCoverId
-          : defaults.cloudCoverTypeId,
-    };
-  }
+          ? visibilityId
+          : defaults.visibility.typeId,
+    },
+
+    cloudCoverTypeId:
+      cloudCoverId &&
+      this.definitions.cloudCover.some(
+        item => item.id === cloudCoverId
+      )
+        ? cloudCoverId
+        : defaults.cloudCoverTypeId,
+  };
 }
 
     this.notify();
@@ -201,6 +195,30 @@ else
     this.state = structuredClone(state);
     this.notify();
   }
+
+  setActiveSeason(
+  seasonId: string
+): void
+{
+  if (!this.state)
+  {
+    return;
+  }
+
+  if (
+    this.state.seasonId === seasonId
+  )
+  {
+    return;
+  }
+
+  this.state = {
+    ...this.state,
+    seasonId,
+  };
+
+  this.notify();
+}
 
   subscribe(listener: EnvironmentListener): () => void
   {

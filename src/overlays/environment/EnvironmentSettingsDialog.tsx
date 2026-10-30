@@ -385,7 +385,7 @@ renderEntry={entry => (
 
   <div className="environment-settings-description-section">
     <div className="environment-settings-section-header">
-      <h3>Descriptive Tag</h3>
+      <h3>Display Tag</h3>
     </div>
 
     <div className="environment-settings-description-controls">

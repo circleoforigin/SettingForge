@@ -650,669 +650,129 @@ export function SimClockOverlay({
           <div className="dialog sim-clock-settings-dialog">
             <h2>SimClock Settings</h2>
 
-            <div className="sim-clock-settings-section">
-              <h3>Calendar</h3>
+            
+<div className="sim-clock-settings-section">
+  <h3>Calendar</h3>
 
-              <div className="sim-clock-settings-columns">
+  <div className="sim-clock-settings-columns">
+    <div className="sim-clock-settings-column">
+      <div className="sim-clock-basic-settings">
+        {([
+          ['Seconds per Minute', activeEra.secondsPerMinute],
+          ['Minutes per Hour', activeEra.minutesPerHour],
+          ['Hours per Day', activeEra.hoursPerDay],
+        ] as const).map(([label, value]) => (
+          <label key={label}>
+            <span>{label}</span>
+            <input
+              type="text"
+              value={value}
+              readOnly
+            />
+          </label>
+        ))}
+      </div>
 
-                {/* CALENDAR / LEAP DAY */}
+      <div className="sim-clock-leap-section">
+        <label className="sim-clock-leap-toggle">
+          <input
+            type="checkbox"
+            checked={!!activeEra.leapRule}
+            disabled
+          />
+          <strong>Leap Day</strong>
+        </label>
 
-                <div className="sim-clock-settings-column">
-                  <div className="sim-clock-basic-settings">
-                    <label>
-                      <span>
-                        Seconds per Minute
-                      </span>
+        {activeEra.leapRule && (
+          <div className="sim-clock-leap-settings">
+            {([
+              ['Every', activeEra.leapRule.interval],
+              ['Except Every', activeEra.leapRule.exceptEvery],
+              ['Unless Every', activeEra.leapRule.unlessEvery],
+              ['After Day', activeEra.leapRule.afterDay],
+              ['Additional Days', activeEra.leapRule.additionalDays],
+            ] as const).map(([label, value]) => (
+              <label key={label}>
+                <span>{label}</span>
+                <input
+                  type="text"
+                  value={value ?? ''}
+                  readOnly
+                />
+              </label>
+            ))}
 
-                      <input
-                        type="number"
-                        min="1"
-                        value={
-                          activeEra.secondsPerMinute
-                        }
-                        onChange={(event) => {
-                          const secondsPerMinute =
-                            Math.max(
-                              1,
-                              Number(
-                                event.target.value
-                              )
-                            );
+            <label>
+              <span>Month</span>
+              <input
+                type="text"
+                value={
+                  activeEra.months.find(
+                    (month) =>
+                      month.id === activeEra.leapRule?.monthId
+                  )?.name ?? ''
+                }
+                readOnly
+              />
+            </label>
+          </div>
+        )}
+      </div>
+    </div>
 
-                          controller.updateActiveEra(
-                            (current) => ({
-                              ...current,
-                              secondsPerMinute,
-                            })
-                          );
-                        }}
-                      />
-                    </label>
+    <div className="sim-clock-settings-column">
+      <div className="sim-clock-settings-list">
+        <div className="sim-clock-list-header">
+          <strong>Days</strong>
+        </div>
 
-                    <label>
-                      <span>
-                        Minutes per Hour
-                      </span>
-
-                      <input
-                        type="number"
-                        min="1"
-                        value={
-                          activeEra.minutesPerHour
-                        }
-                        onChange={(event) => {
-                          const minutesPerHour =
-                            Math.max(
-                              1,
-                              Number(
-                                event.target.value
-                              )
-                            );
-
-                          controller.updateActiveEra(
-                            (current) => ({
-                              ...current,
-                              minutesPerHour,
-                            })
-                          );
-                        }}
-                      />
-                    </label>
-
-                    <label>
-                      <span>
-                        Hours per Day
-                      </span>
-
-                      <input
-                        type="number"
-                        min="1"
-                        value={
-                          activeEra.hoursPerDay
-                        }
-                        onChange={(event) => {
-                          const hoursPerDay =
-                            Math.max(
-                              1,
-                              Number(
-                                event.target.value
-                              )
-                            );
-
-                          controller.updateActiveEra(
-                            (current) => ({
-                              ...current,
-                              hoursPerDay,
-                            })
-                          );
-                        }}
-                      />
-                    </label>
-                  </div>
-
-                  <div className="sim-clock-leap-section">
-                    <label className="sim-clock-leap-toggle">
-                      <input
-                        type="checkbox"
-                        checked={
-                          activeEra.leapRule !==
-                          undefined
-                        }
-                        onChange={(event) => {
-                          const enabled =
-                            event.target.checked;
-
-                          controller.updateActiveEra(
-                            (current) => ({
-                              ...current,
-
-                              leapRule: enabled
-                                ? {
-                                    interval: 4,
-
-                                    monthId:
-                                      current
-                                        .months[0]
-                                        .id,
-
-                                    afterDay:
-                                      current
-                                        .months[0]
-                                        .days,
-
-                                    additionalDays:
-                                      1,
-                                  }
-                                : undefined,
-                            })
-                          );
-                        }}
-                      />
-
-                      <strong>
-                        Leap Day
-                      </strong>
-                    </label>
-
-                    {activeEra.leapRule && (
-                      <div className="sim-clock-leap-settings">
-                        <label>
-                          <span>Every</span>
-
-                          <div className="sim-clock-inline-field">
-                            <input
-                              type="number"
-                              min="1"
-                              value={
-                                activeEra
-                                  .leapRule
-                                  .interval
-                              }
-                              onChange={(
-                                event
-                              ) => {
-                                const interval =
-                                  Math.max(
-                                    1,
-                                    Number(
-                                      event
-                                        .target
-                                        .value
-                                    )
-                                  );
-
-                                controller.updateActiveEra(
-                                  (
-                                    current
-                                  ) => ({
-                                    ...current,
-
-                                    leapRule:
-                                      current
-                                        .leapRule
-                                        ? {
-                                            ...current
-                                              .leapRule,
-                                            interval,
-                                          }
-                                        : undefined,
-                                  })
-                                );
-                              }}
-                            />
-
-                            <span>
-                              years
-                            </span>
-                          </div>
-                        </label>
-
-                        <label>
-                          <span>Month</span>
-
-                          <select
-                            value={
-                              activeEra
-                                .leapRule
-                                .monthId
-                            }
-                            onChange={(
-                              event
-                            ) => {
-                              const monthId =
-                                event
-                                  .target
-                                  .value;
-
-                              controller.updateActiveEra(
-                                (
-                                  current
-                                ) => ({
-                                  ...current,
-
-                                  leapRule:
-                                    current
-                                      .leapRule
-                                      ? {
-                                          ...current
-                                            .leapRule,
-                                          monthId,
-                                        }
-                                      : undefined,
-                                })
-                              );
-                            }}
-                          >
-                            {activeEra.months.map(
-                              (month) => (
-                                <option
-                                  key={
-                                    month.id
-                                  }
-                                  value={
-                                    month.id
-                                  }
-                                >
-                                  {
-                                    month.name
-                                  }
-                                </option>
-                              )
-                            )}
-                          </select>
-                        </label>
-
-                        <label>
-                          <span>
-                            After Day
-                          </span>
-
-                          <input
-                            type="number"
-                            min="1"
-                            value={
-                              activeEra
-                                .leapRule
-                                .afterDay
-                            }
-                            onChange={(
-                              event
-                            ) => {
-                              const afterDay =
-                                Math.max(
-                                  1,
-                                  Number(
-                                    event
-                                      .target
-                                      .value
-                                  )
-                                );
-
-                              controller.updateActiveEra(
-                                (
-                                  current
-                                ) => ({
-                                  ...current,
-
-                                  leapRule:
-                                    current
-                                      .leapRule
-                                      ? {
-                                          ...current
-                                            .leapRule,
-                                          afterDay,
-                                        }
-                                      : undefined,
-                                })
-                              );
-                            }}
-                          />
-                        </label>
-
-                        <label>
-                          <span>
-                            Additional Days
-                          </span>
-
-                          <input
-                            type="number"
-                            min="1"
-                            value={
-                              activeEra
-                                .leapRule
-                                .additionalDays
-                            }
-                            onChange={(
-                              event
-                            ) => {
-                              const additionalDays =
-                                Math.max(
-                                  1,
-                                  Number(
-                                    event
-                                      .target
-                                      .value
-                                  )
-                                );
-
-                              controller.updateActiveEra(
-                                (
-                                  current
-                                ) => ({
-                                  ...current,
-
-                                  leapRule:
-                                    current
-                                      .leapRule
-                                      ? {
-                                          ...current
-                                            .leapRule,
-                                          additionalDays,
-                                        }
-                                      : undefined,
-                                })
-                              );
-                            }}
-                          />
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* DAYS */}
-
-                <div className="sim-clock-settings-column">
-                  <div className="sim-clock-settings-list">
-                    <div className="sim-clock-list-header">
-                      <strong>Days</strong>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          controller.updateActiveEra(
-                            (current) => ({
-                              ...current,
-
-                              dayNames: [
-                                ...current.dayNames,
-
-                                `Day ${
-                                  current
-                                    .dayNames
-                                    .length + 1
-                                }`,
-                              ],
-                            })
-                          )
-                        }
-                      >
-                        + Add Day
-                      </button>
-                    </div>
-
-                    <div className="sim-clock-day-list">
-                      {activeEra.dayNames.map(
-                        (
-                          dayName,
-                          index
-                        ) => (
-                          <div
-                            key={index}
-                            className="sim-clock-settings-row"
-                          >
-                            <input
-                              type="text"
-                              value={
-                                dayName
-                              }
-                              onChange={(
-                                event
-                              ) => {
-                                const name =
-                                  event
-                                    .target
-                                    .value;
-
-                                controller.updateActiveEra(
-                                  (
-                                    current
-                                  ) => ({
-                                    ...current,
-
-                                    dayNames:
-                                      current
-                                        .dayNames
-                                        .map(
-                                          (
-                                            currentName,
-                                            currentIndex
-                                          ) =>
-                                            currentIndex ===
-                                            index
-                                              ? name
-                                              : currentName
-                                        ),
-                                  })
-                                );
-                              }}
-                            />
-
-                            <button
-                              type="button"
-                              disabled={
-                                activeEra
-                                  .dayNames
-                                  .length <= 1
-                              }
-                              onClick={() =>
-                                controller.updateActiveEra(
-                                  (
-                                    current
-                                  ) => {
-                                    const dayNames =
-                                      current
-                                        .dayNames
-                                        .filter(
-                                          (
-                                            _,
-                                            currentIndex
-                                          ) =>
-                                            currentIndex !==
-                                            index
-                                        );
-
-                                    const startingWeekday =
-                                      dayNames.includes(
-                                        current
-                                          .startingWeekday
-                                      )
-                                        ? current
-                                            .startingWeekday
-                                        : dayNames[0];
-
-                                    return {
-                                      ...current,
-                                      dayNames,
-                                      startingWeekday,
-                                    };
-                                  }
-                                )
-                              }
-                            >
-                              ×
-                            </button>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* MONTHS */}
-
-                <div className="sim-clock-settings-column">
-                  <div className="sim-clock-settings-list">
-                    <div className="sim-clock-list-header">
-                      <strong>
-                        Months
-                      </strong>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          controller.updateActiveEra(
-                            (current) => ({
-                              ...current,
-
-                              months: [
-                                ...current.months,
-
-                                {
-                                  id:
-                                    crypto.randomUUID(),
-
-                                  name:
-                                    `Month ${
-                                      current
-                                        .months
-                                        .length +
-                                      1
-                                    }`,
-
-                                  days: 30,
-                                },
-                              ],
-                            })
-                          )
-                        }
-                      >
-                        + Add Month
-                      </button>
-                    </div>
-
-                    <div className="sim-clock-month-list">
-                      {activeEra.months.map(
-                        (month) => (
-                          <div
-                            key={month.id}
-                            className="sim-clock-settings-row"
-                          >
-                            <input
-                              type="text"
-                              value={
-                                month.name
-                              }
-                              onChange={(
-                                event
-                              ) => {
-                                const name =
-                                  event
-                                    .target
-                                    .value;
-
-                                controller.updateActiveEra(
-                                  (
-                                    current
-                                  ) => ({
-                                    ...current,
-
-                                    months:
-                                      current
-                                        .months
-                                        .map(
-                                          (
-                                            currentMonth
-                                          ) =>
-                                            currentMonth
-                                              .id ===
-                                            month.id
-                                              ? {
-                                                  ...currentMonth,
-                                                  name,
-                                                }
-                                              : currentMonth
-                                        ),
-                                  })
-                                );
-                              }}
-                            />
-
-                            <input
-                              type="number"
-                              min="1"
-                              title="Days"
-                              value={
-                                month.days
-                              }
-                              onChange={(
-                                event
-                              ) => {
-                                const days =
-                                  Math.max(
-                                    1,
-                                    Number(
-                                      event
-                                        .target
-                                        .value
-                                    )
-                                  );
-
-                                controller.updateActiveEra(
-                                  (
-                                    current
-                                  ) => ({
-                                    ...current,
-
-                                    months:
-                                      current
-                                        .months
-                                        .map(
-                                          (
-                                            currentMonth
-                                          ) =>
-                                            currentMonth
-                                              .id ===
-                                            month.id
-                                              ? {
-                                                  ...currentMonth,
-                                                  days,
-                                                }
-                                              : currentMonth
-                                        ),
-                                  })
-                                );
-                              }}
-                            />
-
-                            <button
-                              type="button"
-                              disabled={
-                                activeEra
-                                  .months
-                                  .length <= 1
-                              }
-                              onClick={() =>
-                                controller.updateActiveEra(
-                                  (
-                                    current
-                                  ) => ({
-                                    ...current,
-
-                                    months:
-                                      current
-                                        .months
-                                        .filter(
-                                          (
-                                            currentMonth
-                                          ) =>
-                                            currentMonth
-                                              .id !==
-                                            month.id
-                                        ),
-
-                                    leapRule:
-                                      current
-                                        .leapRule
-                                        ?.monthId ===
-                                      month.id
-                                        ? undefined
-                                        : current
-                                            .leapRule,
-                                  })
-                                )
-                              }
-                            >
-                              ×
-                            </button>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div className="sim-clock-day-list">
+          {activeEra.dayNames.map((dayName, index) => (
+            <div
+              key={index}
+              className="sim-clock-settings-row"
+            >
+              <input
+                type="text"
+                value={dayName}
+                readOnly
+              />
             </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <div className="sim-clock-settings-column">
+      <div className="sim-clock-settings-list">
+        <div className="sim-clock-list-header">
+          <strong>Months</strong>
+        </div>
+
+        <div className="sim-clock-month-list">
+          {activeEra.months.map((month) => (
+            <div
+              key={month.id}
+              className="sim-clock-settings-row"
+            >
+              <input
+                type="text"
+                value={month.name}
+                readOnly
+              />
+              <input
+                type="text"
+                title="Days"
+                value={month.days}
+                readOnly
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
             {/* ERA / DISPLAY */}
 
@@ -1376,35 +836,13 @@ export function SimClockOverlay({
                       Starting Weekday
                     </span>
 
-                    <select
-                      value={
-                        activeEra.startingWeekday
-                      }
-                      onChange={(
-                        event
-                      ) => {
-                        const startingWeekday =
-                          event.target.value;
+                    
+<input
+  type="text"
+  value={activeEra.startingWeekday}
+  readOnly
+/>
 
-                        controller.updateActiveEra(
-                          (current) => ({
-                            ...current,
-                            startingWeekday,
-                          })
-                        );
-                      }}
-                    >
-                      {activeEra.dayNames.map(
-                        (dayName) => (
-                          <option
-                            key={dayName}
-                            value={dayName}
-                          >
-                            {dayName}
-                          </option>
-                        )
-                      )}
-                    </select>
                   </label>
                 </div>
               </div>

@@ -21,9 +21,9 @@ export function createInitialEnvironmentState(
     !windDirection
   )
   {
-    throw new Error(
-      'Ruleset has incomplete Environment definitions.'
-    );
+throw new Error(
+  'Environment definitions are incomplete.'
+);
   }
 
   return {

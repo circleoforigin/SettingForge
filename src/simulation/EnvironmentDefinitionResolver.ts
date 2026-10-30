@@ -5,6 +5,7 @@ import type {
   EnvironmentDefinitions,
   EnvironmentDefinitionOverrides,
 } from './EnvironmentDefinitions';
+import { createDefaultEnvironmentDefinitions } from './EnvironmentDefaults';
 
 export function resolveEnvironmentDefinitions(
   ruleset: WorldRulesetReference | undefined
@@ -25,18 +26,31 @@ export function resolveEnvironmentDefinitions(
 export function resolveEffectiveEnvironmentDefinitions(
   ruleset: WorldRulesetReference | undefined,
   overrides?: EnvironmentDefinitionOverrides
-): EnvironmentDefinitions | undefined
+): EnvironmentDefinitions
 {
-  const definitions =
+  const defaults =
+    createDefaultEnvironmentDefinitions();
+
+  const rulesetDefinitions =
     resolveEnvironmentDefinitions(ruleset);
 
-  if (!definitions)
-  {
-    return undefined;
-  }
+  const definitions: EnvironmentDefinitions = {
+    ...defaults,
+    ...structuredClone(rulesetDefinitions ?? {}),
+
+    temperature: {
+      ...defaults.temperature,
+      ...rulesetDefinitions?.temperature,
+    },
+
+    generation: {
+      ...defaults.generation!,
+      ...rulesetDefinitions?.generation,
+    },
+  };
 
   return {
-    ...structuredClone(definitions),
+    ...definitions,
 
     temperature: {
       ...definitions.temperature,
