@@ -20,6 +20,7 @@ import { rulesetRegistry } from './rules/RulesetRegistry';
 import { registerRulesHostService } from './rules/RulesHostService';
 import { occurrenceService } from './overlays/occurrence/OccurrenceService';
 import { celestialService } from './simulation/CelestialService';
+import { CelestialSettingsDialog } from './overlays/celestial/CelestialSettingsDialog';
 import {
   MessengerOverlay,
   useMessengerOverlay,
@@ -491,6 +492,10 @@ const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
 const [
   environmentSettingsOpen,
   setEnvironmentSettingsOpen,
+] = useState(false);
+const [
+  celestialSettingsOpen,
+  setCelestialSettingsOpen,
 ] = useState(false);
 const [activeWorld, setActiveWorld] = useState<World | null>(null);
 const [worldRuntimeDirty, setWorldRuntimeDirty] = useState(false);
@@ -3991,6 +3996,11 @@ async function removeModuleFromWorld(
               {
                 setEnvironmentSettingsOpen(true);
               }
+
+              if (overlay.id === 'celestial')
+              {
+                setCelestialSettingsOpen(true);
+              }
             }}
           >
             Settings...
@@ -4278,6 +4288,14 @@ return (
   <EnvironmentSettingsDialog
     onClose={() =>
       setEnvironmentSettingsOpen(false)
+    }
+  />
+)}
+
+{celestialSettingsOpen && (
+  <CelestialSettingsDialog
+    onClose={() =>
+      setCelestialSettingsOpen(false)
     }
   />
 )}
