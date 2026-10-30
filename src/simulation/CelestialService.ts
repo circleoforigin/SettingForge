@@ -5,6 +5,10 @@ import {
 import type { SimClockEra } from './SimClockSettings';
 import type { SimulationTime } from './SimulationClockService';
 import { resolveCelestialSeason } from './CelestialSeasonResolver';
+import {
+  resolveCelestialSolarState,
+  type CelestialSolarState,
+} from './CelestialSolarResolver';
 
 type CelestialListener = (
   settings: CelestialSettings
@@ -26,16 +30,28 @@ export class CelestialService
   }
 
   getSeasonAtTime(
-  time: SimulationTime,
-  era: SimClockEra
-): string | undefined
-{
-  return resolveCelestialSeason(
-    time,
-    era,
-    this.settings.seasonStarts
-  );
-}
+    time: SimulationTime,
+    era: SimClockEra
+  ): string | undefined
+  {
+    return resolveCelestialSeason(
+        time,
+        era,
+        this.settings.seasonStarts
+    );
+  }
+
+  getSolarStateAtTime(
+    time: SimulationTime,
+    era: SimClockEra
+  ): CelestialSolarState
+  {
+    return resolveCelestialSolarState(
+        time,
+        era,
+        this.settings.solarCycle
+    );
+  }
 
   setSettings(
     settings: CelestialSettings

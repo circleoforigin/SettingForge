@@ -523,6 +523,58 @@ useEffect(() =>
   });
 }, []);
 
+useEffect(() =>
+{
+  const synchronizeSeason = () =>
+  {
+    if (!activeWorldRef.current)
+    {
+      return;
+    }
+
+    if (!simClock.activeEra)
+    {
+      return;
+    }
+
+    const seasonId =
+      celestialService.getSeasonAtTime(
+        simulationClockService.getTime(),
+        simClock.activeEra
+      );
+
+    if (!seasonId)
+    {
+      return;
+    }
+
+    environmentService.setActiveSeason(
+      seasonId
+    );
+  };
+
+  const unsubscribeClock =
+    simulationClockService.subscribe(
+      synchronizeSeason
+    );
+
+  const unsubscribeCelestial =
+    celestialService.subscribe(
+      synchronizeSeason
+    );
+
+  synchronizeSeason();
+
+  return () =>
+  {
+    unsubscribeClock();
+    unsubscribeCelestial();
+  };
+}, [
+  activeWorld,
+  simClock.activeEra,
+]);
+
 const availableRulesets = rulesetRegistry.getAll();
 
 const handleSelectRuleset = async (
