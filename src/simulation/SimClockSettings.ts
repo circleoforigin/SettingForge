@@ -8,6 +8,9 @@ export interface SimClockMonth
 export interface SimClockLeapRule
 {
   interval: number;
+  exceptEvery?: number;
+  unlessEvery?: number;
+
   monthId: string;
   afterDay: number;
   additionalDays: number;

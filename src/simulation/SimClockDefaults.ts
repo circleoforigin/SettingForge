@@ -70,6 +70,9 @@ export const DEFAULT_SIM_CLOCK_SETTINGS: SimClockSettings = {
 
       leapRule: {
         interval: 4,
+        exceptEvery: 100,
+        unlessEvery: 400,
+
         monthId: 'february',
         afterDay: 28,
         additionalDays: 1,

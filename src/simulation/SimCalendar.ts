@@ -34,10 +34,28 @@ function isLeapYear(
 {
   const rule = era.leapRule;
 
-  if (!rule)
+  if (!rule || rule.interval <= 0)
+  {
     return false;
+  }
 
-  return year % rule.interval === 0;
+  if (year % rule.interval !== 0)
+  {
+    return false;
+  }
+
+  if (
+    rule.exceptEvery &&
+    year % rule.exceptEvery === 0
+  )
+  {
+    return (
+      !!rule.unlessEvery &&
+      year % rule.unlessEvery === 0
+    );
+  }
+
+  return true;
 }
 
 function getMonthDays(
