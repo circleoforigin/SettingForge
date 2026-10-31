@@ -10,20 +10,17 @@ export const DEFAULT_CELESTIAL_SETTINGS:
     },
 
     solarCycle: {
-      summerSolstice: {
-        monthId: 'june',
-        day: 21,
-      },
+        shortSolstice: {
+            monthId: 'december',
+            day: 21,
+            daylightMinutes: 553,
+        },
 
-      winterSolstice: {
-        monthId: 'december',
-        day: 21,
-      },
-
-      longestDayHours: 15,
-      shortestDayHours: 9,
-
-      solarNoonHour: 12,
+        longSolstice: {
+            monthId: 'june',
+            day: 21,
+            daylightMinutes: 921,
+        },
     },
 
     seasonStarts: [

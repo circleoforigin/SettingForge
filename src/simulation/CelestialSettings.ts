@@ -13,19 +13,17 @@ export interface CelestialSun
 
 export interface CelestialSolarCycle
 {
-  summerSolstice: {
+  shortSolstice: {
     monthId: string;
     day: number;
+    daylightHours: number;
   };
 
-  winterSolstice: {
+  longSolstice: {
     monthId: string;
     day: number;
+    daylightHours: number;
   };
-
-  longestDayHours: number;
-  shortestDayHours: number;
-  solarNoonHour: number;
 }
 
 export interface CelestialSettings

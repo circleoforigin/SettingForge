@@ -9,7 +9,7 @@ import {
 
 export interface CelestialSolarState
 {
-  daylightHours: number;
+  daylightMinutes: number;
   sunriseHour: number;
   solarNoonHour: number;
   sunsetHour: number;
