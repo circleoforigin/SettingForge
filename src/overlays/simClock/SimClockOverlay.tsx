@@ -13,7 +13,6 @@ import {
 import type { OverlayMountId } from '../OverlayPlacement';
 import { SimClockSurface } from './SimClockSurface';
 import {
-  advanceSimulationTimeToMarker,
   calendarToSimulationTime,
   progressSimulationTime,
   simulationTimeToCalendar,
@@ -24,10 +23,6 @@ import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
 
 import { occurrenceService } from '../occurrence/OccurrenceService';
-import {
-  extendGlobalOccurrences,
-  rebuildGlobalOccurrences,
-} from '../../simulation/SimClockGlobalOccurrences';
 import { occurrenceCoordinator } from '../occurrence/OccurrenceCoordinator';
 import {
   OccurrenceReactions,
@@ -143,45 +138,6 @@ export function useSimClockOverlay()
     ) ??
     settings.eras[0];
 
-useEffect(() =>
-{
-  if (!activeEra)
-  {
-    return;
-  }
-
-  rebuildGlobalOccurrences(
-    simulationClockService.getTime(),
-    {
-      markers: settings.markers,
-      era: activeEra,
-    }
-  );
-}, [
-  activeEra,
-  settings.markers,
-]);
-
-useEffect(() =>
-{
-  if (!activeEra)
-  {
-    return;
-  }
-
-  extendGlobalOccurrences(
-    committedTime,
-    {
-      markers: settings.markers,
-      era: activeEra,
-    }
-  );
-}, [
-  committedTime,
-  activeEra,
-  settings.markers,
-]);
-
   const updateActiveEra = (
     update: (
       current: SimClockEra
@@ -281,14 +237,15 @@ const progressCompleteOccurrence:
 
 occurrenceService.addVisible(progressCompleteOccurrence);
 
-  hostEventBroker.broadcast(
-    'Simulation.TimeProspected',
-    {
-      startTime,
-      endTime: targetTime,
-      duration,
-    }
-  );
+hostEventBroker.broadcast(
+  'Simulation.TimeProspected',
+  {
+    startTime,
+    endTime: targetTime,
+    duration,
+    era: activeEra,
+  }
+);
 };
 
 const progressTime = (
@@ -574,8 +531,7 @@ const restoreWorldState = (
   settings: SimClockSettings
 ) =>
 {
-  const defaults =
-    createDefaultSimClockSettings();
+  const defaults = createDefaultSimClockSettings();
 
   const restoredSettings: SimClockSettings = {
     ...defaults,

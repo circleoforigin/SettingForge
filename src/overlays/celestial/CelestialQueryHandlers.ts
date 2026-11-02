@@ -18,17 +18,12 @@ interface ResolveMarkerPayload
   era: SimClockEra;
 }
 
-interface GenerateOccurrencesPayload
+interface BuildGlobalOccurrencesPayload
 {
+  mode: 'rebuild' | 'extend';
   startTime: number;
   endTime: number;
   era: SimClockEra;
-}
-
-interface BuildGlobalOccurrencesPayload
-  extends GenerateOccurrencesPayload
-{
-  mode: 'rebuild' | 'extend';
 }
 
 async function submitCelestialOccurrences(
@@ -102,43 +97,7 @@ export function registerCelestialQueryHandlers(
               targetTime,
             };
       }
-    );
-
-    const unregisterGenerateOccurrences =
-  registerRequestHandler(
-    'Celestial.GenerateOccurrences',
-    async (message) =>
-    {
-      const payload =
-        message.payload as
-          Partial<GenerateOccurrencesPayload>
-          | undefined;
-
-      if (
-        !payload ||
-        typeof payload.startTime !== 'number' ||
-        !Number.isFinite(payload.startTime) ||
-        typeof payload.endTime !== 'number' ||
-        !Number.isFinite(payload.endTime) ||
-        !payload.era ||
-        typeof payload.era !== 'object'
-      )
-      {
-        throw new Error(
-          'Celestial.GenerateOccurrences received invalid input.'
-        );
-      }
-
-      return {
-        occurrences:
-          generateCelestialOccurrences(
-            payload.startTime,
-            payload.endTime,
-            payload.era
-          ),
-      };
-    }
-  );
+    );   
 
     const unsubscribeBuildGlobal =
     hostEventBroker.subscribe(
@@ -160,6 +119,7 @@ if (
   !Number.isFinite(payload.startTime) ||
   typeof payload.endTime !== 'number' ||
   !Number.isFinite(payload.endTime) ||
+  payload.endTime <= payload.startTime ||
   !payload.era ||
   typeof payload.era !== 'object'
 )
@@ -187,7 +147,6 @@ void submitCelestialOccurrences(
 return () =>
 {
   unsubscribeBuildGlobal();
-  unregisterGenerateOccurrences();
   unregisterResolveMarker();
 };
 }

@@ -514,22 +514,22 @@ loadQueueRef.current?.completeModule(
   );
 
   return () => {
-  unregisterOverlayCapabilities();
-  unregisterProjectLoadFailed();
-  unregisterProjectLoaded();
-  unregisterModuleReady();
-  unregisterRulesService();
-  unregisterWorldService();
-  unregisterOccurrenceService();
-  unregisterCelestialQueries();
-  unregisterCapabilityService();
-  unregisterFileServices();
-  unregisterStorageServices();
-  occurrenceProducerRegistry.unregisterOverlay('celestial');
-  unsubscribeCelestialMarkers();
-  unsubscribeOverlayEvents();
-  stopBroker();
-};
+    unregisterOverlayCapabilities();
+    unregisterProjectLoadFailed();
+    unregisterProjectLoaded();
+    unregisterModuleReady();
+    unregisterRulesService();
+    unregisterWorldService();
+    unregisterOccurrenceService();
+    unregisterCelestialQueries();
+    unregisterCapabilityService();
+    unregisterFileServices();
+    unregisterStorageServices();
+    occurrenceProducerRegistry.unregisterOverlay('celestial');
+    unsubscribeCelestialMarkers();
+    unsubscribeOverlayEvents();
+    stopBroker();
+  };
 }, []);
   
 const [fileMenuOpen, setFileMenuOpen] = useState(false);
