@@ -19,6 +19,7 @@ import type { OverlayMountId } from './overlays/OverlayPlacement';
 import { rulesetRegistry } from './rules/RulesetRegistry';
 import { registerRulesHostService } from './rules/RulesHostService';
 import { occurrenceService } from './overlays/occurrence/OccurrenceService';
+import { occurrenceProducerRegistry } from './overlays/occurrence/OccurrenceProducerRegistry';
 import { celestialService } from './simulation/CelestialService';
 import { celestialMarkerRegistry } from './simulation/CelestialMarkers';
 import { registerCelestialQueryHandlers } from './overlays/celestial/CelestialQueryHandlers';
@@ -411,6 +412,10 @@ const unregisterOccurrenceService =
     )
   );
 
+occurrenceProducerRegistry.registerOverlay(
+  'celestial'
+);
+
 const unregisterModuleReady =
   hostEventBroker.subscribe(
     'module.ready',
@@ -519,7 +524,8 @@ loadQueueRef.current?.completeModule(
   unregisterCelestialQueries();
   unregisterCapabilityService();
   unregisterFileServices();
-  unregisterStorageServices();  
+  unregisterStorageServices();
+  occurrenceProducerRegistry.unregisterOverlay('celestial');
   unsubscribeCelestialMarkers();
   unsubscribeOverlayEvents();
   stopBroker();

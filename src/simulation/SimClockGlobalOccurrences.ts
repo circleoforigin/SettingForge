@@ -5,7 +5,6 @@ import type {
   SimClockEra,
   SimClockMarkers,
 } from './SimClockSettings';
-import type { Occurrence } from '@settingforge/module-sdk';
 
 export const GLOBAL_OCCURRENCE_HORIZON_HOURS = 100;
 
@@ -23,41 +22,6 @@ export function isCurrentGlobalOccurrenceRequest(
 ): boolean
 {
   return version === globalOccurrenceRequestVersion;
-}
-
-interface CelestialOccurrencesResult
-{
-  occurrences: Occurrence[];
-}
-
-export async function requestCelestialOccurrences(
-  startTime: number,
-  endTime: number,
-  era: SimClockEra
-): Promise<Occurrence[]>
-{
-  const result =
-    await hostEventBroker.requestHost<CelestialOccurrencesResult>(
-      'overlay:sim-clock',
-      'Celestial.GenerateOccurrences',
-      {
-        startTime,
-        endTime,
-        era,
-      }
-    );
-
-  if (
-    !result ||
-    !Array.isArray(result.occurrences)
-  )
-  {
-    throw new Error(
-      'Celestial.GenerateOccurrences returned an invalid result.'
-    );
-  }
-
-  return result.occurrences;
 }
 
 export interface SimClockGlobalOccurrenceSettings

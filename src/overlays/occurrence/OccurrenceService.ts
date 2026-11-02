@@ -752,6 +752,26 @@ consumeVisible(
     }
   }
 
+  removeGlobalByProducer(
+  sourceModuleId: string
+): number
+{
+  const removed =
+    removeOccurrences(
+      this.globalQueue,
+      (occurrence) =>
+        occurrence.sourceModuleId ===
+          sourceModuleId
+    );
+
+  if (removed > 0)
+  {
+    this.notify();
+  }
+
+  return removed;
+}
+
   clearGlobal(): void
   {
     if (this.globalQueue.length === 0)
