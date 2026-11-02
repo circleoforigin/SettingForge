@@ -1,6 +1,15 @@
-import type { SimClockEra } from './SimClockSettings';
-import type { CelestialSolarCycle } from './CelestialSettings';
-import type { SimulationTime } from './SimulationClockService';
+import type {
+  SimClockEra,
+} from './SimClockSettings';
+
+import type {
+  CelestialSolarCycle,
+} from './CelestialSettings';
+
+import type {
+  SimulationTime,
+} from './SimulationClockService';
+
 import {
   calendarToSimulationTime,
   simulationTimeToCalendar,
@@ -28,7 +37,8 @@ function getBoundaryTime(
 ): SimulationTime
 {
   const month = era.months.find(
-    item => item.id === boundary.monthId
+    (item) =>
+      item.id === boundary.monthId
   );
 
   if (
@@ -63,8 +73,8 @@ function getBoundaryTime(
 function interpolateDaylight(
   position: number,
   duration: number,
-  startingHours: number,
-  endingHours: number
+  startingMinutes: number,
+  endingMinutes: number
 ): number
 {
   const progress =
@@ -79,10 +89,10 @@ function interpolateDaylight(
     ) / 2;
 
   return (
-    startingHours +
+    startingMinutes +
     (
-      endingHours -
-      startingHours
+      endingMinutes -
+      startingMinutes
     ) * blend
   );
 }
@@ -101,69 +111,65 @@ export function resolveCelestialSolarState(
 
   const year = calendar.year;
 
-  const summer =
-    getBoundaryTime(
-      year,
-      cycle.summerSolstice,
-      era
-    );
-
-  const winter =
-    getBoundaryTime(
-      year,
-      cycle.winterSolstice,
-      era
-    );
-
   const boundaries = [
     {
       time: getBoundaryTime(
         year - 1,
-        cycle.summerSolstice,
+        cycle.shortSolstice,
         era
       ),
-      daylight: cycle.longestDayHours,
+      daylight:
+        cycle.shortSolstice.daylightMinutes,
     },
     {
       time: getBoundaryTime(
         year - 1,
-        cycle.winterSolstice,
+        cycle.longSolstice,
         era
       ),
-      daylight: cycle.shortestDayHours,
+      daylight:
+        cycle.longSolstice.daylightMinutes,
     },
     {
-      time: summer,
-      daylight: cycle.longestDayHours,
+      time: getBoundaryTime(
+        year,
+        cycle.shortSolstice,
+        era
+      ),
+      daylight:
+        cycle.shortSolstice.daylightMinutes,
     },
     {
-      time: winter,
-      daylight: cycle.shortestDayHours,
+      time: getBoundaryTime(
+        year,
+        cycle.longSolstice,
+        era
+      ),
+      daylight:
+        cycle.longSolstice.daylightMinutes,
     },
     {
       time: getBoundaryTime(
         year + 1,
-        cycle.summerSolstice,
+        cycle.shortSolstice,
         era
       ),
-      daylight: cycle.longestDayHours,
+      daylight:
+        cycle.shortSolstice.daylightMinutes,
     },
     {
       time: getBoundaryTime(
         year + 1,
-        cycle.winterSolstice,
+        cycle.longSolstice,
         era
       ),
-      daylight: cycle.shortestDayHours,
+      daylight:
+        cycle.longSolstice.daylightMinutes,
     },
   ].sort(
-    (a, b) => a.time - b.time
+    (left, right) =>
+      left.time - right.time
   );
-
-  const secondsPerDay =
-    era.secondsPerMinute *
-    era.minutesPerHour *
-    era.hoursPerDay;
 
   const dayStart =
     calendarToSimulationTime(
@@ -178,8 +184,8 @@ export function resolveCelestialSolarState(
       era
     );
 
-  let daylightHours =
-    cycle.longestDayHours;
+  let daylightMinutes =
+    cycle.longSolstice.daylightMinutes;
 
   for (
     let index = 0;
@@ -195,7 +201,7 @@ export function resolveCelestialSolarState(
       dayStart <= end.time
     )
     {
-      daylightHours =
+      daylightMinutes =
         interpolateDaylight(
           dayStart - start.time,
           end.time - start.time,
@@ -208,7 +214,11 @@ export function resolveCelestialSolarState(
   }
 
   const solarNoonHour =
-    cycle.solarNoonHour;
+    era.hoursPerDay / 2;
+
+  const daylightHours =
+    daylightMinutes /
+    era.minutesPerHour;
 
   const sunriseHour =
     solarNoonHour -
@@ -219,7 +229,7 @@ export function resolveCelestialSolarState(
     daylightHours / 2;
 
   return {
-    daylightHours,
+    daylightMinutes,
     sunriseHour,
     solarNoonHour,
     sunsetHour,

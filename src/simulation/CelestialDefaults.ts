@@ -13,13 +13,13 @@ export const DEFAULT_CELESTIAL_SETTINGS:
         shortSolstice: {
             monthId: 'december',
             day: 21,
-            daylightMinutes: 553,
+            daylightMinutes: 574,
         },
 
         longSolstice: {
             monthId: 'june',
             day: 21,
-            daylightMinutes: 921,
+            daylightMinutes: 886,
         },
     },
 

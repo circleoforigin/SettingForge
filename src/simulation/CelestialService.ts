@@ -9,6 +9,8 @@ import {
   resolveCelestialSolarState,
   type CelestialSolarState,
 } from './CelestialSolarResolver';
+import { celestialMarkerRegistry } from './CelestialMarkers';
+import { resolveNextCelestialMarker } from './CelestialMarkerResolver';
 
 type CelestialListener = (
   settings: CelestialSettings
@@ -19,14 +21,16 @@ export class CelestialService
   private settings: CelestialSettings =
     createDefaultCelestialSettings();
 
-  private listeners =
-    new Set<CelestialListener>();
+  private listeners = new Set<CelestialListener>();
+
+  constructor()
+  {
+    this.synchronizeMarkers();
+  }
 
   getSettings(): CelestialSettings
   {
-    return structuredClone(
-      this.settings
-    );
+    return structuredClone(this.settings);
   }
 
   getSeasonAtTime(
@@ -53,6 +57,46 @@ export class CelestialService
     );
   }
 
+  resolveMarker(
+  markerId: string,
+  afterTime: SimulationTime,
+  era: SimClockEra
+): SimulationTime | undefined
+{
+  const marker =
+    celestialMarkerRegistry.getMarker(
+      markerId
+    );
+
+  if (!marker)
+  {
+    return undefined;
+  }
+
+  if (marker.lifetime === 'temporary')
+  {
+    const targetTime =
+      marker.targetTime;
+
+    if (
+      targetTime === undefined ||
+      targetTime <= afterTime
+    )
+    {
+      return undefined;
+    }
+
+    return targetTime;
+  }
+
+  return resolveNextCelestialMarker(
+    marker.id,
+    afterTime,
+    era,
+    this.settings.solarCycle
+  );
+}
+
   setSettings(
     settings: CelestialSettings
   ): void
@@ -67,8 +111,73 @@ restoreWorldState(
   settings?: CelestialSettings
 ): void
 {
-  const defaults =
-    createDefaultCelestialSettings();
+  const defaults = createDefaultCelestialSettings();
+
+  type LegacySolarCycle = {
+    summerSolstice?: {
+      monthId: string;
+      day: number;
+    };
+
+    winterSolstice?: {
+      monthId: string;
+      day: number;
+    };
+
+    longestDayHours?: number;
+    shortestDayHours?: number;
+  };
+
+  const savedCycle = settings?.solarCycle;
+
+  const legacyCycle =
+    savedCycle as
+      (typeof savedCycle & LegacySolarCycle)
+      | undefined;
+
+  const shortSolstice = {
+    ...defaults.solarCycle.shortSolstice,
+
+    monthId:
+      savedCycle?.shortSolstice?.monthId ??
+      legacyCycle?.winterSolstice?.monthId ??
+      defaults.solarCycle.shortSolstice.monthId,
+
+    day:
+      savedCycle?.shortSolstice?.day ??
+      legacyCycle?.winterSolstice?.day ??
+      defaults.solarCycle.shortSolstice.day,
+
+    daylightMinutes:
+      savedCycle?.shortSolstice?.daylightMinutes ??
+      (
+        legacyCycle?.shortestDayHours !== undefined
+          ? legacyCycle.shortestDayHours * 60
+          : defaults.solarCycle.shortSolstice.daylightMinutes
+      ),
+  };
+
+  const longSolstice = {
+    ...defaults.solarCycle.longSolstice,
+
+    monthId:
+      savedCycle?.longSolstice?.monthId ??
+      legacyCycle?.summerSolstice?.monthId ??
+      defaults.solarCycle.longSolstice.monthId,
+
+    day:
+      savedCycle?.longSolstice?.day ??
+      legacyCycle?.summerSolstice?.day ??
+      defaults.solarCycle.longSolstice.day,
+
+    daylightMinutes:
+      savedCycle?.longSolstice?.daylightMinutes ??
+      (
+        legacyCycle?.longestDayHours !== undefined
+          ? legacyCycle.longestDayHours * 60
+          : defaults.solarCycle.longSolstice.daylightMinutes
+      ),
+  };
 
   this.settings = {
     ...defaults,
@@ -80,18 +189,8 @@ restoreWorldState(
     },
 
     solarCycle: {
-      ...defaults.solarCycle,
-      ...settings?.solarCycle,
-
-      summerSolstice: {
-        ...defaults.solarCycle.summerSolstice,
-        ...settings?.solarCycle?.summerSolstice,
-      },
-
-      winterSolstice: {
-        ...defaults.solarCycle.winterSolstice,
-        ...settings?.solarCycle?.winterSolstice,
-      },
+      shortSolstice,
+      longSolstice,
     },
 
     seasonStarts:
@@ -100,6 +199,7 @@ restoreWorldState(
         : defaults.seasonStarts,
   };
 
+  celestialMarkerRegistry.clear();
   this.notify();
 }
 
@@ -115,15 +215,51 @@ restoreWorldState(
     };
   }
 
-  private notify(): void
-  {
-    for (const listener of this.listeners)
+  private synchronizeMarkers(): void
+{
+  const recurringMarkers = [
     {
-      listener(
-        this.getSettings()
-      );
-    }
+      id: 'sunrise',
+      name: 'Sunrise',
+      bodyId: this.settings.sun.id,
+    },
+    {
+      id: 'solar-noon',
+      name: 'Solar Noon',
+      bodyId: this.settings.sun.id,
+    },
+    {
+      id: 'sunset',
+      name: 'Sunset',
+      bodyId: this.settings.sun.id,
+    },
+    {
+      id: 'midnight',
+      name: 'Midnight',
+      bodyId: null,
+    },
+  ];
+
+  for (const marker of recurringMarkers)
+  {
+    celestialMarkerRegistry.register({
+      ...marker,
+      lifetime: 'recurring',
+    });
   }
+}
+
+private notify(): void
+{
+  this.synchronizeMarkers();
+
+  for (const listener of this.listeners)
+  {
+    listener(
+      this.getSettings()
+    );
+  }
+}
 }
 
 export const celestialService =

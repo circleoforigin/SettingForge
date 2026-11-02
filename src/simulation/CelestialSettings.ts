@@ -16,13 +16,13 @@ export interface CelestialSolarCycle
   shortSolstice: {
     monthId: string;
     day: number;
-    daylightHours: number;
+    daylightMinutes: number;
   };
 
   longSolstice: {
     monthId: string;
     day: number;
-    daylightHours: number;
+    daylightMinutes: number;
   };
 }
 
