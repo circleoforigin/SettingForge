@@ -1,7 +1,24 @@
 export class OccurrenceProducerRegistry
 {
-  private readonly producers =
-    new Set<string>();
+  private readonly producers = new Set<string>();
+
+  registerOverlay(
+    overlayId: string
+  ): void
+  {
+    this.register(
+      `overlay:${overlayId}`
+    );
+  }
+
+  unregisterOverlay(
+    overlayId: string
+  ): void
+  {
+    this.unregister(
+      `overlay:${overlayId}`
+    );
+  }
 
   register(moduleId: string): void
   {

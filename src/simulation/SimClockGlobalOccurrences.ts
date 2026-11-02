@@ -5,8 +5,60 @@ import type {
   SimClockEra,
   SimClockMarkers,
 } from './SimClockSettings';
+import type { Occurrence } from '@settingforge/module-sdk';
 
 export const GLOBAL_OCCURRENCE_HORIZON_HOURS = 100;
+
+let globalOccurrenceRequestVersion = 0;
+
+export function invalidateGlobalOccurrenceRequests(): number
+{
+  globalOccurrenceRequestVersion += 1;
+
+  return globalOccurrenceRequestVersion;
+}
+
+export function isCurrentGlobalOccurrenceRequest(
+  version: number
+): boolean
+{
+  return version === globalOccurrenceRequestVersion;
+}
+
+interface CelestialOccurrencesResult
+{
+  occurrences: Occurrence[];
+}
+
+export async function requestCelestialOccurrences(
+  startTime: number,
+  endTime: number,
+  era: SimClockEra
+): Promise<Occurrence[]>
+{
+  const result =
+    await hostEventBroker.requestHost<CelestialOccurrencesResult>(
+      'overlay:sim-clock',
+      'Celestial.GenerateOccurrences',
+      {
+        startTime,
+        endTime,
+        era,
+      }
+    );
+
+  if (
+    !result ||
+    !Array.isArray(result.occurrences)
+  )
+  {
+    throw new Error(
+      'Celestial.GenerateOccurrences returned an invalid result.'
+    );
+  }
+
+  return result.occurrences;
+}
 
 export interface SimClockGlobalOccurrenceSettings
 {
@@ -69,8 +121,7 @@ export function extendGlobalOccurrences(
       settings.era
     );
 
-  const globalQueue =
-    occurrenceService.getGlobalQueue();
+  const globalQueue = occurrenceService.getGlobalQueue();
 
   const currentEnd =
     globalQueue.length > 0
