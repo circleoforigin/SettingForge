@@ -39,4 +39,41 @@ export const celestialQueryDefinitions:
         },
       ],
     },
+    {
+  id: 'Celestial.GenerateOccurrences',
+  label: 'Generate Celestial Occurrences',
+
+  description:
+    'Generates celestial Occurrences within a specified simulation-time interval without advancing time or modifying the Occurrences queue.',
+
+  input: [
+    {
+      key: 'startTime',
+      label: 'Start Time',
+      type: 'number',
+      required: true,
+    },
+    {
+      key: 'endTime',
+      label: 'End Time',
+      type: 'number',
+      required: true,
+    },
+    {
+      key: 'era',
+      label: 'Calendar Era',
+      type: 'object',
+      required: true,
+    },
+  ],
+
+  output: [
+    {
+      key: 'occurrences',
+      label: 'Generated Occurrences',
+      type: 'array',
+      required: true,
+    },
+  ],
+},
   ];
