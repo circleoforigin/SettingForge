@@ -415,6 +415,10 @@ const unregisterModuleReady =
   hostEventBroker.subscribe(
     'module.ready',
     (message) => {
+      if (message.sourceModuleId === 'settingforge')
+      {
+        return;
+      }
       const payload =
         message.payload as
           | {

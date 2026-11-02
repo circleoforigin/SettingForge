@@ -1,19 +1,12 @@
-import {
-  hostEventBroker,
-} from '../events/HostEventBroker';
-import {
-  occurrenceService,
-} from '../overlays/occurrence/OccurrenceService';
-import {
-  generateSimClockOccurrences,
-} from './SimClockOccurrenceGenerator';
+import { hostEventBroker } from '../events/HostEventBroker';
+import { occurrenceService } from '../overlays/occurrence/OccurrenceService';
+import { generateCelestialOccurrences } from './CelestialOccurrenceGenerator';
 import type {
   SimClockEra,
   SimClockMarkers,
 } from './SimClockSettings';
 
-export const GLOBAL_OCCURRENCE_HORIZON_HOURS =
-  100;
+export const GLOBAL_OCCURRENCE_HORIZON_HOURS = 100;
 
 export interface SimClockGlobalOccurrenceSettings
 {
@@ -48,14 +41,13 @@ export function rebuildGlobalOccurrences(
       settings.era
     );
 
-  occurrenceService.replaceGlobal(
-    generateSimClockOccurrences(
-      startTime,
-      endTime,
-      settings.markers,
-      settings.era
-    )
-  );
+occurrenceService.replaceGlobal(
+  generateCelestialOccurrences(
+    startTime,
+    endTime,
+    settings.era
+  )
+);
 
   hostEventBroker.broadcast(
     'SimClock.BuildGlobal',
@@ -92,14 +84,13 @@ export function extendGlobalOccurrences(
     return;
   }
 
-  occurrenceService.addGlobal(
-    generateSimClockOccurrences(
-      currentEnd,
-      targetEnd,
-      settings.markers,
-      settings.era
-    )
-  );
+occurrenceService.addGlobal(
+  generateCelestialOccurrences(
+    currentEnd,
+    targetEnd,
+    settings.era
+  )
+);
 
   hostEventBroker.broadcast(
     'SimClock.BuildGlobal',

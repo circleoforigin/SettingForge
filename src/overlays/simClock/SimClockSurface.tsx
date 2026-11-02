@@ -52,7 +52,7 @@ export function SimClockSurface({
   const [progressPresetIndex, setProgressPresetIndex] =
     useState(0);
 
-  const [marker, setMarker] = useState<SimClockMarker>('sunrise');
+  const [marker, setMarker] = useState<string>('');
   
   const [celestialMarkers, setCelestialMarkers] =
   useState<CelestialMarker[]>(
@@ -61,9 +61,7 @@ export function SimClockSurface({
 
 useEffect(() =>
 {
-  setCelestialMarkers(
-    simClockMarkerState.getMarkers()
-  );
+  setCelestialMarkers(simClockMarkerState.getMarkers());
 
   return simClockMarkerState.subscribe(
     setCelestialMarkers
@@ -77,6 +75,13 @@ const markerOptions =
       label: celestialMarker.name,
     })
   );
+
+const selectedMarker =
+  markerOptions.some(
+    (option) => option.value === marker
+  )
+    ? marker
+    : markerOptions[0]?.value ?? '';
 
   if (!controller)
     return null;
@@ -326,58 +331,58 @@ const markerOptions =
             </div>
 
             <div className="sim-clock-progression-column">
-              <button
-                type="button"
-                onClick={() =>
-                {
-                  controller.progressToMarker(
-                    marker
-                  );
-                }}
-              >
-                To Marker
-              </button>
+<button
+  type="button"
+  disabled={!selectedMarker}
+  onClick={() =>
+  {
+    void controller.progressToMarker(
+      selectedMarker
+    );
+  }}
+>
+  To Marker
+</button>
 
-              <select
-                value={marker}
-                onChange={(event) =>
-                  setMarker(
-                    event.target.value as
-                      SimClockMarker
-                  )
-                }
-              >
-                <option value="sunrise">
-                  Sunrise
-                </option>
+<select
+  value={selectedMarker}
+  disabled={markerOptions.length === 0}
+  onChange={(event) =>
+  {
+    setMarker(event.target.value);
+  }}
+>
+  {markerOptions.length === 0 && (
+    <option value="">
+      No markers available
+    </option>
+  )}
 
-                <option value="noon">
-                  Noon
-                </option>
-
-                <option value="sunset">
-                  Sunset
-                </option>
-
-                <option value="midnight">
-                  Midnight
-                </option>
-              </select>
+  {markerOptions.map((option) => (
+    <option
+      key={option.value}
+      value={option.value}
+    >
+      {option.label}
+    </option>
+  ))}
+</select>
             </div>
 
 <div className="sim-clock-progression-column sim-clock-progression-actions">
-  <button
-    type="button"
-    onClick={() =>
-    {
-      controller.progressToMarkerAfter(
-        progressPreset,
-        marker
-      );
-    }}
-  >
-    Progress To
-  </button>
+<button
+  type="button"
+  disabled={!selectedMarker}
+  onClick={() =>
+  {
+    void controller.progressToMarkerAfter(
+      progressPreset,
+      selectedMarker
+    );
+  }}
+>
+  Progress To
+</button>
 
   <button
     type="button"
