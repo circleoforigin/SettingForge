@@ -6,6 +6,7 @@ import { occurrenceEventHandlers } from './occurrence/OccurrenceEvents';
 import { EnvironmentSurface } from './environment/EnvironmentSurface';
 import { CelestialSurface } from './celestial/CelestialSurface';
 import { celestialEventDefinitions } from './celestial/CelestialEvents';
+import { simClockEventHandlers } from './simClock/SimClockEvents';
 
 export const overlayRegistry = new OverlayRegistry();
 
@@ -38,6 +39,7 @@ const simClockOverlay: OverlayDefinition = {
   ],
   defaultMount: 'bottom-center',
   Surface: SimClockSurface,
+  events: simClockEventHandlers,
 };
 
 const environmentOverlay: OverlayDefinition = {

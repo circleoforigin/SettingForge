@@ -20,6 +20,7 @@ import { rulesetRegistry } from './rules/RulesetRegistry';
 import { registerRulesHostService } from './rules/RulesHostService';
 import { occurrenceService } from './overlays/occurrence/OccurrenceService';
 import { celestialService } from './simulation/CelestialService';
+import { celestialMarkerRegistry } from './simulation/CelestialMarkers';
 import { CelestialSettingsDialog } from './overlays/celestial/CelestialSettingsDialog';
 import {
   MessengerOverlay,
@@ -331,6 +332,26 @@ overlays:
   const unregisterOverlayCapabilities =
     overlayRegistry.registerCapabilities();
 
+    const publishCelestialMarkers = () =>
+{
+  hostEventBroker.emitOverlayEvent(
+    'celestial',
+    'Celestial.MarkersChanged',
+    {
+      markers:
+        celestialMarkerRegistry.getMarkers(),
+    }
+  );
+};
+
+const unsubscribeCelestialMarkers =
+  celestialMarkerRegistry.subscribe(
+    publishCelestialMarkers
+  );
+
+// Publish the current marker state.
+publishCelestialMarkers();
+
   const unsubscribeOverlayEvents =
     overlayRegistry.subscribeEvents(
       hostEventBroker.subscribe.bind(
@@ -485,7 +506,8 @@ loadQueueRef.current?.completeModule(
   unregisterOccurrenceService();
   unregisterCapabilityService();
   unregisterFileServices();
-  unregisterStorageServices();
+  unregisterStorageServices();  
+  unsubscribeCelestialMarkers();
   unsubscribeOverlayEvents();
   stopBroker();
 };
