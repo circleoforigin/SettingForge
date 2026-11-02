@@ -252,6 +252,58 @@ private relayModuleEvent(
     };
   }
 
+  emitOverlayEvent(
+  overlayId: string,
+  type: string,
+  payload?: unknown
+): void
+{
+  const sourceModuleId =
+    `overlay:${overlayId}`;
+
+  const definition =
+    capabilityRegistry.getEvent(
+      type,
+      sourceModuleId
+    );
+
+  if (!definition)
+  {
+    throw new Error(
+      `Overlay "${overlayId}" cannot emit unregistered event "${type}".`
+    );
+  }
+
+  const message: HostEventMessage = {
+    kind: 'event',
+    id: crypto.randomUUID(),
+    sourceModuleId,
+    type,
+    timestamp: Date.now(),
+    payload,
+  };
+
+  if (definition.delivery === 'state')
+  {
+    eventStateStore.retain(message);
+  }
+
+  // Deliver to host-side subscribers.
+  this.dispatchEvent(message);
+
+  // Deliver to connected modules.
+  for (
+    const moduleWindow
+    of this.moduleWindows.values()
+  )
+  {
+    moduleWindow.postMessage(
+      message,
+      '*'
+    );
+  }
+}
+
 broadcast(
   type: string,
   payload?: unknown
