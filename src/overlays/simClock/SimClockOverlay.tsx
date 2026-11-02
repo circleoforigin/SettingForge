@@ -7,7 +7,6 @@ import { hostEventBroker } from '../../events/HostEventBroker';
 import {
   createDefaultSimClockSettings,
   type SimClockEra,
-  type SimClockMarker,
   type SimClockProgressPreset,
   type SimClockSettings,
 } from '../../simulation/SimClockSettings';
@@ -312,53 +311,117 @@ const progressTime = (
     requestProgressTime(targetTime);
 };
 
-const progressToMarker = (
-  marker: SimClockMarker
-) =>
+const progressToMarker = async (
+  markerId: string
+): Promise<void> =>
 {
   if (!activeEra)
   {
     return;
   }
 
-  const targetTime =
-    advanceSimulationTimeToMarker(
-      committedTime,
-      marker,
-      settings.markers,
-      activeEra
-    );
+  const startTime =
+    simulationClockService.getTime();
 
-    requestProgressTime(targetTime);
+  try
+  {
+    const result =
+      await hostEventBroker.requestHost<{
+        targetTime?: number;
+      }>(
+        'overlay:sim-clock',
+        'Celestial.ResolveMarker',
+        {
+          markerId,
+          afterTime: startTime,
+          era: activeEra,
+        }
+      );
+
+    if (
+      typeof result.targetTime !== 'number' ||
+      !Number.isFinite(result.targetTime) ||
+      result.targetTime <= startTime
+    )
+    {
+      console.warn(
+        '[SimClock] Marker could not be resolved.',
+        markerId
+      );
+
+      return;
+    }
+
+    requestProgressTime(result.targetTime);
+  }
+  catch (error)
+  {
+    console.error(
+      '[SimClock] Unable to resolve marker.',
+      error
+    );
+  }
 };
 
-const progressToMarkerAfter = (
+const progressToMarkerAfter = async (
   preset: SimClockProgressPreset,
-  marker: SimClockMarker
-) =>
+  markerId: string
+): Promise<void> =>
 {
   if (!activeEra)
   {
     return;
   }
+
+  const startTime =
+    simulationClockService.getTime();
 
   const progressedTime =
     progressSimulationTime(
-      committedTime,
+      startTime,
       preset.amount,
       preset.unit,
       activeEra
     );
 
-  const targetTime =
-    advanceSimulationTimeToMarker(
-      progressedTime,
-      marker,
-      settings.markers,
-      activeEra
-    );
+  try
+  {
+    const result =
+      await hostEventBroker.requestHost<{
+        targetTime?: number;
+      }>(
+        'overlay:sim-clock',
+        'Celestial.ResolveMarker',
+        {
+          markerId,
+          afterTime: progressedTime,
+          era: activeEra,
+        }
+      );
 
-    requestProgressTime(targetTime);  
+    if (
+      typeof result.targetTime !== 'number' ||
+      !Number.isFinite(result.targetTime) ||
+      result.targetTime <= progressedTime
+    )
+    {
+      console.warn(
+        '[SimClock] Marker could not be resolved.',
+        markerId
+      );
+
+      return;
+    }
+
+    requestProgressTime(result.targetTime);
+  }
+  catch (error)
+  {
+    console.error(
+      '[SimClock] Unable to resolve marker.',
+      error
+    );
+  }
 };
 
   const stepPendingTime = (

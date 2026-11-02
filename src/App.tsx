@@ -21,6 +21,7 @@ import { registerRulesHostService } from './rules/RulesHostService';
 import { occurrenceService } from './overlays/occurrence/OccurrenceService';
 import { celestialService } from './simulation/CelestialService';
 import { celestialMarkerRegistry } from './simulation/CelestialMarkers';
+import { registerCelestialQueryHandlers } from './overlays/celestial/CelestialQueryHandlers';
 import { CelestialSettingsDialog } from './overlays/celestial/CelestialSettingsDialog';
 import {
   MessengerOverlay,
@@ -349,15 +350,15 @@ const unsubscribeCelestialMarkers =
     publishCelestialMarkers
   );
 
+const unsubscribeOverlayEvents =
+  overlayRegistry.subscribeEvents(
+    hostEventBroker.subscribe.bind(
+      hostEventBroker
+    )
+  );
+
 // Publish the current marker state.
 publishCelestialMarkers();
-
-  const unsubscribeOverlayEvents =
-    overlayRegistry.subscribeEvents(
-      hostEventBroker.subscribe.bind(
-        hostEventBroker
-      )
-    );
 
   const unregisterStorageServices =
     registerStorageHostServices(
@@ -375,6 +376,13 @@ publishCelestialMarkers();
 
 const unregisterCapabilityService =
   registerCapabilityHostService(
+    hostEventBroker.registerRequestHandler.bind(
+      hostEventBroker
+    )
+  );
+
+const unregisterCelestialQueries =
+  registerCelestialQueryHandlers(
     hostEventBroker.registerRequestHandler.bind(
       hostEventBroker
     )
@@ -504,6 +512,7 @@ loadQueueRef.current?.completeModule(
   unregisterRulesService();
   unregisterWorldService();
   unregisterOccurrenceService();
+  unregisterCelestialQueries();
   unregisterCapabilityService();
   unregisterFileServices();
   unregisterStorageServices();  

@@ -3,15 +3,14 @@ import { occurrenceService } from '../occurrence/OccurrenceService';
 import type { OverlaySurfaceProps } from '../OverlayDefinition';
 import { SimClockValueControl } from './SimClockValueControl';
 import type { SimClockOverlayController } from './SimClockOverlay';
-import type {
-  SimClockMarker,
-  SimClockProgressUnit,
-} from '../../simulation/SimClockSettings';
+import type { SimClockProgressUnit } from '../../simulation/SimClockSettings';
 import {
   formatSimulationDate,
   formatSimulationTime,
   simulationTimeToCalendar,
 } from '../../simulation/SimCalendar';
+import type { CelestialMarker } from '../../simulation/CelestialMarkers';
+import { simClockMarkerState } from './SimClockMarkerState';
 
 interface SimClockSurfaceProps
   extends OverlaySurfaceProps
@@ -53,8 +52,31 @@ export function SimClockSurface({
   const [progressPresetIndex, setProgressPresetIndex] =
     useState(0);
 
-  const [marker, setMarker] =
-    useState<SimClockMarker>('sunrise');
+  const [marker, setMarker] = useState<SimClockMarker>('sunrise');
+  
+  const [celestialMarkers, setCelestialMarkers] =
+  useState<CelestialMarker[]>(
+    () => simClockMarkerState.getMarkers()
+  );
+
+useEffect(() =>
+{
+  setCelestialMarkers(
+    simClockMarkerState.getMarkers()
+  );
+
+  return simClockMarkerState.subscribe(
+    setCelestialMarkers
+  );
+}, []);
+
+const markerOptions =
+  celestialMarkers.map(
+    (celestialMarker) => ({
+      value: celestialMarker.id,
+      label: celestialMarker.name,
+    })
+  );
 
   if (!controller)
     return null;

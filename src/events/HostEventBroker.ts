@@ -252,7 +252,38 @@ private relayModuleEvent(
     };
   }
 
-  emitOverlayEvent(
+  async requestHost<T>(
+  sourceModuleId: string,
+  type: string,
+  payload?: unknown
+): Promise<T>
+{
+  const handler =
+    this.requestHandlers.get(type);
+
+  if (!handler)
+  {
+    throw new Error(
+      `No SettingForge handler is registered for "${type}".`
+    );
+  }
+
+  const request: HostRequestMessage = {
+    kind: 'request',
+    id: crypto.randomUUID(),
+    sourceModuleId,
+    type,
+    timestamp: Date.now(),
+    payload,
+  };
+
+  const result =
+    await handler(request);
+
+  return result as T;
+}
+
+emitOverlayEvent(
   overlayId: string,
   type: string,
   payload?: unknown

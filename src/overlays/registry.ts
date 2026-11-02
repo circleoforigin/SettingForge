@@ -6,6 +6,7 @@ import { occurrenceEventHandlers } from './occurrence/OccurrenceEvents';
 import { EnvironmentSurface } from './environment/EnvironmentSurface';
 import { CelestialSurface } from './celestial/CelestialSurface';
 import { celestialEventDefinitions } from './celestial/CelestialEvents';
+import { celestialQueryDefinitions } from './celestial/CelestialQueries';
 import { simClockEventHandlers } from './simClock/SimClockEvents';
 
 export const overlayRegistry = new OverlayRegistry();
@@ -73,6 +74,7 @@ const celestialOverlay: OverlayDefinition = {
   Surface: CelestialSurface,
   capabilities: {
     events: celestialEventDefinitions,
+    queries: celestialQueryDefinitions,
   },
 };
 
