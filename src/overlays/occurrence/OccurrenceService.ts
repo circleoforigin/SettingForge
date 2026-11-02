@@ -752,7 +752,7 @@ consumeVisible(
     }
   }
 
-  removeGlobalByProducer(
+removeGlobalByProducer(
   sourceModuleId: string
 ): number
 {
@@ -770,6 +770,41 @@ consumeVisible(
   }
 
   return removed;
+}
+
+replaceGlobalByProducer(
+  sourceModuleId: string,
+  occurrences: Occurrence[]
+): void
+{
+  const retained =
+    this.globalQueue.filter(
+      occurrence =>
+        occurrence.sourceModuleId !== sourceModuleId
+    );
+
+  const replacements =
+    occurrences.filter(
+      occurrence =>
+        occurrence.sourceModuleId === sourceModuleId
+    );
+
+const updated = [
+  ...retained,
+  ...replacements,
+].sort(
+  (a, b) =>
+    a.simulationTime - b.simulationTime ||
+    a.id.localeCompare(b.id)
+);
+
+this.globalQueue.splice(
+  0,
+  this.globalQueue.length,
+  ...updated
+);
+
+  this.notify();
 }
 
   clearGlobal(): void

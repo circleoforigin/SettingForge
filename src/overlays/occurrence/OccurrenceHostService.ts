@@ -35,6 +35,66 @@ export function registerOccurrenceHostService(
       }
     );
 
+  const unregisterGlobalReplacement =
+  registerRequestHandler(
+    'occurrences.replaceGlobal',
+    async (message) =>
+    {
+      if (
+        !occurrenceProducerRegistry.has(
+          message.sourceModuleId
+        )
+      )
+      {
+        throw new Error(
+          `Module "${message.sourceModuleId}" is not registered as an Occurrence producer.`
+        );
+      }
+
+      const submission =
+        message.payload as
+          | OccurrenceSubmission
+          | undefined;
+
+      if (
+        !submission ||
+        submission.pieceId !== null ||
+        !Array.isArray(submission.occurrences)
+      )
+      {
+        throw new Error(
+          'occurrences.replaceGlobal requires a global Occurrence submission.'
+        );
+      }
+
+      for (const occurrence of submission.occurrences)
+      {
+        if (
+          occurrence.pieceId !== null ||
+          occurrence.sourceModuleId !==
+            message.sourceModuleId
+        )
+        {
+          throw new Error(
+            'Global replacement contains an Occurrence belonging to another producer or piece.'
+          );
+        }
+      }
+
+      occurrenceService.replaceGlobalByProducer(
+        message.sourceModuleId,
+        submission.occurrences.filter(
+          (occurrence) =>
+            occurrence.reaction !== 'none'
+        )
+      );
+
+      return {
+        replaced: true,
+      };
+    }
+  );
+
   const unregisterSubmission =
     registerRequestHandler(
       'occurrences.submit',
@@ -182,6 +242,7 @@ export function registerOccurrenceHostService(
 
   return () =>
   {
+    unregisterGlobalReplacement();
     unregisterSubmission();
     unregisterProducerRegistration();
   };
