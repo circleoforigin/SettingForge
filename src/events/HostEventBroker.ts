@@ -252,25 +252,30 @@ private relayModuleEvent(
     };
   }
 
-  broadcast(
+broadcast(
   type: string,
   payload?: unknown
-): void {
+): void
+{
   const message: HostEventMessage = {
     kind: 'event',
     id: crypto.randomUUID(),
-    sourceModuleId:
-      'settingforge',
+    sourceModuleId: 'settingforge',
     type,
-    timestamp:
-      Date.now(),
+    timestamp: Date.now(),
     payload,
   };
 
+  // Deliver to local subscribers,
+  // including SettingForge overlays.
+  this.dispatchEvent(message);
+
+  // Deliver to connected modules.
   for (
     const moduleWindow
     of this.moduleWindows.values()
-  ) {
+  )
+  {
     moduleWindow.postMessage(
       message,
       '*'

@@ -328,6 +328,9 @@ overlays:
   useEffect(() => {
   const stopBroker = hostEventBroker.start();
 
+  const unregisterOverlayCapabilities =
+    overlayRegistry.registerCapabilities();
+
   const unsubscribeOverlayEvents =
     overlayRegistry.subscribeEvents(
       hostEventBroker.subscribe.bind(
@@ -473,6 +476,7 @@ loadQueueRef.current?.completeModule(
   );
 
   return () => {
+  unregisterOverlayCapabilities();
   unregisterProjectLoadFailed();
   unregisterProjectLoaded();
   unregisterModuleReady();

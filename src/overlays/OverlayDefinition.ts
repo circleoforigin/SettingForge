@@ -4,6 +4,11 @@ import type {
   OverlayMountId,
   OverlayPlacement,
 } from './OverlayPlacement';
+import type {
+  EventDefinition,
+  CommandDefinition,
+  QueryDefinition,
+} from '@settingforge/module-sdk';
 
 export type OverlayLayout =
   | 'positioned'
@@ -39,8 +44,18 @@ interface OverlayDefinitionBase
   name: string;
   description: string;
   version: string;
+
   Surface?: ComponentType<OverlaySurfaceProps>;
+
+  // Events this overlay listens for.
   events?: OverlayEventHandler[];
+
+  // Capabilities this overlay provides.
+  capabilities?: {
+    events?: EventDefinition[];
+    commands?: CommandDefinition[];
+    queries?: QueryDefinition[];
+  };
 }
 
 export interface PositionedOverlayDefinition
