@@ -106,6 +106,7 @@ export class OccurrenceService
 private readonly globalQueue: Occurrence[] = [];
 private readonly pieceQueues = new Map<string, Occurrence[]>();
 private readonly visibleOccurrences: Occurrence[] = [];
+private operationFinish: Occurrence | undefined;
 private readonly listeners = new Set<OccurrenceListener>();
 private presentationActive = false;
 private presentationThroughTime: number | undefined;
@@ -129,6 +130,14 @@ addVisible(
     occurrence
   );
 
+  this.notify();
+}
+
+setOperationFinish(
+  occurrence: Occurrence
+): void
+{
+  this.operationFinish = occurrence;
   this.notify();
 }
 
@@ -402,10 +411,17 @@ fillVisible(
   }
 );
 
-      const queues: Occurrence[][] = [
-        globalCandidates,
-        ...this.pieceQueues.values(),
-      ];
+const finishCandidate =
+  this.operationFinish &&
+  !visibleIds.has(this.operationFinish.id)
+    ? [this.operationFinish]
+    : [];
+
+const queues: Occurrence[][] = [
+  globalCandidates,
+  ...this.pieceQueues.values(),
+  finishCandidate,
+];
 
       let next:
         Occurrence | undefined;
@@ -474,11 +490,13 @@ fillVisible(
   clearOperationOccurrences(): void
   {
     const changed =
+      this.operationFinish !== undefined ||
       this.presentationActive ||
       this.pieceQueues.size > 0 ||
       this.visibleOccurrences.length > 0;
 
     this.presentationActive = false;
+    this.operationFinish = undefined;
     this.presentationThroughTime = undefined;
     this.pieceQueues.clear();
     this.visibleOccurrences.length = 0;
@@ -688,15 +706,24 @@ consumeVisible(
       count
     );
 
-  for (const occurrence of consumed)
+for (const occurrence of consumed)
+{
+  if (
+    occurrence.id ===
+    this.operationFinish?.id
+  )
   {
-    if (occurrence.pieceId)
-    {
-      continue;
-    }
-
-    this.globalQueue.shift();
+    this.operationFinish = undefined;
+    continue;
   }
+
+  if (occurrence.pieceId)
+  {
+    continue;
+  }
+
+  this.globalQueue.shift();
+}
 
   this.notify();
 

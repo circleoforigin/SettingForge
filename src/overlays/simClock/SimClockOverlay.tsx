@@ -247,7 +247,7 @@ const progressCompleteOccurrence:
       OccurrenceReactions.Notify,
   };
 
-occurrenceService.addVisible(progressCompleteOccurrence);
+occurrenceService.setOperationFinish(progressCompleteOccurrence);
 
 hostEventBroker.broadcast(
   'Simulation.TimeProspected',
