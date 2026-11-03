@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { occurrenceService } from '../occurrence/OccurrenceService';
+import { occurrenceCoordinator } from '../occurrence/OccurrenceCoordinator';
 import type { OverlaySurfaceProps } from '../OverlayDefinition';
 import { SimClockValueControl } from './SimClockValueControl';
 import type { SimClockOverlayController } from './SimClockOverlay';
@@ -32,6 +33,31 @@ export function SimClockSurface({
   ] = useState(
     occurrenceService.isPresentationActive()
   );
+
+  const [globalPending, setGlobalPending] =
+  useState(
+    occurrenceCoordinator.getGlobalPendingThrough() !==
+    undefined
+  );
+
+useEffect(() =>
+{
+  return occurrenceCoordinator.subscribeGlobal(
+    () =>
+    {
+      const pending =
+        occurrenceCoordinator.getGlobalPendingThrough() !==
+        undefined;
+
+      setGlobalPending(pending);
+
+      if (pending)
+      {
+        setExpanded(false);
+      }
+    }
+  );
+}, []);
 
   useEffect(() =>
   {
@@ -178,11 +204,11 @@ const selectedMarker =
       className="sim-clock-surface"
       data-mount={mountId}
     >
-      {(!expanded || occurrenceActive) && (
+      {(!expanded || occurrenceActive || globalPending) && (
         <button
           type="button"
           className="sim-clock-summary"
-          disabled={occurrenceActive}
+          disabled={occurrenceActive || globalPending}
           onClick={() =>
           {
             if (occurrenceActive)
@@ -209,7 +235,7 @@ const selectedMarker =
         </button>
       )}
 
-      {expanded && !occurrenceActive && (
+      {expanded && !occurrenceActive && !globalPending && (
         <>
           <div className="sim-clock-progression">
             <div className="sim-clock-progression-column">

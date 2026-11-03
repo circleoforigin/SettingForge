@@ -20,6 +20,7 @@ import { rulesetRegistry } from './rules/RulesetRegistry';
 import { registerRulesHostService } from './rules/RulesHostService';
 import { occurrenceService } from './overlays/occurrence/OccurrenceService';
 import { occurrenceProducerRegistry } from './overlays/occurrence/OccurrenceProducerRegistry';
+import { occurrenceCoordinator } from './overlays/occurrence/OccurrenceCoordinator';
 import { celestialService } from './simulation/CelestialService';
 import { celestialMarkerRegistry } from './simulation/CelestialMarkers';
 import { registerCelestialQueryHandlers } from './overlays/celestial/CelestialQueryHandlers';
@@ -414,6 +415,21 @@ const unregisterOccurrenceService =
 
 occurrenceProducerRegistry.registerGlobal('overlay:celestial');
 
+const unsubscribeGlobalForecast =
+  simulationClockService.subscribe(
+    (committedTime) =>
+    {
+      if (!activeWorldRef.current)
+      {
+        return;
+      }
+
+      occurrenceCoordinator.requestGlobalCoverage(
+        committedTime
+      );
+    }
+  );
+
 const unregisterModuleReady =
   hostEventBroker.subscribe(
     'module.ready',
@@ -512,6 +528,7 @@ loadQueueRef.current?.completeModule(
   );
 
   return () => {
+    unsubscribeGlobalForecast();
     unregisterOverlayCapabilities();
     unregisterProjectLoadFailed();
     unregisterProjectLoaded();
@@ -1241,12 +1258,32 @@ if (!loadQueueRef.current) {
           );
         }
 
-        void worldRepository
-          .saveWorld(world)
-          .then(() => {
-            setActiveWorld(world);
+void worldRepository
+  .saveWorld(world)
+  .then(() => {
+    setActiveWorld(world);
 
-            setWorldRuntimeDirty(false);
+    const settings =
+      world.simulation!.simClockSettings;
+
+    const activeEra =
+      settings.eras.find(
+        (era) =>
+          era.id === settings.activeEraId
+      ) ??
+      settings.eras[0];
+
+    if (activeEra)
+    {
+      occurrenceService.clearGlobal();
+
+      occurrenceCoordinator.initializeGlobalCoverage(
+        world.simulation!.time,
+        activeEra
+      );
+    }
+
+    setWorldRuntimeDirty(false);
 
             setActiveModuleId(
               world.modules[0]
@@ -2172,6 +2209,9 @@ async function handleDeleteWorld() {
       worldLoadGenerationRef.current += 1;
       loadQueueRef.current?.clear();
 
+      occurrenceCoordinator.clearGlobalCoverage();
+      occurrenceService.clearGlobal();
+
       setActiveWorld(null);
       setWorldRuntimeDirty(false);
 
@@ -2351,24 +2391,48 @@ async function handleLoadWorld(worldId: string) {
     }
 
     // Ensure older Worlds have a persistent seed.
-const seedResult = ensureWorldSeed(world);
+    const seedResult = ensureWorldSeed(world);
+    world = seedResult.world;
 
-world = seedResult.world;
+    if (seedResult.migrated)
+    {
+      await worldRepository.saveWorld(world);
 
-if (seedResult.migrated)
-{
-  await worldRepository.saveWorld(world);
+      if (
+        generation !==
+        worldLoadGenerationRef.current
+      )
+      {
+        return;
+      }
+    }
 
-  if (
-    generation !==
-    worldLoadGenerationRef.current
-  )
-  {
-    return;
-  }
-}
+    const simulation = world.simulation;
 
-const simulation = world.simulation;
+    const restoredSettings =
+      simulation?.simClockSettings ??
+      createDefaultSimClockSettings();
+
+    const restoredTime =
+      simulation?.time ?? 0;
+
+    const restoredEra =
+      restoredSettings.eras.find(
+        (era) =>
+          era.id === restoredSettings.activeEraId
+      ) ??
+      restoredSettings.eras[0];
+
+    occurrenceCoordinator.clearGlobalCoverage();
+    occurrenceService.clearGlobal();
+
+    if (restoredEra)
+    {
+      occurrenceCoordinator.initializeGlobalCoverage(
+        restoredTime,
+        restoredEra
+      );
+    }
 
     simClock.restoreWorldState(
       simulation?.time ?? 0,
@@ -2960,6 +3024,9 @@ async function finishClose(
       );
     }
   }
+  
+  occurrenceCoordinator.clearGlobalCoverage();
+  occurrenceService.clearGlobal();
 
   setActiveWorld(null);
   setWorldRuntimeDirty(false);

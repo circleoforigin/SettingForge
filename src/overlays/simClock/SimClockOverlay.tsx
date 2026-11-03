@@ -21,7 +21,6 @@ import {
 } from '../../simulation/SimCalendar';
 import { travelProspectService } from '../../simulation/TravelProspectService';
 import { stationaryTimeProspectService } from '../../simulation/StationaryTimeProspectService';
-
 import { occurrenceService } from '../occurrence/OccurrenceService';
 import { occurrenceCoordinator } from '../occurrence/OccurrenceCoordinator';
 import {
@@ -180,16 +179,29 @@ const updateProgressPreset = (
 };
 
 const commitPendingTime = () =>
+{
+  if (
+    occurrenceCoordinator.getGlobalPendingThrough() !==
+    undefined
+  )
   {
-    simulationClockService.setTime(
-      pendingTime
-    );
-  };
+    return;
+  }
+
+  simulationClockService.setTime(
+    pendingTime
+  );
+};
 
 const requestProgressTime = (
   targetTime: SimulationTime
 ) =>
 {
+  if (occurrenceCoordinator.getGlobalPendingThrough() !== undefined)
+  {
+    return;
+  }
+
   if (!activeEra)
   {
     return;
@@ -272,6 +284,11 @@ const progressToMarker = async (
   markerId: string
 ): Promise<void> =>
 {
+  if (occurrenceCoordinator.getGlobalPendingThrough() !== undefined)
+  {
+    return;
+  }
+
   if (!activeEra)
   {
     return;
@@ -462,6 +479,11 @@ const progressToMarkerAfter = async (
 
 const requestTravel = () =>
 {
+  if (occurrenceCoordinator.getGlobalPendingThrough() !== undefined)
+  {
+    return;
+  }
+
   travelProspectService.clear();
 
   void hostEventBroker

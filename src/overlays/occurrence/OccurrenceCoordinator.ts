@@ -16,6 +16,27 @@ export class OccurrenceCoordinator
 
   private globalProducerIds = new Set<string>();
   private readonly globalCompletedProducerIds = new Set<string>();
+  private readonly globalListeners = new Set<() => void>();
+
+  subscribeGlobal(
+    listener: () => void
+  ): () => void
+  {
+    this.globalListeners.add(listener);
+
+    return () =>
+    {
+      this.globalListeners.delete(listener);
+    };
+  }
+
+  private notifyGlobal(): void
+  {
+    for (const listener of this.globalListeners)
+    {
+      listener();
+    }
+  }
 
   getProspect(
     pieceId: string
@@ -491,6 +512,7 @@ if (this.globalProducerIds.size === 0)
 }
   this.globalPendingThrough = requiredThrough;
   this.globalRequestId = crypto.randomUUID();
+  this.notifyGlobal();
 
   hostEventBroker.broadcast(
     'Simulation.GlobalOccurrencesRequested',
@@ -550,7 +572,8 @@ completeGlobalCoverage(
   this.globalCoveredThrough = this.globalPendingThrough;
   this.globalPendingThrough = undefined;
   this.globalRequestId = undefined;
-  this.globalCompletedProducerIds.clear();
+  this.globalCompletedProducerIds.clear();  
+  this.notifyGlobal();
 }
 
 getGlobalCoveredThrough(): number | undefined
@@ -570,7 +593,8 @@ clearGlobalCoverage(): void
   this.globalEra = undefined;
   this.globalCompletedProducerIds.clear();
   this.globalProducerIds.clear();
-  this.globalRequestId = undefined;
+  this.globalRequestId = undefined;  
+  this.notifyGlobal();
 }
 
 
