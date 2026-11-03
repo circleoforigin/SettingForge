@@ -167,6 +167,30 @@ export function registerOccurrenceHostService(
             );
 
           if (
+  message.sourceModuleId ===
+    'overlay:celestial'
+)
+{
+  const globalCompletion =
+    occurrences.find(
+      (occurrence) =>
+        occurrence.reaction === 'none' &&
+        occurrence.simulationTime ===
+          occurrenceCoordinator
+            .getGlobalPendingThrough()
+    );
+
+  if (globalCompletion)
+  {
+    occurrenceCoordinator
+      .completeGlobalCoverage(
+        message.sourceModuleId,
+        globalCompletion.simulationTime
+      );
+  }
+}
+
+          if (
             completed &&
             message.sourceModuleId ===
               'regions' &&

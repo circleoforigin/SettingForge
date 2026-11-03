@@ -2,12 +2,19 @@ import type { OccurrenceRound } from './OccurrenceRound';
 import { occurrenceProducerRegistry } from './OccurrenceProducerRegistry';
 import type { Occurrence } from '@settingforge/module-sdk';
 import type { OccurrenceProspect } from './OccurrenceProspect';
+import type { SimClockEra } from '../../simulation/SimClockSettings';
+import { hostEventBroker } from '../../events/HostEventBroker';
 
 export class OccurrenceCoordinator
 {
   private readonly rounds = new Map<string, OccurrenceRound>();
-  private readonly prospects =
-    new Map<string, OccurrenceProspect>();
+  private readonly prospects = new Map<string, OccurrenceProspect>();
+  private globalCoveredThrough: number | undefined;
+  private globalPendingThrough: number | undefined;
+  private globalEra: SimClockEra | undefined;
+
+  private readonly globalProducerIds = new Set<string>(['overlay:celestial']);
+  private readonly globalCompletedProducerIds = new Set<string>();
 
   getProspect(
     pieceId: string
@@ -427,6 +434,116 @@ setProspectStationaryTime(
   {
     return this.rounds.delete(pieceId);
   }
+
+
+initializeGlobalCoverage(
+  committedTime: number,
+  era: SimClockEra
+): void
+{
+  this.clearGlobalCoverage();
+
+  this.globalCoveredThrough = committedTime;
+  this.globalEra = era;
+
+  this.requestGlobalCoverage(committedTime);
+}
+
+requestGlobalCoverage(
+  committedTime: number
+): void
+{
+  if (
+    !this.globalEra ||
+    this.globalCoveredThrough === undefined ||
+    this.globalPendingThrough !== undefined
+  )
+  {
+    return;
+  }
+
+  const secondsPerHour =
+    this.globalEra.secondsPerMinute *
+    this.globalEra.minutesPerHour;
+
+  const requiredThrough =
+    committedTime + 100 * secondsPerHour;
+
+  if (
+    this.globalCoveredThrough >= requiredThrough
+  )
+  {
+    return;
+  }
+
+  const startTime =
+    this.globalCoveredThrough;
+
+  this.globalPendingThrough =
+    requiredThrough;
+
+  hostEventBroker.broadcast(
+    'Simulation.GlobalOccurrencesRequested',
+    {
+      startTime,
+      endTime: requiredThrough,
+      era: this.globalEra,
+    }
+  );
+}
+
+completeGlobalCoverage(
+  producerId: string,
+  endTime: number
+): void
+{
+  if (
+    this.globalPendingThrough === undefined ||
+    endTime !== this.globalPendingThrough ||
+    !this.globalProducerIds.has(producerId)
+  )
+  {
+    return;
+  }
+
+  this.globalCompletedProducerIds.add(
+    producerId
+  );
+
+  if (
+    this.globalCompletedProducerIds.size <
+    this.globalProducerIds.size
+  )
+  {
+    return;
+  }
+
+  this.globalCoveredThrough =
+    this.globalPendingThrough;
+
+  this.globalPendingThrough = undefined;
+
+  this.globalCompletedProducerIds.clear();
+}
+
+getGlobalCoveredThrough(): number | undefined
+{
+  return this.globalCoveredThrough;
+}
+
+getGlobalPendingThrough(): number | undefined
+{
+  return this.globalPendingThrough;
+}
+
+clearGlobalCoverage(): void
+{
+  this.globalCoveredThrough = undefined;
+  this.globalPendingThrough = undefined;
+  this.globalEra = undefined;
+  this.globalCompletedProducerIds.clear();
+}
+
 
   clear(): void
   {

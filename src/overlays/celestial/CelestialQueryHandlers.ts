@@ -22,11 +22,10 @@ interface ResolveMarkerPayload
   era: SimClockEra;
 }
 
-interface TimeProspectedPayload
+interface GlobalOccurrencesRequestedPayload
 {
   startTime: number;
   endTime: number;
-  duration: number;
   era: SimClockEra;
 }
 
@@ -36,22 +35,14 @@ async function submitCelestialOccurrences(
   era: SimClockEra
 ): Promise<void>
 {
-  const secondsPerHour =
-    era.secondsPerMinute *
-    era.minutesPerHour;
+ const prospectEndTime = endTime;
 
-  const prospectEndTime =
-    Math.min(
-      endTime,
-      startTime + 100 * secondsPerHour
-    );
-
-  const occurrences =
-    generateCelestialOccurrences(
-      startTime,
-      prospectEndTime,
-      era
-    );
+ const occurrences =
+  generateCelestialOccurrences(
+    startTime,
+    prospectEndTime,
+    era
+  ); 
 
   const completion: Occurrence = {
     id: crypto.randomUUID(),
@@ -120,14 +111,14 @@ export function registerCelestialQueryHandlers(
       }
     );   
 
-   const unsubscribeTimeProspected =
+const unsubscribeGlobalRequested =
   hostEventBroker.subscribe(
-    'Simulation.TimeProspected',
+    'Simulation.GlobalOccurrencesRequested',
     (message) =>
     {
       const payload =
         message.payload as
-          Partial<TimeProspectedPayload>
+          Partial<GlobalOccurrencesRequestedPayload>
           | undefined;
 
       if (
@@ -162,7 +153,7 @@ export function registerCelestialQueryHandlers(
 
 return () =>
 {
-  unsubscribeTimeProspected();
+  unsubscribeGlobalRequested();
   unregisterResolveMarker();
 };
 }

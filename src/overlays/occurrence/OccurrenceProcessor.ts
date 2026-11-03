@@ -231,7 +231,7 @@ export class OccurrenceProcessor
     return true;
   }
 
-    completeStationaryTimeIfReady(): boolean
+  completeStationaryTimeIfReady(): boolean
   {
     if (
       !stationaryTimeProspectService
