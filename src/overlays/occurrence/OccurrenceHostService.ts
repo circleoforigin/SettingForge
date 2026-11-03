@@ -116,10 +116,12 @@ const unregisterGlobalProducerRegistration =
       'occurrences.submit',
       async (message) =>
       {
-        const submission =
-          message.payload as
-            | OccurrenceSubmission
-            | undefined;
+const submission =
+  message.payload as
+    | (OccurrenceSubmission & {
+        requestId?: string;
+      })
+    | undefined;
 
         if (!submission)
         {
@@ -174,6 +176,17 @@ if (!registered)
 
         if (submission.pieceId === null)
         {
+          if (
+            typeof submission.requestId !== 'string' ||
+            !occurrenceCoordinator.isActiveGlobalRequest(
+              submission.requestId,
+              message.sourceModuleId
+            )
+          )
+          {
+            return;
+
+          }
           occurrenceService.addGlobal(
             occurrences.filter(
               (occurrence) =>
@@ -201,13 +214,13 @@ const globalCompletion =
 
 if (globalCompletion)
 {
-  occurrenceCoordinator
-    .completeGlobalCoverage(
-      message.sourceModuleId,
-      globalCompletion.simulationTime
-    );
+occurrenceCoordinator
+  .completeGlobalCoverage(
+    message.sourceModuleId,
+    submission.requestId,
+    globalCompletion.simulationTime
+  );
 }
-
 
           if (
             completed &&

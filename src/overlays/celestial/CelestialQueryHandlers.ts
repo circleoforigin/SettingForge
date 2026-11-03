@@ -24,12 +24,14 @@ interface ResolveMarkerPayload
 
 interface GlobalOccurrencesRequestedPayload
 {
+  requestId: string;
   startTime: number;
   endTime: number;
   era: SimClockEra;
 }
 
 async function submitCelestialOccurrences(
+  requestId: string,
   startTime: number,
   endTime: number,
   era: SimClockEra
@@ -58,6 +60,7 @@ await hostEventBroker.requestHost(
   'overlay:celestial',
   'occurrences.submit',
   {
+    requestId,
     pieceId: null,
     occurrences: [
       ...occurrences,
@@ -123,6 +126,8 @@ const unsubscribeGlobalRequested =
 
       if (
         !payload ||
+        typeof payload.requestId !== 'string' ||
+        !payload.requestId ||
         typeof payload.startTime !== 'number' ||
         !Number.isFinite(payload.startTime) ||
         typeof payload.endTime !== 'number' ||
@@ -136,6 +141,7 @@ const unsubscribeGlobalRequested =
       }
 
       void submitCelestialOccurrences(
+        payload.requestId,
         payload.startTime,
         payload.endTime,
         payload.era

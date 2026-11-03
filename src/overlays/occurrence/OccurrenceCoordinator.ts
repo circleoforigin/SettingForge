@@ -11,6 +11,7 @@ export class OccurrenceCoordinator
   private readonly prospects = new Map<string, OccurrenceProspect>();
   private globalCoveredThrough: number | undefined;
   private globalPendingThrough: number | undefined;
+  private globalRequestId: string | undefined;
   private globalEra: SimClockEra | undefined;
 
   private globalProducerIds = new Set<string>();
@@ -489,10 +490,12 @@ if (this.globalProducerIds.size === 0)
   return;
 }
   this.globalPendingThrough = requiredThrough;
+  this.globalRequestId = crypto.randomUUID();
 
   hostEventBroker.broadcast(
     'Simulation.GlobalOccurrencesRequested',
     {
+      requestId: this.globalRequestId,
       startTime,
       endTime: requiredThrough,
       era: this.globalEra,
@@ -500,12 +503,32 @@ if (this.globalProducerIds.size === 0)
   );
 }
 
+isActiveGlobalRequest(
+  requestId: string,
+  producerId: string
+): boolean
+{
+  return (
+    this.globalPendingThrough !== undefined &&
+    this.globalRequestId === requestId &&
+    this.globalProducerIds.has(producerId) &&
+    !this.globalCompletedProducerIds.has(
+      producerId
+    )
+  );
+}
+
 completeGlobalCoverage(
   producerId: string,
+  requestId: string,
   endTime: number
 ): void
 {
   if (
+    !this.isActiveGlobalRequest(
+    requestId,
+    producerId
+  ) ||
     this.globalPendingThrough === undefined ||
     endTime !== this.globalPendingThrough ||
     !this.globalProducerIds.has(producerId)
@@ -514,9 +537,7 @@ completeGlobalCoverage(
     return;
   }
 
-  this.globalCompletedProducerIds.add(
-    producerId
-  );
+  this.globalCompletedProducerIds.add(producerId);
 
   if (
     this.globalCompletedProducerIds.size <
@@ -526,11 +547,9 @@ completeGlobalCoverage(
     return;
   }
 
-  this.globalCoveredThrough =
-    this.globalPendingThrough;
-
+  this.globalCoveredThrough = this.globalPendingThrough;
   this.globalPendingThrough = undefined;
-
+  this.globalRequestId = undefined;
   this.globalCompletedProducerIds.clear();
 }
 
@@ -551,6 +570,7 @@ clearGlobalCoverage(): void
   this.globalEra = undefined;
   this.globalCompletedProducerIds.clear();
   this.globalProducerIds.clear();
+  this.globalRequestId = undefined;
 }
 
 
