@@ -86,6 +86,17 @@ const unregisterGlobalProducerRegistration =
         }
       }
 
+      if (
+  !occurrenceProducerRegistry.hasGlobal(
+    message.sourceModuleId
+  )
+)
+{
+  throw new Error(
+    `Module "${message.sourceModuleId}" is not registered as a Global Occurrence producer.`
+  );
+}
+
       occurrenceService.replaceGlobalByProducer(
         message.sourceModuleId,
         submission.occurrences.filter(
@@ -105,17 +116,6 @@ const unregisterGlobalProducerRegistration =
       'occurrences.submit',
       async (message) =>
       {
-        if (
-          !occurrenceProducerRegistry.has(
-            message.sourceModuleId
-          )
-        )
-        {
-          throw new Error(
-            `Module "${message.sourceModuleId}" is not registered as an Occurrence producer.`
-          );
-        }
-
         const submission =
           message.payload as
             | OccurrenceSubmission

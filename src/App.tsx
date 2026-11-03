@@ -412,7 +412,6 @@ const unregisterOccurrenceService =
     )
   );
 
-occurrenceProducerRegistry.registerOverlay('celestial');
 occurrenceProducerRegistry.registerGlobal('overlay:celestial');
 
 const unregisterModuleReady =
@@ -524,7 +523,7 @@ loadQueueRef.current?.completeModule(
     unregisterCapabilityService();
     unregisterFileServices();
     unregisterStorageServices();
-    occurrenceProducerRegistry.unregisterOverlay('celestial');
+    occurrenceProducerRegistry.unregisterGlobal('overlay:celestial');
     unsubscribeCelestialMarkers();
     unsubscribeOverlayEvents();
     stopBroker();
