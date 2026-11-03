@@ -259,13 +259,14 @@ export class OccurrenceProcessor
               targetTime
         );
 
-    if (
-      occurrenceService.getCount() > 0 ||
-      pendingBeforeTarget
-    )
-    {
-      return false;
-    }
+if (
+  occurrenceService.getCount() > 0 ||
+  pendingBeforeTarget ||
+  occurrenceService.hasPendingOperationFinish()
+)
+{
+  return false;
+}
 
     simulationClockService.setTime(targetTime);
 
@@ -487,11 +488,28 @@ async handleOccurrence(
 
     const target = visible[count - 1];
 
+    const finishingOperation =
+      visible.slice(0, count).some(
+        (occurrence) =>
+          occurrenceService.isOperationFinish(
+            occurrence
+          )
+      );
+
 await this.commitThrough(
   target
 );
 
 occurrenceService.consumeVisible(count);
+if (finishingOperation)
+{
+  occurrenceService.clearOperationOccurrences();
+  occurrenceCoordinator.clear();
+  stationaryTimeProspectService.clear();
+
+  return true;
+}
+
 if (
   stationaryTimeProspectService
     .isOperationComplete() &&

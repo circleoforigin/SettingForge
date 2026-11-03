@@ -4456,9 +4456,11 @@ return (
 
 {celestialSettingsOpen && (
   <CelestialSettingsDialog
+    era={simClock.activeEra}
     onClose={() =>
-      setCelestialSettingsOpen(false)
-    }
+    {
+      setCelestialSettingsOpen(false);
+    }}
   />
 )}
 

@@ -2438,3 +2438,100 @@ input[type="number"]::-webkit-outer-spin-button {
   margin: 0;
   color: #d8d8d8;
 }
+
+/* ---------- CELESTIAL ---------- */
+
+.celestial-settings-dialog {
+  width: 820px;
+  max-width: calc(100vw - 40px);
+}
+
+.celestial-seasons-section {
+  position: relative;
+  width: 280px;
+}
+
+.celestial-start-date-header {
+  position: absolute;
+  top: 0;
+  right: 3px;
+
+  margin: 0;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: bold;
+}
+
+.celestial-season-start-date {
+  margin-left: auto;
+  text-align: right;
+}
+
+.celestial-settings-columns {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.celestial-seasons-section {
+  position: relative;
+  width: 280px;
+  flex: 0 0 280px;
+}
+
+.celestial-solar-section {
+  width: 490px;
+  flex: 0 0 490px;
+}
+
+.celestial-solar-name {
+  flex: 1;
+  min-width: 120px;
+  margin-left: 5px;
+  font-size: 11px;
+}
+
+.celestial-solar-date {
+  min-width: 95px;
+  text-align: right;
+  font-size: 11px;
+}
+
+.celestial-solar-daylight {
+  min-width: 135px;
+  text-align: right;
+  font-size: 11px;
+  margin-right: 5px;
+}
+
+.celestial-solar-section .environment-settings-entry {
+  flex: 0 0 48px;
+  height: 48px;
+  align-items: stretch;
+}
+
+.celestial-solar-section .environment-settings-entry-list {
+  height: 108px;
+  min-height: 108px;
+}
+
+.celestial-solar-entry {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 2px;
+}
+
+.celestial-solar-entry-heading,
+.celestial-solar-entry-daylight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 20px;
+}
+
+.celestial-solar-entry-daylight {
+  padding-left: 5px;
+  padding-right: 5px;
+  font-size: 11px;
+}

@@ -50,7 +50,7 @@ export function EnvironmentSettingsSection<
   )}
 </div>
 
-      <div className="environment-settings-entry-list">
+      <div className="environment-settings-entry-list">        
         {entries.map(entry => (
           <div
             key={entry.id}

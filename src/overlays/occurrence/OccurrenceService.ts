@@ -141,6 +141,18 @@ setOperationFinish(
   this.notify();
 }
 
+hasPendingOperationFinish(): boolean
+{
+  return this.operationFinish !== undefined;
+}
+
+isOperationFinish(
+  occurrence: Occurrence
+): boolean
+{
+  return this.operationFinish?.id === occurrence.id;
+}
+
 beginPresentation(
   throughTime?: number
 ): void
