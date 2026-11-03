@@ -1,6 +1,7 @@
 export class OccurrenceProducerRegistry
 {
   private readonly producers = new Set<string>();
+  private readonly globalProducers = new Set<string>();
 
   registerOverlay(
     overlayId: string
@@ -32,10 +33,11 @@ export class OccurrenceProducerRegistry
     this.producers.add(moduleId);
   }
 
-  unregister(moduleId: string): void
-  {
-    this.producers.delete(moduleId);
-  }
+unregister(moduleId: string): void
+{
+  this.producers.delete(moduleId);
+  this.globalProducers.delete(moduleId);
+}
 
   has(moduleId: string): boolean
   {
@@ -49,9 +51,38 @@ export class OccurrenceProducerRegistry
     ).sort();
   }
 
+
+registerGlobal(moduleId: string): void
+{
+  if (!moduleId)
+  {
+    throw new Error(
+      'Global Occurrence producer requires a module ID.'
+    );
+  }
+
+  this.globalProducers.add(moduleId);
+}
+
+unregisterGlobal(moduleId: string): void
+{
+  this.globalProducers.delete(moduleId);
+}
+
+snapshotGlobal(): string[]
+{
+  return Array.from(this.globalProducers).sort();
+}
+
+hasGlobal(moduleId: string): boolean
+{
+  return this.globalProducers.has(moduleId);
+}
+
   clear(): void
   {
     this.producers.clear();
+    this.globalProducers.clear();
   }
 }
 

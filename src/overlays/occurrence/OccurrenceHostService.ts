@@ -35,22 +35,27 @@ export function registerOccurrenceHostService(
       }
     );
 
+  
+const unregisterGlobalProducerRegistration =
+  registerRequestHandler(
+    'occurrences.registerGlobalProducer',
+    async (message) =>
+    {
+      occurrenceProducerRegistry.registerGlobal(
+        message.sourceModuleId
+      );
+
+      return {
+        registered: true,
+      };
+    }
+  );
+
   const unregisterGlobalReplacement =
   registerRequestHandler(
     'occurrences.replaceGlobal',
     async (message) =>
     {
-      if (
-        !occurrenceProducerRegistry.has(
-          message.sourceModuleId
-        )
-      )
-      {
-        throw new Error(
-          `Module "${message.sourceModuleId}" is not registered as an Occurrence producer.`
-        );
-      }
-
       const submission =
         message.payload as
           | OccurrenceSubmission
@@ -123,6 +128,24 @@ export function registerOccurrenceHostService(
           );
         }
 
+
+const registered =
+  submission.pieceId === null
+    ? occurrenceProducerRegistry.hasGlobal(
+        message.sourceModuleId
+      )
+    : occurrenceProducerRegistry.has(
+        message.sourceModuleId
+      );
+
+if (!registered)
+{
+  throw new Error(
+    `Module "${message.sourceModuleId}" is not registered for this Occurrence category.`
+  );
+}
+
+
         const occurrences =
           submission.occurrences ?? [];
 
@@ -166,29 +189,25 @@ export function registerOccurrenceHostService(
                   'none'
             );
 
-          if (
-  message.sourceModuleId ===
-    'overlay:celestial'
-)
-{
-  const globalCompletion =
-    occurrences.find(
-      (occurrence) =>
-        occurrence.reaction === 'none' &&
-        occurrence.simulationTime ===
-          occurrenceCoordinator
-            .getGlobalPendingThrough()
-    );
+          
+const globalCompletion =
+  occurrences.find(
+    (occurrence) =>
+      occurrence.reaction === 'none' &&
+      occurrence.simulationTime ===
+        occurrenceCoordinator
+          .getGlobalPendingThrough()
+  );
 
-  if (globalCompletion)
-  {
-    occurrenceCoordinator
-      .completeGlobalCoverage(
-        message.sourceModuleId,
-        globalCompletion.simulationTime
-      );
-  }
+if (globalCompletion)
+{
+  occurrenceCoordinator
+    .completeGlobalCoverage(
+      message.sourceModuleId,
+      globalCompletion.simulationTime
+    );
 }
+
 
           if (
             completed &&
@@ -269,5 +288,6 @@ export function registerOccurrenceHostService(
     unregisterGlobalReplacement();
     unregisterSubmission();
     unregisterProducerRegistration();
+    unregisterGlobalProducerRegistration();
   };
 }

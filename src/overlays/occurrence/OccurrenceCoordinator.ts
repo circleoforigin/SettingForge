@@ -13,7 +13,7 @@ export class OccurrenceCoordinator
   private globalPendingThrough: number | undefined;
   private globalEra: SimClockEra | undefined;
 
-  private readonly globalProducerIds = new Set<string>(['overlay:celestial']);
+  private globalProducerIds = new Set<string>();
   private readonly globalCompletedProducerIds = new Set<string>();
 
   getProspect(
@@ -476,11 +476,19 @@ requestGlobalCoverage(
     return;
   }
 
-  const startTime =
-    this.globalCoveredThrough;
+  const startTime = this.globalCoveredThrough;
+  this.globalProducerIds =
+  new Set(
+    occurrenceProducerRegistry.snapshotGlobal()
+  );
 
-  this.globalPendingThrough =
-    requiredThrough;
+this.globalCompletedProducerIds.clear();
+
+if (this.globalProducerIds.size === 0)
+{
+  return;
+}
+  this.globalPendingThrough = requiredThrough;
 
   hostEventBroker.broadcast(
     'Simulation.GlobalOccurrencesRequested',
@@ -542,6 +550,7 @@ clearGlobalCoverage(): void
   this.globalPendingThrough = undefined;
   this.globalEra = undefined;
   this.globalCompletedProducerIds.clear();
+  this.globalProducerIds.clear();
 }
 
 

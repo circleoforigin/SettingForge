@@ -412,9 +412,8 @@ const unregisterOccurrenceService =
     )
   );
 
-occurrenceProducerRegistry.registerOverlay(
-  'celestial'
-);
+occurrenceProducerRegistry.registerOverlay('celestial');
+occurrenceProducerRegistry.registerGlobal('overlay:celestial');
 
 const unregisterModuleReady =
   hostEventBroker.subscribe(
