@@ -58,6 +58,9 @@ const updateSeasonStart = (
   }));
 };
 
+  const [activeDetailsTab, setActiveDetailsTab] =
+    useState<'moons' | 'zodiac'>('moons');
+
   const saveSettings = () =>
   {
     celestialService.setSettings(draft);
@@ -76,7 +79,7 @@ const updateSeasonStart = (
     Start Date
   </h3>
 <EnvironmentSettingsSection
-  title="Seasons"
+  title="Season Details"
   entries={seasons}
   onChange={() => {}}
   renderEntry={season =>
@@ -108,60 +111,65 @@ const updateSeasonStart = (
     );
   }}
 />
-<EnvironmentSettingsSection
-  title="Solar"
-  entries={[
+</div>
+<div className="celestial-solar-section">
+<section className="celestial-solar-panel">
+  <h3>Solar Details - {draft.sun.name}</h3>
+
+  <div className="celestial-solar-content">
+    {[
+      {
+        id: 'hibernal',
+        name: 'Hibernal Solstice',
+        value: draft.solarCycle.shortSolstice,
+      },
+      {
+        id: 'estival',
+        name: 'Estival Solstice',
+        value: draft.solarCycle.longSolstice,
+      },
+    ].map(entry =>
     {
-      id: 'hibernal',
-      name: 'Hibernal Solstice',
-      value: draft.solarCycle.shortSolstice,
-    },
-    {
-      id: 'estival',
-      name: 'Estival Solstice',
-      value: draft.solarCycle.longSolstice,
-    },
-  ]}
-  onChange={() => {}}
-  renderEntry={entry =>
-  {
-    const month = era.months.find(
-      item =>
-        item.id === entry.value.monthId
-    );
+      const month = era.months.find(
+        item => item.id === entry.value.monthId
+      );
 
-    const hours = Math.floor(
-      entry.value.daylightMinutes / 60
-    );
+      const hours = Math.floor(
+        entry.value.daylightMinutes / 60
+      );
 
-    const minutes =
-      entry.value.daylightMinutes % 60;
+      const minutes =
+        entry.value.daylightMinutes % 60;
 
-return (
-  <div className="celestial-solar-entry">
-    <div className="celestial-solar-entry-heading">
-      <span className="celestial-solar-name">
-        {entry.name}
-      </span>
+      return (
+        <div
+          key={entry.id}
+          className="celestial-solar-entry"
+        >
+          <div className="celestial-solar-entry-heading">
+            <span className="celestial-solar-name">
+              {entry.name}
+            </span>
 
-      <span className="celestial-solar-date">
-        {month
-          ? `${month.name} ${entry.value.day}`
-          : 'Not configured'}
-      </span>
-    </div>
+            <span className="celestial-solar-date">
+              {month
+                ? `${month.name} ${entry.value.day}`
+                : 'Not configured'}
+            </span>
+          </div>
 
-    <div className="celestial-solar-entry-daylight">
-      <span>Daylight Hours</span>
+          <div className="celestial-solar-entry-daylight">
+            <span>Daylight Hours</span>
 
-      <span>
-        {hours}h {String(minutes).padStart(2, '0')}m
-      </span>
-    </div>
+            <span>
+              {hours}h {String(minutes).padStart(2, '0')}m
+            </span>
+          </div>
+        </div>
+      );
+    })}
   </div>
-);
-  }}
-/>
+</section>
 </div>
 </div>
         </div>

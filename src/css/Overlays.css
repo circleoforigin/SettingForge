@@ -2468,20 +2468,88 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .celestial-settings-columns {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  align-items: start;
   gap: 12px;
+}
+
+.celestial-settings-left {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.celestial-settings-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.celestial-solar-section {
+  width: 100%;
+  flex: none;
+}
+
+.celestial-details-tabs {
+  display: flex;
+  gap: 4px;
+  height: 25px;
+  align-items: flex-end;
+}
+
+.celestial-details-tabs button {
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.celestial-details-tabs button.selected {
+  background: #2b2d31;
+  color: #ffffff;
+  border-bottom-color: #2b2d31;
+}
+
+.celestial-details-panel {
+  min-height: 180px;
+  padding: 10px;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 4px;
+  font-size: 11px;
 }
 
 .celestial-seasons-section {
   position: relative;
-  width: 280px;
-  flex: 0 0 280px;
+  width: 240px;
+  flex: 0 0 240px;
 }
 
-.celestial-solar-section {
-  width: 490px;
-  flex: 0 0 490px;
+.celestial-solar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.celestial-solar-panel h3 {
+  height: 22px;
+  margin: 0;
+  padding: 0 3px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.celestial-solar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 6px 4px;
+
+  background: #2b2d31;
+  border: 1px solid #45474e;
+  border-radius: 4px;
 }
 
 .celestial-solar-name {
@@ -2489,6 +2557,7 @@ input[type="number"]::-webkit-outer-spin-button {
   min-width: 120px;
   margin-left: 5px;
   font-size: 11px;
+  font-weight: bold;
 }
 
 .celestial-solar-date {
@@ -2504,22 +2573,11 @@ input[type="number"]::-webkit-outer-spin-button {
   margin-right: 5px;
 }
 
-.celestial-solar-section .environment-settings-entry {
-  flex: 0 0 48px;
-  height: 48px;
-  align-items: stretch;
-}
-
-.celestial-solar-section .environment-settings-entry-list {
-  height: 108px;
-  min-height: 108px;
-}
-
 .celestial-solar-entry {
   display: flex;
   flex-direction: column;
   width: 100%;
-  gap: 2px;
+  gap: 0px;
 }
 
 .celestial-solar-entry-heading,
