@@ -26,13 +26,14 @@ export interface CelestialSolarCycle
   };
 }
 
-
 export type CelestialProgressionStyle =
   | 'loop'
   | 'peak'
-  | 'wave'
-  | 'plateau'
-  | 'valley';
+  | 'wave';
+
+export type CelestialTagEntry = CelestialPhaseTagEntry;
+export type CelestialTag = CelestialPhaseTag;
+export type CelestialCycle = CelestialPhaseCycle;
 
 export interface CelestialPhaseTagEntry
 {
