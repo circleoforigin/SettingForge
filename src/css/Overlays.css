@@ -2487,11 +2487,6 @@ input[type="number"]::-webkit-outer-spin-button {
   min-width: 0;
 }
 
-.celestial-solar-section {
-  width: 100%;
-  flex: none;
-}
-
 .celestial-details-tabs {
   display: flex;
   gap: 4px;
@@ -2550,6 +2545,7 @@ input[type="number"]::-webkit-outer-spin-button {
   background: #2b2d31;
   border: 1px solid #45474e;
   border-radius: 4px;
+  width: 240px;
 }
 
 .celestial-solar-name {
