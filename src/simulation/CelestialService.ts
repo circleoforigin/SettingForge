@@ -197,6 +197,11 @@ restoreWorldState(
       settings?.seasonStarts?.length
         ? structuredClone(settings.seasonStarts)
         : defaults.seasonStarts,
+
+    moons:
+      settings?.moons !== undefined
+        ? structuredClone(settings.moons)
+        : defaults.moons,
   };
 
   celestialMarkerRegistry.clear();

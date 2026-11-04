@@ -26,11 +26,79 @@ export interface CelestialSolarCycle
   };
 }
 
+
+export type CelestialProgressionStyle =
+  | 'loop'
+  | 'peak'
+  | 'wave'
+  | 'plateau'
+  | 'valley';
+
+export interface CelestialPhaseTagEntry
+{
+  id: string;
+  name: string;
+
+  // Number of phase steps this entry occupies.
+  phaseDuration: number;
+}
+
+export interface CelestialPhaseTag
+{
+  id: string;
+  name: string;
+  progressionStyle: CelestialProgressionStyle;
+  entries: CelestialPhaseTagEntry[];
+}
+
+export interface CelestialNotableCondition
+{
+  tagId: string;
+  value: string;
+}
+
+export interface CelestialNotable
+{
+  id: string;
+  name: string;
+  conditions: CelestialNotableCondition[];
+}
+
+export interface CelestialPhaseCycle
+{
+  id: string;
+  name: string;
+
+  // Example: "{Direction} {Phase}"
+  structure: string;
+
+  // Simulation-time durations.
+  cycleDuration: number;
+  cycleOffset: number;
+
+  tags: CelestialPhaseTag[];
+  notables: CelestialNotable[];
+}
+
+export interface CelestialMoon
+{
+  id: string;
+  name: string;
+
+  // Simulation-time durations.
+  lunarDay: number;
+  moonriseOffset: number;
+
+  phaseCycles: CelestialPhaseCycle[];
+}
+
 export interface CelestialSettings
 {
   sun: CelestialSun;
   solarCycle: CelestialSolarCycle;
   seasonStarts: CelestialSeasonStart[];
+
+  moons: CelestialMoon[];
 }
 
 export {
