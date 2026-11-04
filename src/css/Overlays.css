@@ -2446,11 +2446,6 @@ input[type="number"]::-webkit-outer-spin-button {
   max-width: calc(100vw - 40px);
 }
 
-.celestial-seasons-section {
-  position: relative;
-  width: 280px;
-}
-
 .celestial-start-date-header {
   position: absolute;
   top: 0;
@@ -2477,14 +2472,18 @@ input[type="number"]::-webkit-outer-spin-button {
 .celestial-settings-left {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
   gap: 12px;
   min-width: 0;
+  height: fit-content;
 }
 
 .celestial-settings-right {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  margin-top: -4px;
 }
 
 .celestial-details-tabs {
@@ -2495,7 +2494,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .celestial-details-tabs button {
-  padding: 4px 12px;
+  padding: 2px 12px;
   font-size: 12px;
   cursor: pointer;
 }
@@ -2507,7 +2506,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .celestial-details-panel {
-  min-height: 180px;
+  min-height: 258px;
   padding: 10px;
 
   background: #2b2d31;
@@ -2519,7 +2518,6 @@ input[type="number"]::-webkit-outer-spin-button {
 .celestial-seasons-section {
   position: relative;
   width: 240px;
-  flex: 0 0 240px;
 }
 
 .celestial-solar-panel {
