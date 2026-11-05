@@ -5,6 +5,7 @@ import { ActivationGate } from './activation/ActivationGate.tsx'
 import { registerBuiltInRulesets } from './rules/registerBuiltInRulesets';
 
 registerBuiltInRulesets();
+
 createRoot(document.getElementById('root')!).render(
   <ActivationGate>
     <App />
