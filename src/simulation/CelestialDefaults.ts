@@ -49,11 +49,14 @@ export const DEFAULT_CELESTIAL_SETTINGS:
     moons: [
       {
         id: 'moon',
-        name: 'Moon',
+        name: 'Luna',
 
         // Approximately 24 hours, 50 minutes.
-        lunarDay: 89400,
-        moonriseOffset: 0,
+        lunarDay: 89428,
+        // Estimated moonrise in Wichita, Kansas,
+        // January 1, AD 1 (Julian calendar).
+        // Approximately 9:02 PM local mean solar time.
+        moonriseOffset: 45581,
 
         phaseCycles: [
           {

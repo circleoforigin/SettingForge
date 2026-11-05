@@ -26,12 +26,116 @@ export function CelestialSettingsDialog({
       () => celestialService.getSettings()
     );
 
-  const [activeDetailsTab, setActiveDetailsTab] =
-    useState<CelestialDetailsTab>('moons');
 
-  const seasons =
-    environmentService.getDefinitions()
-      ?.seasons ?? [];
+const [activeDetailsTab, setActiveDetailsTab] =
+  useState<CelestialDetailsTab>('moons');
+
+const [selectedMoonId, setSelectedMoonId] =
+  useState<string>(
+    () => draft.moons[0]?.id ?? ''
+  );
+
+const selectedMoon =
+  draft.moons.find(
+    moon => moon.id === selectedMoonId
+  );
+
+  const [selectedCycleId, setSelectedCycleId] =
+  useState<string>(
+    () => draft.moons[0]?.phaseCycles[0]?.id ?? ''
+  );
+
+const selectedCycle =
+  selectedMoon?.phaseCycles.find(
+    cycle => cycle.id === selectedCycleId
+  ) ?? selectedMoon?.phaseCycles[0];
+
+const [keywordIndex, setKeywordIndex] = useState(0);
+
+const keywords = selectedCycle?.tags ?? [];
+
+const visibleKeywords =
+  keywords.slice(
+    Math.min(
+      keywordIndex,
+      Math.max(0, keywords.length - 2)
+    ),
+    Math.min(
+      keywordIndex,
+      Math.max(0, keywords.length - 2)
+    ) + 2
+  );
+
+const navigateMoon = (direction: number) =>
+{
+  if (draft.moons.length <= 1)
+  {
+    return;
+  }
+
+  const currentIndex =
+    draft.moons.findIndex(
+      moon => moon.id === selectedMoonId
+    );
+
+  const nextIndex =
+    (
+      currentIndex + direction +
+      draft.moons.length
+    ) % draft.moons.length;
+
+  setSelectedMoonId(
+    draft.moons[nextIndex].id
+  );
+};
+
+
+const navigateCycle = (direction: number) =>
+{
+  if (!selectedMoon || selectedMoon.phaseCycles.length <= 1)
+  {
+    return;
+  }
+
+  const cycles = selectedMoon.phaseCycles;
+
+  const currentIndex =
+    cycles.findIndex(
+      cycle => cycle.id === selectedCycle?.id
+    );
+
+  const nextIndex =
+    (
+      currentIndex + direction +
+      cycles.length
+    ) % cycles.length;
+
+  setSelectedCycleId(
+    cycles[nextIndex].id
+  );
+};
+
+const navigateKeywords = (direction: number) =>
+{
+  if (keywords.length <= 2)
+  {
+    return;
+  }
+
+  setKeywordIndex(current =>
+  {
+    const maxIndex = keywords.length - 2;
+
+    return (
+      current + direction + maxIndex + 1
+    ) % (maxIndex + 1);
+  });
+};
+
+const seasons =
+  environmentService.getDefinitions()
+    ?.seasons ?? [];
+
 
   const saveSettings = () =>
   {
@@ -62,6 +166,70 @@ export function CelestialSettingsDialog({
 
     return (`${hours}h ${String(minutes).padStart(2, '0')}m`);
   };
+
+
+const formatMoonTime = (
+  seconds: number,
+  signed = false
+): string =>
+{
+  const sign =
+    signed
+      ? seconds < 0 ? '-' : '+'
+      : '';
+
+  const absoluteSeconds = Math.abs(seconds);
+
+  const hours =
+    Math.floor(absoluteSeconds / 3600);
+
+  const minutes =
+    Math.floor((absoluteSeconds % 3600) / 60);
+
+  const remainingSeconds =
+    Math.floor(absoluteSeconds % 60);
+
+  const formatted =
+    `${hours}h ${String(minutes).padStart(2, '0')}m`;
+
+  return (
+    sign +
+    formatted +
+    (remainingSeconds > 0
+      ? ` ${remainingSeconds}s`
+      : '')
+  );
+};
+
+
+const formatCycleDuration = (
+  seconds: number
+): string =>
+{
+  const totalSeconds =
+    Math.floor(Math.abs(seconds));
+
+  const days =
+    Math.floor(totalSeconds / 86400);
+
+  const hours =
+    Math.floor((totalSeconds % 86400) / 3600);
+
+  const minutes =
+    Math.floor((totalSeconds % 3600) / 60);
+
+  const remainingSeconds =
+    totalSeconds % 60;
+
+  return [
+    days > 0 ? `${days}d` : '',
+    hours > 0 ? `${hours}h` : '',
+    minutes > 0 ? `${minutes}m` : '',
+    remainingSeconds > 0
+      ? `${remainingSeconds}s`
+      : '',
+  ].filter(Boolean).join(' ') || '0s';
+};
 
   return (
     <div className="dialog-backdrop">
@@ -216,15 +384,197 @@ export function CelestialSettingsDialog({
                 className="celestial-details-panel"
                 role="tabpanel"
               >
-                {activeDetailsTab === 'moons' ? (
-                  <p>
-                    Moon details will appear here.
-                  </p>
-                ) : (
-                  <p>
-                    Zodiac details will appear here.
-                  </p>
-                )}
+
+{activeDetailsTab === 'moons' ? (
+  <div className="celestial-moons-panel">    
+<div className="celestial-moon-navigation">
+  <button
+    type="button"
+    onClick={() => navigateMoon(-1)}
+    style={{
+      visibility:
+        draft.moons.length > 1
+          ? 'visible'
+          : 'hidden',
+    }}
+    aria-label="Previous moon"
+  >
+    ‹
+  </button>
+
+  <strong>
+    {selectedMoon?.name ?? 'None'}
+  </strong>
+
+  <button
+    type="button"
+    onClick={() => navigateMoon(1)}
+    style={{
+      visibility:
+        draft.moons.length > 1
+          ? 'visible'
+          : 'hidden',
+    }}
+    aria-label="Next moon"
+  >
+    ›
+
+  </button>
+
+</div>
+
+{selectedMoon && (
+  <div className="celestial-moon-properties">
+    <span>
+      Lunar Day:{' '}
+      <strong>
+        {formatMoonTime(selectedMoon.lunarDay)}
+      </strong>
+    </span>
+
+    <span>
+      Moonrise Offset (Day 1):{' '}
+      <strong>
+        {formatMoonTime(
+          selectedMoon.moonriseOffset,
+          true
+        )}
+      </strong>
+    </span>
+  </div>
+)}
+
+
+{selectedMoon && (
+  <section className="celestial-phase-cycles">
+    {selectedCycle ? (
+      <div className="celestial-cycle-navigation">
+
+        <button
+          type="button"
+          onClick={() => navigateCycle(-1)}
+          style={{
+            visibility:
+              selectedMoon.phaseCycles.length > 1
+                ? 'visible'
+                : 'hidden',
+          }}
+          aria-label="Previous phase cycle"
+        >
+          ‹
+        </button>
+
+        <strong>
+          Cycle Name: {selectedCycle.name}
+        </strong>
+
+        <button
+          type="button"
+          onClick={() => navigateCycle(1)}
+          style={{
+            visibility:
+              selectedMoon.phaseCycles.length > 1
+                ? 'visible'
+                : 'hidden',
+          }}
+          aria-label="Next phase cycle"
+        >
+          ›
+
+        </button>
+
+      </div>
+    ) : (
+      <p>No phase cycles configured.</p>
+    )}
+
+    {selectedCycle && (
+      <div className="celestial-cycle-properties">
+
+        <div>
+          <strong>Structure:</strong>
+          <span>{selectedCycle.structure}</span>
+        </div>
+
+        <div>
+          <strong>Phase Length:</strong>
+          <span>
+            {formatCycleDuration(
+              selectedCycle.cycleDuration
+            )}
+          </span>
+        </div>
+
+      </div>
+    )}
+
+{selectedCycle && keywords.length > 0 && (
+  <div className="celestial-keywords-section">
+
+    <div className="celestial-keywords-navigation">
+
+      <button
+        type="button"
+        onClick={() => navigateKeywords(-1)}
+        style={{
+          visibility:
+            keywords.length > 2
+              ? 'visible'
+              : 'hidden',
+        }}
+        aria-label="Previous keywords"
+      >
+        ‹
+      </button>
+
+      <button
+        type="button"
+        onClick={() => navigateKeywords(1)}
+        style={{
+          visibility:
+            keywords.length > 2
+              ? 'visible'
+              : 'hidden',
+        }}
+        aria-label="Next keywords"
+      >
+        ›
+      </button>
+
+    </div>
+
+    <div className="celestial-keywords-grid">
+      {visibleKeywords.map(keyword => (
+        <div
+          key={keyword.id}
+          className="celestial-keyword-panel"
+        >
+          <strong>
+            Keyword: {'{'}{keyword.name}{'}'}
+          </strong>
+        </div>
+      ))}
+    </div>
+
+  </div>
+)}
+
+
+  </section>
+)}
+
+{!selectedMoon && (
+  <p>No moons configured.</p>
+)}
+
+
+  </div>
+) : (
+  <p>
+    Zodiac details will appear here.
+  </p>
+)}
+
               </div>
             </div>
 

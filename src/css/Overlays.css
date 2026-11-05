@@ -2587,3 +2587,102 @@ input[type="number"]::-webkit-outer-spin-button {
   padding-right: 5px;
   font-size: 11px;
 }
+
+.celestial-moon-navigation {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  margin-top: -12px;
+}
+
+.celestial-moon-navigation button {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.celestial-moon-navigation strong {
+  font-size: 14px;
+}
+
+.celestial-moon-properties {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: -6px;
+  margin-bottom: 2px;
+  font-size: 11px;
+}
+
+.celestial-phase-cycles {
+  margin-top: 6px;
+  border-top: 1px solid var(--border-color, #555);
+  font-size: 12px;
+}
+
+.celestial-cycle-navigation {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.celestial-cycle-navigation button {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.celestial-cycle-properties {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: -6px;
+}
+
+.celestial-cycle-properties > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.celestial-cycle-properties span {
+  text-align: right;
+}
+
+.celestial-keywords-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.celestial-keywords-navigation button {
+  border: none;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.celestial-keywords-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.celestial-keyword-panel {
+  min-width: 0;
+  text-align: center;
+}
