@@ -545,14 +545,50 @@ const formatCycleDuration = (
 
     <div className="celestial-keywords-grid">
       {visibleKeywords.map(keyword => (
-        <div
-          key={keyword.id}
-          className="celestial-keyword-panel"
-        >
-          <strong>
-            Keyword: {'{'}{keyword.name}{'}'}
-          </strong>
-        </div>
+
+<div
+  key={keyword.id}
+  className="celestial-keyword-panel"
+>
+  <strong>
+    Keyword: {'{'}{keyword.name}{'}'}
+  </strong>
+
+<div className="celestial-keyword-entry-header">
+  <strong>Name</strong>
+  <strong>Duration</strong>
+</div>
+
+<div className="celestial-keyword-entries">
+
+   <div className="celestial-keyword-entry-scroll">
+  {keyword.entries.map(entry => (
+    <div
+      key={entry.id}
+      className="celestial-keyword-entry"
+    >
+      <span>
+        {entry.name || '(Blank)'}
+      </span>
+
+      <span>
+        {entry.phaseDuration}
+      </span>
+    </div>
+  ))}
+</div>
+  </div>
+
+  <div className="celestial-keyword-progression">
+    <span>Progression Style:</span>
+
+    <strong>
+      {keyword.progressionStyle.charAt(0).toUpperCase() +
+        keyword.progressionStyle.slice(1)}
+    </strong>
+  </div>
+</div>
+
       ))}
     </div>
 

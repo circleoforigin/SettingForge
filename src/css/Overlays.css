@@ -2686,3 +2686,64 @@ input[type="number"]::-webkit-outer-spin-button {
   min-width: 0;
   text-align: center;
 }
+
+.celestial-keyword-entries {
+  margin-top: 8px;
+  border: 1px solid var(--border-color, #555);
+  border-radius: 6px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.celestial-keyword-entries {
+  margin-top: 4px;
+  border: 1px solid var(--border-color, #555);
+  border-radius: 4px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.celestial-keyword-entry-header,
+.celestial-keyword-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 65px;
+  gap: 6px;
+  padding: 0px 8px;
+  align-items: center;
+}
+
+.celestial-keyword-entry-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 65px;
+  gap: 6px;
+  align-items: center;
+  text-align: left;
+  font-size: 12px;
+  padding: 3px 5px 0px 8px;
+}
+
+.celestial-keyword-entry-header > :last-child,
+.celestial-keyword-entry > :last-child {
+  text-align: right;
+}
+
+.celestial-keyword-progression {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.celestial-keyword-entry-scroll {
+  height: 125px;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+.celestial-keyword-entry {
+  box-sizing: border-box;
+  height: 25px;
+  min-height: 25px;
+  font-size: 13px;
+}
