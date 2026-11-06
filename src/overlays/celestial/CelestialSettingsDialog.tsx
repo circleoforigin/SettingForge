@@ -862,28 +862,28 @@ visibility:
 )}
   </div>
 ) : activeDetailsTab === 'notables' ? (
-  <div className="celestial-notables-panel">
+
+<div className="celestial-notables-panel">
+  <p className="celestial-notables-description">
+  A Notable generates an Occurrence whenever its time arises.
+</p>
   <div className="celestial-notables-grid">
     {notableGroups.map(group => (
-      <section
+      <div
         key={group.id}
         className="celestial-notable-group"
       >
-        <strong className="celestial-notable-title">
-          {group.title}
-        </strong>
-
-        <div className="celestial-notable-listbox">
-          {group.notables.map(notable => (
-            <div
-              key={notable.id}
-              className="celestial-notable-entry"
-            >
+        <EnvironmentSettingsSection
+          title={group.title}
+          entries={group.notables}
+          onChange={() => {}}
+          renderEntry={notable => (
+            <span className="environment-settings-static-value">
               {notable.name}
-            </div>
-          ))}
-        </div>
-      </section>
+            </span>
+          )}
+        />
+      </div>
     ))}
   </div>
 
@@ -892,17 +892,15 @@ visibility:
   )}
 
   <div className="celestial-conjunction-group">
-    <strong className="celestial-notable-title">
-      Conjunctions
-    </strong>
-
-    <div className="celestial-conjunction-listbox">
-      <div className="celestial-notable-empty">
-        No conjunctions configured.
-      </div>
-    </div>
+    <EnvironmentSettingsSection
+      title="Conjunctions"
+      entries={[]}
+      onChange={() => {}}
+      renderEntry={() => null}
+    />
   </div>
 </div>
+
 ) : (
   <p>Ruleset details will appear here.</p>
 )}

@@ -146,30 +146,7 @@ export const DEFAULT_CELESTIAL_SETTINGS:
                   },
                 ],
               },
-            ],
-
-            notables: [
-              {
-                id: 'new-moon',
-                name: 'New Moon',
-                conditions: [
-                  {
-                    tagId: 'phase',
-                    value: 'New Moon',
-                  },
-                ],
-              },
-              {
-                id: 'full-moon',
-                name: 'Full Moon',
-                conditions: [
-                  {
-                    tagId: 'phase',
-                    value: 'Full Moon',
-                  },
-                ],
-              },
-            ],
+            ],            
           },
         ],
       },
@@ -288,13 +265,65 @@ export const DEFAULT_CELESTIAL_SETTINGS:
                 ],
               },
             ],
-
-            notables: [],
           },
         ],
       },
     ],
-    notables: [],
+    
+notables: [
+  {
+    id: 'moon:lunar-phases:new-moon',
+    name: 'New Moon',
+    conditions: [
+      {
+        bodyId: 'moon',
+        cycleId: 'lunar-phases',
+        tagId: 'phase',
+        value: 'New Moon',
+      },
+    ],
+  },
+  {
+    id: 'moon:lunar-phases:full-moon',
+    name: 'Full Moon',
+    conditions: [
+      {
+        bodyId: 'moon',
+        cycleId: 'lunar-phases',
+        tagId: 'phase',
+        value: 'Full Moon',
+      },
+    ],
+  },
+  
+...[
+  'Aries',
+  'Taurus',
+  'Gemini',
+  'Cancer',
+  'Leo',
+  'Virgo',
+  'Libra',
+  'Scorpio',
+  'Sagittarius',
+  'Capricorn',
+  'Aquarius',
+  'Pisces',
+].map(sign => ({
+  id: `western-zodiac:western-zodiac-signs:${sign.toLowerCase()}`,
+  name: sign,
+  conditions: [
+    {
+      bodyId: 'western-zodiac',
+      cycleId: 'western-zodiac-signs',
+      tagId: 'zodiac-sign',
+      value: sign,
+    },
+  ],
+})),
+
+],
+
   };
 
 export function createDefaultCelestialSettings():

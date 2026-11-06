@@ -9,6 +9,9 @@ import {
   formatSimClockOccurrenceMessage,
   type SimClockOccurrenceMessageKey,
 } from './SimClockOccurrenceMessages';
+import {
+  findCelestialNotableTransitions,
+} from './CelestialNotableResolver';
 
 const legacyMessageKeys:
   Record<string, SimClockOccurrenceMessageKey> =
@@ -93,6 +96,37 @@ export function generateCelestialOccurrences(
       }
 
       afterTime = simulationTime;
+    }
+  }
+  
+  const settings =
+    celestialService.getSettings();
+
+  for (const notable of settings.notables)
+  {
+    const transitions =
+      findCelestialNotableTransitions(
+        notable,
+        settings,
+        startTime,
+        endTime,
+        era
+      );
+
+    for (const simulationTime of transitions)
+    {
+      occurrences.push({
+        id: crypto.randomUUID(),
+        sourceModuleId: 'overlay:celestial',
+        simulationTime,
+        pieceId: null,
+        entityId: null,
+        sectorId: null,
+        type: 'almanac',
+        title: notable.name,
+        description: `${notable.name} begins.`,
+        reaction: OccurrenceReactions.Notify,
+      });
     }
   }
 
