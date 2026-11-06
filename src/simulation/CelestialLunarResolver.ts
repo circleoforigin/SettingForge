@@ -36,7 +36,6 @@ export interface ResolvedLunarCycle
   elapsedInCycle: SimulationTime;
 
   tags: ResolvedLunarTag[];
-  activeNotableIds: string[];
 }
 
 function positiveModulo(
@@ -59,7 +58,6 @@ export function resolveLunarCycle(
     phaseName: '',
     elapsedInCycle: 0,
     tags: [],
-    activeNotableIds: [],
   };
 
   if (
@@ -122,6 +120,5 @@ export function resolveLunarCycle(
     elapsedInCycle,
 
     tags,
-    activeNotableIds: result.activeNotableIds,
   };
 }

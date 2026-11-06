@@ -19,7 +19,6 @@ export interface CelestialCycleStepResult
 {
   resolved: ResolvedCelestialStructure;
   progress: CelestialTagProgress[];
-  activeNotableIds: string[];
 }
 
 export interface CelestialCyclePeriod
@@ -63,19 +62,6 @@ export function advanceCelestialCycle(
     );
   }
 
-const activeNotableIds =
-  (cycle.notables ?? [])
-    .filter(notable =>
-      notable.conditions.length > 0 &&
-      notable.conditions.every(condition =>
-        resolved.tags.some(tag =>
-          tag.tagId === condition.tagId &&
-          tag.entry.name === condition.value
-        )
-      )
-    )
-    .map(notable => notable.id);
-
   return {
     resolved,
 
@@ -86,8 +72,6 @@ const activeNotableIds =
         step,
       })
     ),
-
-    activeNotableIds,
   };
 }
 
@@ -474,23 +458,9 @@ export function resolveCelestialCalendarCycleAtTime(
       true
     );
 
-const activeNotableIds =
-  (cycle.notables ?? [])
-      .filter(notable =>
-        notable.conditions.length > 0 &&
-        notable.conditions.every(condition =>
-          resolved.tags.some(tag =>
-            tag.tagId === condition.tagId &&
-            tag.entry.name === condition.value
-          )
-        )
-      )
-      .map(notable => notable.id);
-
   return {
     resolved,
     progress: [],
-    activeNotableIds,
   };
 }
 

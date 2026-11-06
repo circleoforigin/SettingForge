@@ -1,6 +1,7 @@
 import {
   createDefaultCelestialSettings,
   type CelestialSettings,
+  type CelestialNotable,
 } from './CelestialSettings';
 import type { SimClockEra } from './SimClockSettings';
 import type { CelestialCycle } from './CelestialSettings';
@@ -197,6 +198,61 @@ restoreWorldState(
       ),
   };
 
+  const restoredMoons =
+    structuredClone(
+      settings?.moons ?? defaults.moons
+    );
+
+  const restoredZodiacs =
+    structuredClone(
+      settings?.zodiacs ?? defaults.zodiacs
+    );
+
+  const migratedNotables: CelestialNotable[] = [];
+
+  const migrateCycles = (
+    bodyId: string,
+    cycles: typeof restoredMoons[number]['phaseCycles']
+  ): void =>
+  {
+    for (const cycle of cycles)
+    {
+      for (const notable of cycle.notables ?? [])
+      {
+        migratedNotables.push({
+          id: `${bodyId}:${cycle.id}:${notable.id}`,
+          name: notable.name,
+
+          conditions: notable.conditions.map(
+            condition => ({
+              bodyId,
+              cycleId: cycle.id,
+              tagId: condition.tagId,
+              value: condition.value,
+            })
+          ),
+        });
+      }
+
+      delete cycle.notables;
+    }
+  };
+
+  for (const moon of restoredMoons)
+  {
+    migrateCycles(moon.id, moon.phaseCycles);
+  }
+
+  for (const zodiac of restoredZodiacs)
+  {
+    migrateCycles(zodiac.id, zodiac.cycles);
+  }
+
+  const globalNotables = [
+    ...structuredClone(settings?.notables ?? []),
+    ...migratedNotables,
+  ];
+
   this.settings = {
     ...defaults,
     ...structuredClone(settings ?? {}),
@@ -216,15 +272,9 @@ restoreWorldState(
         ? structuredClone(settings.seasonStarts)
         : defaults.seasonStarts,
 
-    moons:
-      settings?.moons !== undefined
-        ? structuredClone(settings.moons)
-        : defaults.moons,
-    
-    zodiacs:
-      settings?.zodiacs !== undefined
-        ? structuredClone(settings.zodiacs)
-        : defaults.zodiacs,
+    moons: restoredMoons,
+    zodiacs: restoredZodiacs,
+    notables: globalNotables,
   };
 
   celestialMarkerRegistry.clear();

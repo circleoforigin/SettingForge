@@ -43,85 +43,159 @@ const selectedMoon =
     moon => moon.id === selectedMoonId
   );
 
-  const [selectedCycleId, setSelectedCycleId] =
+const [selectedZodiacId, setSelectedZodiacId] =
+  useState<string>(
+    () => draft.zodiacs[0]?.id ?? ''
+  );
+
+const selectedZodiac =
+  draft.zodiacs.find(
+    zodiac => zodiac.id === selectedZodiacId
+  );
+
+const isZodiacTab =
+  activeDetailsTab === 'zodiac';
+
+const selectedBody =
+  isZodiacTab
+    ? selectedZodiac
+    : selectedMoon;
+
+const selectedBodyCycles =
+  isZodiacTab
+    ? selectedZodiac?.cycles ?? []
+    : selectedMoon?.phaseCycles ?? [];
+
+
+const [selectedMoonCycleId, setSelectedMoonCycleId] =
   useState<string>(
     () => draft.moons[0]?.phaseCycles[0]?.id ?? ''
   );
 
+const [selectedZodiacCycleId, setSelectedZodiacCycleId] =
+  useState<string>(
+    () => draft.zodiacs[0]?.cycles[0]?.id ?? ''
+  );
+
+const selectedCycleId =
+  isZodiacTab
+    ? selectedZodiacCycleId
+    : selectedMoonCycleId;
+
 const selectedCycle =
-  selectedMoon?.phaseCycles.find(
+  selectedBodyCycles.find(
     cycle => cycle.id === selectedCycleId
-  ) ?? selectedMoon?.phaseCycles[0];
+  ) ?? selectedBodyCycles[0];
 
 const cycleOffsetResult =
-  selectedCycle?.cycleMeasurement !== 'calendar' &&
-  selectedCycle
+  selectedCycle &&
+  selectedCycle.cycleMeasurement !== 'calendar'
     ? resolveCelestialCycleOffset(selectedCycle)
     : undefined;
 
-const [keywordIndex, setKeywordIndex] = useState(0);
+const [keywordIndex, setKeywordIndex] =
+  useState(0);
 
-const keywords = selectedCycle?.tags ?? [];
+const keywords =
+  selectedCycle?.tags ?? [];
+
 const keywordsPerPage =
   selectedCycle?.cycleMeasurement === 'calendar'
     ? 1
     : 2;
 
-const visibleKeywords =
-  keywords.slice(
-    Math.min(
-      keywordIndex,
-      Math.max(0, keywords.length - keywordsPerPage)
-    ),
-    Math.min(
-      keywordIndex,
-      Math.max(0, keywords.length - keywordsPerPage)
-    ) + keywordsPerPage
+const maxKeywordIndex =
+  Math.max(
+    0,
+    keywords.length - keywordsPerPage
   );
 
-const navigateMoon = (direction: number) =>
+const visibleKeywords =
+  keywords.slice(
+    Math.min(keywordIndex, maxKeywordIndex),
+    Math.min(keywordIndex, maxKeywordIndex) +
+      keywordsPerPage
+  );
+
+const navigateBody = (direction: number) =>
 {
-  if (draft.moons.length <= 1)
+  if (isZodiacTab)
   {
-    return;
+    const zodiacs = draft.zodiacs;
+
+    if (zodiacs.length <= 1)
+    {
+      return;
+    }
+
+    const currentIndex =
+      zodiacs.findIndex(
+        zodiac => zodiac.id === selectedZodiac?.id
+      );
+
+    const nextIndex =
+      (
+        currentIndex + direction + zodiacs.length
+      ) % zodiacs.length;
+
+    setSelectedZodiacId(zodiacs[nextIndex].id);
+  }
+  else
+  {
+    const moons = draft.moons;
+
+    if (moons.length <= 1)
+    {
+      return;
+    }
+
+    const currentIndex =
+      moons.findIndex(
+        moon => moon.id === selectedMoon?.id
+      );
+
+    const nextIndex =
+      (
+        currentIndex + direction + moons.length
+      ) % moons.length;
+
+    setSelectedMoonId(moons[nextIndex].id);
   }
 
-  const currentIndex =
-    draft.moons.findIndex(
-      moon => moon.id === selectedMoonId
-    );
-
-  const nextIndex =
-    (
-      currentIndex + direction +
-      draft.moons.length
-    ) % draft.moons.length;
-
-  setSelectedMoonId(draft.moons[nextIndex].id);
   setKeywordIndex(0);
 };
 
 const navigateCycle = (direction: number) =>
 {
-  if (!selectedMoon || selectedMoon.phaseCycles.length <= 1)
+  if (selectedBodyCycles.length <= 1)
   {
     return;
   }
 
-  const cycles = selectedMoon.phaseCycles;
-
   const currentIndex =
-    cycles.findIndex(
+    selectedBodyCycles.findIndex(
       cycle => cycle.id === selectedCycle?.id
     );
 
   const nextIndex =
     (
-      currentIndex + direction +
-      cycles.length
-    ) % cycles.length;
+      currentIndex +
+      direction +
+      selectedBodyCycles.length
+    ) % selectedBodyCycles.length;
 
-  setSelectedCycleId(cycles[nextIndex].id);
+  const nextCycle =
+    selectedBodyCycles[nextIndex];
+
+  if (isZodiacTab)
+  {
+    setSelectedZodiacCycleId(nextCycle.id);
+  }
+  else
+  {
+    setSelectedMoonCycleId(nextCycle.id);
+  }
+
   setKeywordIndex(0);
 };
 
@@ -142,6 +216,7 @@ const navigateKeywords = (direction: number) =>
     ) % (maxIndex + 1);
   });
 };
+
 
 const seasons =
   environmentService.getDefinitions()
@@ -435,8 +510,11 @@ const formatCycleDuration = (
                 role="tabpanel"
               >
 
-{activeDetailsTab === 'moons' ? (
-  <div className="celestial-moons-panel">    
+{(
+  activeDetailsTab === 'moons' ||
+  activeDetailsTab === 'zodiac'
+) ? (
+  <div className="celestial-moons-panel">  
 <div className="celestial-moon-navigation">
   <button
     type="button"
@@ -473,29 +551,63 @@ const formatCycleDuration = (
 
 </div>
 
-{selectedMoon && (
+{selectedBody && (
   <div className="celestial-moon-properties">
-    <span>
-      Lunar Day:{' '}
-      <strong>
-        {formatMoonTime(selectedMoon.lunarDay)}
-      </strong>
-    </span>
+    {isZodiacTab && selectedZodiac ? (
+      <>
+        <span>
+          Zodiac Day:{' '}
+          <strong>
+            {selectedZodiac.zodiacDay === 0
+              ? 'Stationary'
+              : formatMoonTime(
+                  selectedZodiac.zodiacDay
+                )}
+          </strong>
+        </span>
 
-    <span>
-      Moonrise Offset (Day 1):{' '}
-      <strong>
-        {formatMoonTime(
-          selectedMoon.moonriseOffset,
-          true
+        {selectedZodiac.zodiacDay !== 0 && (
+          <span>
+            Zodiac Rise Offset (Day 1):{' '}
+            <strong>
+              {formatMoonTime(
+                selectedZodiac.zodiacRiseOffset,
+                true
+              )}
+            </strong>
+          </span>
         )}
-      </strong>
-    </span>
+      </>
+    ) : selectedMoon ? (
+      <>
+        <span>
+          Lunar Day:{' '}
+          <strong>
+            {selectedMoon.lunarDay === 0
+              ? 'Stationary'
+              : formatMoonTime(
+                  selectedMoon.lunarDay
+                )}
+          </strong>
+        </span>
+
+        {selectedMoon.lunarDay !== 0 && (
+          <span>
+            Moonrise Offset (Day 1):{' '}
+            <strong>
+              {formatMoonTime(
+                selectedMoon.moonriseOffset,
+                true
+              )}
+            </strong>
+          </span>
+        )}
+      </>
+    ) : null}
   </div>
 )}
 
-
-{selectedMoon && (
+{selectedBody && (
   <section className="celestial-phase-cycles">
     {selectedCycle ? (
       <div className="celestial-cycle-navigation">
@@ -691,12 +803,14 @@ const formatCycleDuration = (
   </section>
 )}
 
-{!selectedMoon && (
-  <p>No moons configured.</p>
+{!selectedBody && (
+  <p>
+    {isZodiacTab
+      ? 'No zodiacs configured.'
+      : 'No moons configured.'}
+  </p>
 )}
   </div>
-) : activeDetailsTab === 'zodiac' ? (
-  <p>Zodiac details will appear here.</p>
 ) : activeDetailsTab === 'notables' ? (
   <p>Notables will appear here.</p>
 ) : (
