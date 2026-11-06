@@ -221,7 +221,36 @@ const navigateKeywords = (direction: number) =>
 const seasons =
   environmentService.getDefinitions()
     ?.seasons ?? [];
+    
+const notableGroups = [
+  ...draft.moons.flatMap(moon =>
+    moon.phaseCycles.map(cycle => ({
+      id: `${moon.id}:${cycle.id}`,
+      title: `${moon.name} - ${cycle.name}`,
+      notables: draft.notables.filter(notable =>
+        notable.conditions.length > 0 &&
+        notable.conditions.every(condition =>
+          condition.bodyId === moon.id &&
+          condition.cycleId === cycle.id
+        )
+      ),
+    }))
+  ),
 
+  ...draft.zodiacs.flatMap(zodiac =>
+    zodiac.cycles.map(cycle => ({
+      id: `${zodiac.id}:${cycle.id}`,
+      title: `${zodiac.name} - ${cycle.name}`,
+      notables: draft.notables.filter(notable =>
+        notable.conditions.length > 0 &&
+        notable.conditions.every(condition =>
+          condition.bodyId === zodiac.id &&
+          condition.cycleId === cycle.id
+        )
+      ),
+    }))
+  ),
+].filter(group => group.notables.length > 0);
 
   const saveSettings = () =>
   {
@@ -515,40 +544,55 @@ const formatCycleDuration = (
   activeDetailsTab === 'zodiac'
 ) ? (
   <div className="celestial-moons-panel">  
+
 <div className="celestial-moon-navigation">
   <button
     type="button"
-    onClick={() => navigateMoon(-1)}
+    onClick={() => navigateBody(-1)}
     style={{
       visibility:
-        draft.moons.length > 1
+        (
+          isZodiacTab
+            ? draft.zodiacs.length
+            : draft.moons.length
+        ) > 1
           ? 'visible'
           : 'hidden',
     }}
-    aria-label="Previous moon"
+    aria-label={
+      isZodiacTab
+        ? 'Previous zodiac'
+        : 'Previous moon'
+    }
   >
     ‹
   </button>
 
   <strong>
-    {selectedMoon?.name ?? 'None'}
+    {selectedBody?.name ?? 'None'}
   </strong>
 
   <button
     type="button"
-    onClick={() => navigateMoon(1)}
+    onClick={() => navigateBody(1)}
     style={{
       visibility:
-        draft.moons.length > 1
+        (
+          isZodiacTab
+            ? draft.zodiacs.length
+            : draft.moons.length
+        ) > 1
           ? 'visible'
           : 'hidden',
     }}
-    aria-label="Next moon"
+    aria-label={
+      isZodiacTab
+        ? 'Next zodiac'
+        : 'Next moon'
+    }
   >
     ›
-
   </button>
-
 </div>
 
 {selectedBody && (
@@ -616,10 +660,10 @@ const formatCycleDuration = (
           type="button"
           onClick={() => navigateCycle(-1)}
           style={{
-            visibility:
-              selectedMoon.phaseCycles.length > 1
-                ? 'visible'
-                : 'hidden',
+ visibility:
+  selectedBodyCycles.length > 1
+    ? 'visible'
+    : 'hidden',
           }}
           aria-label="Previous phase cycle"
         >
@@ -634,10 +678,10 @@ const formatCycleDuration = (
           type="button"
           onClick={() => navigateCycle(1)}
           style={{
-            visibility:
-              selectedMoon.phaseCycles.length > 1
-                ? 'visible'
-                : 'hidden',
+visibility:
+  selectedBodyCycles.length > 1
+    ? 'visible'
+    : 'hidden',
           }}
           aria-label="Next phase cycle"
         >
@@ -647,7 +691,7 @@ const formatCycleDuration = (
 
       </div>
     ) : (
-      <p>No phase cycles configured.</p>
+      <p>No cycles configured.</p>
     )}
 
     {selectedCycle && (
@@ -731,7 +775,13 @@ const formatCycleDuration = (
 
     </div>
 
-    <div className="celestial-keywords-grid">
+<div
+  className={
+    isZodiacTab
+      ? 'celestial-keywords-grid celestial-zodiac-keywords-grid'
+      : 'celestial-keywords-grid'
+  }
+>
       {visibleKeywords.map(keyword => (
 
 <div
@@ -812,7 +862,47 @@ const formatCycleDuration = (
 )}
   </div>
 ) : activeDetailsTab === 'notables' ? (
-  <p>Notables will appear here.</p>
+  <div className="celestial-notables-panel">
+  <div className="celestial-notables-grid">
+    {notableGroups.map(group => (
+      <section
+        key={group.id}
+        className="celestial-notable-group"
+      >
+        <strong className="celestial-notable-title">
+          {group.title}
+        </strong>
+
+        <div className="celestial-notable-listbox">
+          {group.notables.map(notable => (
+            <div
+              key={notable.id}
+              className="celestial-notable-entry"
+            >
+              {notable.name}
+            </div>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+
+  {notableGroups.length === 0 && (
+    <p>No notables configured.</p>
+  )}
+
+  <div className="celestial-conjunction-group">
+    <strong className="celestial-notable-title">
+      Conjunctions
+    </strong>
+
+    <div className="celestial-conjunction-listbox">
+      <div className="celestial-notable-empty">
+        No conjunctions configured.
+      </div>
+    </div>
+  </div>
+</div>
 ) : (
   <p>Ruleset details will appear here.</p>
 )}

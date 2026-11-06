@@ -2749,3 +2749,97 @@ input[type="number"]::-webkit-outer-spin-button {
   min-height: 25px;
   font-size: 12px;
 }
+
+.celestial-zodiac-keywords-grid
+{
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+
+.celestial-zodiac-keywords-grid .celestial-keyword-panel
+{
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Expand the Zodiac Keyword's internal columns. */
+
+.celestial-zodiac-keywords-grid .celestial-keyword-entry-header,
+.celestial-zodiac-keywords-grid .celestial-keyword-entry
+{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.celestial-zodiac-keywords-grid .celestial-keyword-entries,
+.celestial-zodiac-keywords-grid .celestial-keyword-entry-scroll
+{
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.celestial-notables-panel
+{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.celestial-notables-grid
+{
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.celestial-notable-group,
+.celestial-conjunction-group
+{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.celestial-notable-title
+{
+  text-align: center;
+}
+
+.celestial-notable-listbox,
+.celestial-conjunction-listbox
+{
+  height: 160px;
+  min-height: 160px;
+  max-height: 160px;
+
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+
+  box-sizing: border-box;
+  padding: 4px 8px;
+
+  border: 1px solid var(--border-color, #555);
+  border-radius: 4px;
+}
+
+.celestial-notable-entry
+{
+  height: 30px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.celestial-notable-empty
+{
+  padding-top: 4px;
+}
