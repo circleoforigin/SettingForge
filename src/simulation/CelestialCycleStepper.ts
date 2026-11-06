@@ -5,6 +5,12 @@ import {
   type ResolvedCelestialStructure,
 } from './CelestialStructureResolver';
 import { getCelestialTagStepCount } from './CelestialTagResolver';
+import type { CelestialTagEntry } from './CelestialSettings';
+import type { SimClockEra } from './SimClockSettings';
+import { 
+    calendarToSimulationTime,
+    simulationTimeToCalendar,
+ } from './SimCalendar';
 
 export interface CelestialCycleStepResult
 {
@@ -182,9 +188,7 @@ export function getCelestialCyclePeriod(
     return cached ?? undefined;
   }
 
-  const period = findCelestialCyclePeriod(
-    cycle
-  );
+  const period = findCelestialCyclePeriod(cycle);
 
   celestialPeriodCache.set(
     cacheKey,
@@ -244,14 +248,19 @@ export function resolveCelestialCycleAtTime(
   period: CelestialCyclePeriod
 ): CelestialCycleStepResult
 {
+  if (cycle.cycleMeasurement === 'calendar')
+  {
+    throw new Error(
+      'Calendar-based celestial cycles require calendar date resolution.'
+    );
+  }
+
   if (
     !Number.isFinite(cycle.cycleDuration) ||
     cycle.cycleDuration <= 0
   )
   {
-    throw new Error(
-      'Celestial cycle duration must be positive.'
-    );
+    throw new Error('Celestial cycle duration must be positive.');
   }
 
   if (
@@ -260,26 +269,160 @@ export function resolveCelestialCycleAtTime(
     period.stepCount <= 0
   )
   {
-    throw new Error(
-      'Celestial cycle period must be positive.'
-    );
+    throw new Error('Celestial cycle period must be positive.');
   }
 
-  const stepDuration =
-    cycle.cycleDuration / period.stepCount;
-
-  const elapsedTime =
-    simulationTime - cycle.cycleOffset;
-
-  const step = Math.floor(
-    elapsedTime / stepDuration
-  );
+  const stepDuration = cycle.cycleDuration / period.stepCount;
+  const elapsedTime = simulationTime + cycle.cycleOffset;
+  const step = Math.floor(elapsedTime / stepDuration);
 
   return resolveCelestialCycleStep(
     cycle,
     step,
     period
   );
+}
+
+
+export function resolveCelestialCycleOffset(
+  cycle: CelestialCycle
+):
+{
+  name: string;
+  phases: {
+    name: string;
+    step: number;
+    elapsedSeconds: number;
+  }[];
+} | undefined
+{
+  const period = getCelestialCyclePeriod(cycle);
+
+  if (
+    !period ||
+    period.stepCount <= 0 ||
+    !Number.isFinite(cycle.cycleDuration) ||
+    cycle.cycleDuration <= 0 ||
+    !Number.isFinite(cycle.cycleOffset)
+  )
+  {
+    return undefined;
+  }
+
+  const stepDuration =
+    cycle.cycleDuration / period.stepCount;
+
+  const elapsed =
+    ((cycle.cycleOffset % cycle.cycleDuration) +
+      cycle.cycleDuration) % cycle.cycleDuration;
+
+  const step =
+    Math.floor(elapsed / stepDuration);
+
+  const elapsedWithinStep =
+    elapsed - step * stepDuration;
+
+  const result = resolveCelestialCycleStep(
+    cycle,
+    step,
+    period
+  );
+
+  return {
+    name: result.resolved.name,
+
+    phases: result.resolved.tags.map(tag => ({
+      name: tag.entry.name || '(Blank)',
+      step: tag.stepWithinEntry,
+      elapsedSeconds: elapsedWithinStep,
+    })),
+  };
+}
+
+export function getCelestialCalendarEntryStart(
+  entry: CelestialTagEntry,
+  year: number,
+  cycleOffset: number,
+  era: SimClockEra
+): number | undefined
+{
+  if (
+    entry.startMonthId === undefined ||
+    entry.startDay === undefined
+  )
+  {
+    return undefined;
+  }
+
+  const midnight =
+    calendarToSimulationTime(
+      {
+        year,
+        monthId: entry.startMonthId,
+        day: entry.startDay,
+        hour: 0,
+        minute: 0,
+        second: 0,
+      },
+      era
+    );
+
+  return midnight + cycleOffset;
+}
+
+
+export function resolveCelestialCalendarEntry(
+  entries: CelestialTagEntry[],
+  simulationTime: number,
+  cycleOffset: number,
+  era: SimClockEra
+): CelestialTagEntry | undefined
+{
+  const calendar =
+    simulationTimeToCalendar(
+      simulationTime,
+      era
+    );
+
+  let activeEntry:
+    CelestialTagEntry | undefined;
+
+  let activeStart =
+    Number.NEGATIVE_INFINITY;
+
+  // Include the previous year so that
+  // entries can remain active across
+  // the beginning of a new year.
+  for (
+    const year of [
+      calendar.year - 1,
+      calendar.year,
+    ]
+  )
+  {
+    for (const entry of entries)
+    {
+      const start =
+        getCelestialCalendarEntryStart(
+          entry,
+          year,
+          cycleOffset,
+          era
+        );
+
+      if (
+        start !== undefined &&
+        start <= simulationTime &&
+        start > activeStart
+      )
+      {
+        activeStart = start;
+        activeEntry = entry;
+      }
+    }
+  }
+
+  return activeEntry;
 }
 
 

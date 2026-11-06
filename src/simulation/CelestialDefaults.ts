@@ -67,7 +67,7 @@ export const DEFAULT_CELESTIAL_SETTINGS:
 
             // Approximately one synodic month.
             cycleDuration: 2551443,
-            cycleOffset: 0,
+            cycleOffset: 1551531,
 
             tags: [
               {
@@ -174,7 +174,7 @@ export const DEFAULT_CELESTIAL_SETTINGS:
         ],
       },
     ],
-
+    zodiacs: [],
   };
 
 export function createDefaultCelestialSettings():

@@ -31,6 +31,10 @@ export type CelestialProgressionStyle =
   | 'peak'
   | 'wave';
 
+export type CelestialCycleMeasurement =
+  | 'duration'
+  | 'calendar';
+
 export type CelestialTagEntry = CelestialPhaseTagEntry;
 export type CelestialTag = CelestialPhaseTag;
 export type CelestialCycle = CelestialPhaseCycle;
@@ -40,8 +44,14 @@ export interface CelestialPhaseTagEntry
   id: string;
   name: string;
 
-  // Number of phase steps this entry occupies.
+  // Used by duration-based cycles.
+  // Number of progression steps this entry occupies.
   phaseDuration: number;
+
+  // Used by calendar-based cycles.
+  // References the configured calendar's month.
+  startMonthId?: string;
+  startDay?: number;
 }
 
 export interface CelestialPhaseTag
@@ -73,8 +83,16 @@ export interface CelestialPhaseCycle
   // Example: "{Direction} {Phase}"
   structure: string;
 
-  // Simulation-time durations.
+  // Determines how progression is measured.
+  // Omitted in older settings means 'duration'.
+  cycleMeasurement?: CelestialCycleMeasurement;
+
+  // Duration mode: complete cycle length.
+  // Calendar mode: yearly, derived from the calendar.
   cycleDuration: number;
+
+  // Duration mode: starting progression offset.
+  // Calendar mode: time of day for date transitions.
   cycleOffset: number;
 
   tags: CelestialPhaseTag[];
@@ -93,6 +111,17 @@ export interface CelestialMoon
   phaseCycles: CelestialPhaseCycle[];
 }
 
+export interface CelestialZodiac
+{
+  id: string;
+  name: string;
+
+  zodiacDay: number;
+  zodiacRiseOffset: number;
+
+  cycles: CelestialCycle[];
+}
+
 export interface CelestialSettings
 {
   sun: CelestialSun;
@@ -100,6 +129,7 @@ export interface CelestialSettings
   seasonStarts: CelestialSeasonStart[];
 
   moons: CelestialMoon[];
+  zodiacs: CelestialZodiac[];
 }
 
 export {

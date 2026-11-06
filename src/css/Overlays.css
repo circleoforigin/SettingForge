@@ -2506,7 +2506,7 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .celestial-details-panel {
-  min-height: 258px;
+  height: 320px;
   padding: 10px;
 
   background: #2b2d31;
@@ -2643,12 +2643,16 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .celestial-cycle-properties {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-top: -6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 16px;
+  row-gap: 4px;
+}
+
+.celestial-cycle-properties > div:last-child {
+  grid-column: 1 / -1;
+  justify-content: center;
+  gap: 12px;
 }
 
 .celestial-cycle-properties > div {
@@ -2663,17 +2667,22 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 .celestial-keywords-navigation {
+  position: relative;
+  height: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  z-index: 1;
+  margin-top: 10px;
 }
 
 .celestial-keywords-navigation button {
   border: none;
   background: transparent;
-  font-size: 28px;
+  font-size: 20px;
   cursor: pointer;
-  padding: 4px;
+  padding: 0 4px;
+  transform: translateY(10px);
 }
 
 .celestial-keywords-grid {
@@ -2685,14 +2694,6 @@ input[type="number"]::-webkit-outer-spin-button {
 .celestial-keyword-panel {
   min-width: 0;
   text-align: center;
-}
-
-.celestial-keyword-entries {
-  margin-top: 8px;
-  border: 1px solid var(--border-color, #555);
-  border-radius: 6px;
-  overflow: hidden;
-  text-align: left;
 }
 
 .celestial-keyword-entries {
@@ -2725,6 +2726,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .celestial-keyword-entry-header > :last-child,
 .celestial-keyword-entry > :last-child {
   text-align: right;
+  font-size: 12px;
 }
 
 .celestial-keyword-progression {
@@ -2732,7 +2734,7 @@ input[type="number"]::-webkit-outer-spin-button {
   justify-content: space-between;
   gap: 8px;
   margin-top: 5px;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .celestial-keyword-entry-scroll {
@@ -2745,5 +2747,5 @@ input[type="number"]::-webkit-outer-spin-button {
   box-sizing: border-box;
   height: 25px;
   min-height: 25px;
-  font-size: 13px;
+  font-size: 12px;
 }

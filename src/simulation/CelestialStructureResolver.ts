@@ -19,7 +19,8 @@ export interface ResolvedCelestialStructure
 export function resolveCelestialStructure(
   structure: string,
   tags: CelestialTag[],
-  progress: CelestialTagProgress[]
+  progress: CelestialTagProgress[],
+  presetTags: ResolvedCelestialTag[] = []
 ): ResolvedCelestialStructure
 {
   const tagByName = new Map(
@@ -36,7 +37,12 @@ export function resolveCelestialStructure(
   const resolvedTags = new Map<
     string,
     ResolvedCelestialTag
-  >();
+  >(
+    presetTags.map(tag => [
+      tag.tagId,
+      tag,
+    ])
+  );
 
   function resolveText(
     text: string

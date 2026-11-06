@@ -5,6 +5,7 @@ import type { CelestialSettings } from '../../simulation/CelestialSettings';
 import type { SimClockEra } from '../../simulation/SimClockSettings';
 import { environmentService } from '../../simulation/EnvironmentService';
 import { EnvironmentSettingsSection } from '../environment/EnvironmentSettingsSection';
+import { resolveCelestialCycleOffset } from '../../simulation/CelestialCycleStepper';
 
 interface CelestialSettingsDialogProps
 {
@@ -14,7 +15,9 @@ interface CelestialSettingsDialogProps
 
 type CelestialDetailsTab =
   | 'moons'
-  | 'zodiac';
+  | 'zodiac'
+  | 'notables'
+  | 'ruleset';
 
 export function CelestialSettingsDialog({
   onClose,
@@ -50,6 +53,11 @@ const selectedCycle =
     cycle => cycle.id === selectedCycleId
   ) ?? selectedMoon?.phaseCycles[0];
 
+const cycleOffsetResult =
+  selectedCycle
+    ? resolveCelestialCycleOffset(selectedCycle)
+    : undefined;
+
 const [keywordIndex, setKeywordIndex] = useState(0);
 
 const keywords = selectedCycle?.tags ?? [];
@@ -84,11 +92,9 @@ const navigateMoon = (direction: number) =>
       draft.moons.length
     ) % draft.moons.length;
 
-  setSelectedMoonId(
-    draft.moons[nextIndex].id
-  );
+  setSelectedMoonId(draft.moons[nextIndex].id);
+  setKeywordIndex(0);
 };
-
 
 const navigateCycle = (direction: number) =>
 {
@@ -110,9 +116,8 @@ const navigateCycle = (direction: number) =>
       cycles.length
     ) % cycles.length;
 
-  setSelectedCycleId(
-    cycles[nextIndex].id
-  );
+  setSelectedCycleId(cycles[nextIndex].id);
+  setKeywordIndex(0);
 };
 
 const navigateKeywords = (direction: number) =>
@@ -378,6 +383,45 @@ const formatCycleDuration = (
                 >
                   Zodiac
                 </button>
+
+<button
+  type="button"
+  role="tab"
+  aria-selected={
+    activeDetailsTab === 'notables'
+  }
+  className={
+    activeDetailsTab === 'notables'
+      ? 'selected'
+      : ''
+  }
+  onClick={() =>
+  {
+    setActiveDetailsTab('notables');
+  }}
+>
+  Notables
+</button>
+
+<button
+  type="button"
+  role="tab"
+  aria-selected={
+    activeDetailsTab === 'ruleset'
+  }
+  className={
+    activeDetailsTab === 'ruleset'
+      ? 'selected'
+      : ''
+  }
+  onClick={() =>
+  {
+    setActiveDetailsTab('ruleset');
+  }}
+>
+  Ruleset
+</button>
+
               </div>
 
               <div
@@ -497,13 +541,30 @@ const formatCycleDuration = (
         </div>
 
         <div>
-          <strong>Phase Length:</strong>
+          <strong>Cycle Length:</strong>
           <span>
             {formatCycleDuration(
               selectedCycle.cycleDuration
             )}
           </span>
         </div>
+
+<div>
+  <strong>Cycle Offset:</strong>
+
+  <span>
+    {formatCycleDuration(
+      selectedCycle.cycleOffset
+    )}
+
+    {cycleOffsetResult && (
+      <>
+        {' — '}
+        {cycleOffsetResult.name}
+      </>
+    )}
+  </span>
+</div>
 
       </div>
     )}
@@ -602,13 +663,13 @@ const formatCycleDuration = (
 {!selectedMoon && (
   <p>No moons configured.</p>
 )}
-
-
   </div>
+) : activeDetailsTab === 'zodiac' ? (
+  <p>Zodiac details will appear here.</p>
+) : activeDetailsTab === 'notables' ? (
+  <p>Notables will appear here.</p>
 ) : (
-  <p>
-    Zodiac details will appear here.
-  </p>
+  <p>Ruleset details will appear here.</p>
 )}
 
               </div>
