@@ -173,8 +173,128 @@ export const DEFAULT_CELESTIAL_SETTINGS:
           },
         ],
       },
+    ],    
+    zodiacs: [
+      {
+        id: 'western-zodiac',
+        name: 'Western Zodiac',
+
+        // Stationary: no daily rise cycle.
+        zodiacDay: 0,
+        zodiacRiseOffset: 0,
+
+        cycles: [
+          {
+            id: 'western-zodiac-signs',
+            name: 'Zodiac Signs',
+
+            structure: '{Sign}',
+
+            cycleMeasurement: 'calendar',
+            cycleDuration: 0,
+            cycleOffset: 0,
+
+            tags: [
+              {
+                id: 'zodiac-sign',
+                name: 'Sign',
+                progressionStyle: 'loop',
+
+                entries: [
+                  {
+                    id: 'aries',
+                    name: 'Aries',
+                    phaseDuration: 1,
+                    startMonthId: 'march',
+                    startDay: 21,
+                  },
+                  {
+                    id: 'taurus',
+                    name: 'Taurus',
+                    phaseDuration: 1,
+                    startMonthId: 'april',
+                    startDay: 20,
+                  },
+                  {
+                    id: 'gemini',
+                    name: 'Gemini',
+                    phaseDuration: 1,
+                    startMonthId: 'may',
+                    startDay: 21,
+                  },
+                  {
+                    id: 'cancer',
+                    name: 'Cancer',
+                    phaseDuration: 1,
+                    startMonthId: 'june',
+                    startDay: 21,
+                  },
+                  {
+                    id: 'leo',
+                    name: 'Leo',
+                    phaseDuration: 1,
+                    startMonthId: 'july',
+                    startDay: 23,
+                  },
+                  {
+                    id: 'virgo',
+                    name: 'Virgo',
+                    phaseDuration: 1,
+                    startMonthId: 'august',
+                    startDay: 23,
+                  },
+                  {
+                    id: 'libra',
+                    name: 'Libra',
+                    phaseDuration: 1,
+                    startMonthId: 'september',
+                    startDay: 23,
+                  },
+                  {
+                    id: 'scorpio',
+                    name: 'Scorpio',
+                    phaseDuration: 1,
+                    startMonthId: 'october',
+                    startDay: 23,
+                  },
+                  {
+                    id: 'sagittarius',
+                    name: 'Sagittarius',
+                    phaseDuration: 1,
+                    startMonthId: 'november',
+                    startDay: 22,
+                  },
+                  {
+                    id: 'capricorn',
+                    name: 'Capricorn',
+                    phaseDuration: 1,
+                    startMonthId: 'december',
+                    startDay: 22,
+                  },
+                  {
+                    id: 'aquarius',
+                    name: 'Aquarius',
+                    phaseDuration: 1,
+                    startMonthId: 'january',
+                    startDay: 20,
+                  },
+                  {
+                    id: 'pisces',
+                    name: 'Pisces',
+                    phaseDuration: 1,
+                    startMonthId: 'february',
+                    startDay: 19,
+                  },
+                ],
+              },
+            ],
+
+            notables: [],
+          },
+        ],
+      },
     ],
-    zodiacs: [],
+    notables: [],
   };
 
 export function createDefaultCelestialSettings():

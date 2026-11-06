@@ -64,6 +64,8 @@ export interface CelestialPhaseTag
 
 export interface CelestialNotableCondition
 {
+  bodyId: string;
+  cycleId: string;
   tagId: string;
   value: string;
 }
@@ -74,6 +76,7 @@ export interface CelestialNotable
   name: string;
   conditions: CelestialNotableCondition[];
 }
+
 
 export interface CelestialPhaseCycle
 {
@@ -96,7 +99,17 @@ export interface CelestialPhaseCycle
   cycleOffset: number;
 
   tags: CelestialPhaseTag[];
-  notables: CelestialNotable[];
+
+  // Legacy data only. Existing saved Worlds
+  // may still contain cycle-owned Notables.
+  notables?: {
+    id: string;
+    name: string;
+    conditions: {
+      tagId: string;
+      value: string;
+    }[];
+  }[];
 }
 
 export interface CelestialMoon
@@ -130,6 +143,8 @@ export interface CelestialSettings
 
   moons: CelestialMoon[];
   zodiacs: CelestialZodiac[];
+
+  notables: CelestialNotable[];
 }
 
 export {

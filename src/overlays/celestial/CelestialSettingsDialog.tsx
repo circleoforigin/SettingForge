@@ -54,6 +54,7 @@ const selectedCycle =
   ) ?? selectedMoon?.phaseCycles[0];
 
 const cycleOffsetResult =
+  selectedCycle?.cycleMeasurement !== 'calendar' &&
   selectedCycle
     ? resolveCelestialCycleOffset(selectedCycle)
     : undefined;
@@ -61,17 +62,21 @@ const cycleOffsetResult =
 const [keywordIndex, setKeywordIndex] = useState(0);
 
 const keywords = selectedCycle?.tags ?? [];
+const keywordsPerPage =
+  selectedCycle?.cycleMeasurement === 'calendar'
+    ? 1
+    : 2;
 
 const visibleKeywords =
   keywords.slice(
     Math.min(
       keywordIndex,
-      Math.max(0, keywords.length - 2)
+      Math.max(0, keywords.length - keywordsPerPage)
     ),
     Math.min(
       keywordIndex,
-      Math.max(0, keywords.length - 2)
-    ) + 2
+      Math.max(0, keywords.length - keywordsPerPage)
+    ) + keywordsPerPage
   );
 
 const navigateMoon = (direction: number) =>
@@ -122,14 +127,15 @@ const navigateCycle = (direction: number) =>
 
 const navigateKeywords = (direction: number) =>
 {
-  if (keywords.length <= 2)
+  if (keywords.length <= keywordsPerPage)
   {
     return;
   }
 
   setKeywordIndex(current =>
   {
-    const maxIndex = keywords.length - 2;
+    const maxIndex =
+      keywords.length - keywordsPerPage;
 
     return (
       current + direction + maxIndex + 1
@@ -539,18 +545,27 @@ const formatCycleDuration = (
           <strong>Structure:</strong>
           <span>{selectedCycle.structure}</span>
         </div>
-
+<div>
+  <strong>Cycle Measurement:</strong>
+  <span>
+    {selectedCycle.cycleMeasurement === 'calendar'
+      ? 'Calendar'
+      : 'Duration'}
+  </span>
+</div>
         <div>
-          <strong>Cycle Length:</strong>
-          <span>
-            {formatCycleDuration(
-              selectedCycle.cycleDuration
-            )}
-          </span>
+<strong>Length:</strong>
+<span>
+  {selectedCycle.cycleMeasurement === 'calendar'
+    ? 'Yearly'
+    : formatCycleDuration(
+        selectedCycle.cycleDuration
+      )}
+</span>
         </div>
 
 <div>
-  <strong>Cycle Offset:</strong>
+  <strong>Offset:</strong>
 
   <span>
     {formatCycleDuration(
@@ -579,7 +594,7 @@ const formatCycleDuration = (
         onClick={() => navigateKeywords(-1)}
         style={{
           visibility:
-            keywords.length > 2
+            keywords.length > keywordsPerPage
               ? 'visible'
               : 'hidden',
         }}
@@ -593,7 +608,7 @@ const formatCycleDuration = (
         onClick={() => navigateKeywords(1)}
         style={{
           visibility:
-            keywords.length > 2
+            keywords.length > keywordsPerPage
               ? 'visible'
               : 'hidden',
         }}
@@ -617,7 +632,11 @@ const formatCycleDuration = (
 
 <div className="celestial-keyword-entry-header">
   <strong>Name</strong>
-  <strong>Duration</strong>
+  <strong>
+    {selectedCycle.cycleMeasurement === 'calendar'
+      ? 'Start Date'
+      : 'Duration'}
+  </strong>
 </div>
 
 <div className="celestial-keyword-entries">
@@ -632,14 +651,25 @@ const formatCycleDuration = (
         {entry.name || '(Blank)'}
       </span>
 
-      <span>
-        {entry.phaseDuration}
-      </span>
+<span>
+  {selectedCycle.cycleMeasurement === 'calendar'
+    ? (
+        entry.startMonthId !== undefined &&
+        entry.startDay !== undefined
+          ? formatDate(
+              entry.startMonthId,
+              entry.startDay
+            )
+          : 'Not configured'
+      )
+    : entry.phaseDuration}
+</span>
     </div>
   ))}
 </div>
   </div>
 
+{selectedCycle.cycleMeasurement !== 'calendar' && (
   <div className="celestial-keyword-progression">
     <span>Progression Style:</span>
 
@@ -648,6 +678,7 @@ const formatCycleDuration = (
         keyword.progressionStyle.slice(1)}
     </strong>
   </div>
+)}
 </div>
 
       ))}

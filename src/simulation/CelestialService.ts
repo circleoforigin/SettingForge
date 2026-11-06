@@ -3,6 +3,11 @@ import {
   type CelestialSettings,
 } from './CelestialSettings';
 import type { SimClockEra } from './SimClockSettings';
+import type { CelestialCycle } from './CelestialSettings';
+import {
+  resolveCelestialCycle,
+  type CelestialCycleStepResult,
+} from './CelestialCycleStepper';
 import type { SimulationTime } from './SimulationClockService';
 import { resolveCelestialSeason } from './CelestialSeasonResolver';
 import {
@@ -31,6 +36,19 @@ export class CelestialService
   getSettings(): CelestialSettings
   {
     return structuredClone(this.settings);
+  }
+
+  getCycleAtTime(
+    cycle: CelestialCycle,
+    time: SimulationTime,
+    era: SimClockEra
+  ): CelestialCycleStepResult
+  {
+    return resolveCelestialCycle(
+      cycle,
+      time,
+      era
+    );
   }
 
   getSeasonAtTime(
@@ -202,6 +220,11 @@ restoreWorldState(
       settings?.moons !== undefined
         ? structuredClone(settings.moons)
         : defaults.moons,
+    
+    zodiacs:
+      settings?.zodiacs !== undefined
+        ? structuredClone(settings.zodiacs)
+        : defaults.zodiacs,
   };
 
   celestialMarkerRegistry.clear();

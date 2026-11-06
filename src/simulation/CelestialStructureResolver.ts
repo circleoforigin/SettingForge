@@ -20,7 +20,8 @@ export function resolveCelestialStructure(
   structure: string,
   tags: CelestialTag[],
   progress: CelestialTagProgress[],
-  presetTags: ResolvedCelestialTag[] = []
+  presetTags: ResolvedCelestialTag[] = [],
+  calendarMode = false
 ): ResolvedCelestialStructure
 {
   const tagByName = new Map(
@@ -64,6 +65,11 @@ export function resolveCelestialStructure(
         if (existing)
         {
           return resolveText(existing.entry.name);
+        }
+
+        if (calendarMode)
+        {
+          return token;
         }
 
         const step = progressById.get(tag.id) ?? 0;

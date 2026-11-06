@@ -4,7 +4,10 @@ import {
   type CelestialTagProgress,
   type ResolvedCelestialStructure,
 } from './CelestialStructureResolver';
-import { getCelestialTagStepCount } from './CelestialTagResolver';
+import {
+  getCelestialTagStepCount,
+  type ResolvedCelestialTag,
+} from './CelestialTagResolver';
 import type { CelestialTagEntry } from './CelestialSettings';
 import type { SimClockEra } from './SimClockSettings';
 import { 
@@ -60,7 +63,8 @@ export function advanceCelestialCycle(
     );
   }
 
-  const activeNotableIds = cycle.notables
+const activeNotableIds =
+  (cycle.notables ?? [])
     .filter(notable =>
       notable.conditions.length > 0 &&
       notable.conditions.every(condition =>
@@ -425,4 +429,101 @@ export function resolveCelestialCalendarEntry(
   return activeEntry;
 }
 
+
+export function resolveCelestialCalendarCycleAtTime(
+  cycle: CelestialCycle,
+  simulationTime: number,
+  era: SimClockEra
+): CelestialCycleStepResult
+{
+  const presetTags: ResolvedCelestialTag[] = [];
+
+  for (const tag of cycle.tags)
+  {
+    const entry =
+      resolveCelestialCalendarEntry(
+        tag.entries,
+        simulationTime,
+        cycle.cycleOffset,
+        era
+      );
+
+    if (!entry)
+    {
+      continue;
+    }
+
+    const entryIndex =
+      tag.entries.indexOf(entry);
+
+    presetTags.push({
+      tagId: tag.id,
+      tagName: tag.name,
+      entry,
+      entryIndex,
+      stepWithinEntry: 1,
+    });
+  }
+
+  const resolved =
+    resolveCelestialStructure(
+      cycle.structure,
+      cycle.tags,
+      [],
+      presetTags,
+      true
+    );
+
+const activeNotableIds =
+  (cycle.notables ?? [])
+      .filter(notable =>
+        notable.conditions.length > 0 &&
+        notable.conditions.every(condition =>
+          resolved.tags.some(tag =>
+            tag.tagId === condition.tagId &&
+            tag.entry.name === condition.value
+          )
+        )
+      )
+      .map(notable => notable.id);
+
+  return {
+    resolved,
+    progress: [],
+    activeNotableIds,
+  };
+}
+
+
+export function resolveCelestialCycle(
+  cycle: CelestialCycle,
+  simulationTime: number,
+  era: SimClockEra
+): CelestialCycleStepResult
+{
+  if (cycle.cycleMeasurement === 'calendar')
+  {
+    return resolveCelestialCalendarCycleAtTime(
+      cycle,
+      simulationTime,
+      era
+    );
+  }
+
+  const period =
+    getCelestialCyclePeriod(cycle);
+
+  if (!period)
+  {
+    throw new Error(
+      'Unable to resolve celestial cycle period.'
+    );
+  }
+
+  return resolveCelestialCycleAtTime(
+    cycle,
+    simulationTime,
+    period
+  );
+}
 
