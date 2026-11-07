@@ -218,22 +218,23 @@ function getCycleBoundaries(
   return boundaries;
 }
 
-export function findCelestialNotableTransitions(
+
+export function resolveNextCelestialNotable(
   notable: CelestialNotable,
   settings: CelestialSettings,
-  startTime: number,
-  endTime: number,
+  afterTime: number,
+  throughTime: number,
   era: SimClockEra
-): number[]
+): number | undefined
 {
   if (
-    !Number.isFinite(startTime) ||
-    !Number.isFinite(endTime) ||
-    endTime <= startTime ||
+    !Number.isFinite(afterTime) ||
+    !Number.isFinite(throughTime) ||
+    throughTime <= afterTime ||
     notable.conditions.length === 0
   )
   {
-    return [];
+    return undefined;
   }
 
   const cycles = new Map<
@@ -251,7 +252,7 @@ export function findCelestialNotableTransitions(
 
     if (!cycle)
     {
-      return [];
+      return undefined;
     }
 
     cycles.set(
@@ -270,8 +271,8 @@ export function findCelestialNotableTransitions(
     for (
       const boundary of getCycleBoundaries(
         cycle,
-        startTime,
-        endTime,
+        afterTime,
+        throughTime,
         era
       )
     )
@@ -280,24 +281,22 @@ export function findCelestialNotableTransitions(
     }
   }
 
-  const transitions: number[] = [];
-
   const sortedCandidates =
     Array.from(candidates).sort(
       (left, right) => left - right
     );
 
+  let wasActive =
+    isCelestialNotableActive(
+      notable,
+      settings,
+      afterTime,
+      era
+    );
+
   for (const time of sortedCandidates)
   {
-    const before =
-      isCelestialNotableActive(
-        notable,
-        settings,
-        time - 0.000001,
-        era
-      );
-
-    const after =
+    const isActive =
       isCelestialNotableActive(
         notable,
         settings,
@@ -305,12 +304,15 @@ export function findCelestialNotableTransitions(
         era
       );
 
-    if (!before && after)
+    if (!wasActive && isActive)
     {
-      transitions.push(time);
+      return time;
     }
+
+    wasActive = isActive;
   }
 
-  return transitions;
+  return undefined;
 }
+
 

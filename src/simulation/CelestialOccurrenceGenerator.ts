@@ -10,7 +10,7 @@ import {
   type SimClockOccurrenceMessageKey,
 } from './SimClockOccurrenceMessages';
 import {
-  findCelestialNotableTransitions,
+  resolveNextCelestialNotable,
 } from './CelestialNotableResolver';
 
 const legacyMessageKeys:
@@ -39,11 +39,15 @@ export function generateCelestialOccurrences(
 
   const occurrences: Occurrence[] = [];
 
-  const markers =
-    celestialMarkerRegistry.getMarkers();
+  const markers = celestialMarkerRegistry.getMarkers();
 
   for (const marker of markers)
   {
+    if (marker.id === 'midnight')
+    {
+      continue;
+    }
+    
     let afterTime = startTime;
 
     while (true)
@@ -98,23 +102,36 @@ export function generateCelestialOccurrences(
       afterTime = simulationTime;
     }
   }
-  
+
+   
   const settings =
     celestialService.getSettings();
 
   for (const notable of settings.notables)
   {
-    const transitions =
-      findCelestialNotableTransitions(
-        notable,
-        settings,
-        startTime,
-        endTime,
-        era
-      );
+    let afterTime = startTime;
 
-    for (const simulationTime of transitions)
+    while (true)
     {
+      const simulationTime =
+        resolveNextCelestialNotable(
+          notable,
+          settings,
+          afterTime,
+          endTime,
+          era
+        );
+
+      if (
+        simulationTime === undefined ||
+        !Number.isFinite(simulationTime) ||
+        simulationTime <= afterTime ||
+        simulationTime > endTime
+      )
+      {
+        break;
+      }
+
       occurrences.push({
         id: crypto.randomUUID(),
         sourceModuleId: 'overlay:celestial',
@@ -127,6 +144,8 @@ export function generateCelestialOccurrences(
         description: `${notable.name} begins.`,
         reaction: OccurrenceReactions.Notify,
       });
+
+      afterTime = simulationTime;
     }
   }
 

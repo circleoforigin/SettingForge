@@ -248,8 +248,15 @@ restoreWorldState(
     migrateCycles(zodiac.id, zodiac.cycles);
   }
 
-  const globalNotables = [
-    ...structuredClone(settings?.notables ?? []),
+   const globalNotables = [
+    ...structuredClone(
+      settings?.notables ??
+      (
+        migratedNotables.length > 0
+          ? []
+          : defaults.notables
+      )
+    ),
     ...migratedNotables,
   ];
 
