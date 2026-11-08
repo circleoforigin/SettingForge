@@ -112,6 +112,17 @@ export interface CelestialPhaseCycle
   }[];
 }
 
+export interface CelestialEclipsePhaseReference {
+  cycleId: string;
+  tagId: string;
+  entryId: string;
+}
+
+export interface CelestialMoonEclipseSettings {
+  newPhase?: CelestialEclipsePhaseReference;
+  fullPhase?: CelestialEclipsePhaseReference;
+}
+
 export interface CelestialMoon
 {
   id: string;
@@ -122,6 +133,7 @@ export interface CelestialMoon
   moonriseOffset: number;
 
   phaseCycles: CelestialPhaseCycle[];
+  eclipseSettings?: CelestialMoonEclipseSettings;
 }
 
 export interface CelestialZodiac
