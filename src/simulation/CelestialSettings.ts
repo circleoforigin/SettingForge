@@ -154,14 +154,26 @@ export type CelestialConjunctionType =
   | 'lunar-partial'
   | 'lunar-total';
 
+export interface CelestialConjunctionCondition {
+  bodyId: string;
+
+  // Used for Sun daytime/nighttime conditions.
+  solarPhase?: 'daytime' | 'nighttime';
+
+  // Used for any configured celestial phase cycle.
+  cycleId?: string;
+  tagId?: string;
+  entryId?: string;
+}
+
 export interface CelestialConjunction {
   id: string;
   name: string;
-  type: CelestialConjunctionType;
 
-  moonId: string;
-  sunPhase: 'daytime' | 'nighttime';
-  moonPhase: CelestialEclipsePhaseReference;
+  // Undefined for ordinary phase-overlap conjunctions.
+  type?: CelestialConjunctionType;
+
+  conditions: CelestialConjunctionCondition[];
 }
 
 export interface CelestialSettings
@@ -181,3 +193,65 @@ export {
   DEFAULT_CELESTIAL_SETTINGS,
   createDefaultCelestialSettings,
 } from './CelestialDefaults';
+
+export function formatCelestialConjunctionCondition(
+  condition: CelestialConjunctionCondition,
+  settings: CelestialSettings
+): string {
+  if (condition.bodyId === settings.sun.id) {
+    const phase =
+      condition.solarPhase === 'daytime'
+        ? 'Daytime'
+        : condition.solarPhase === 'nighttime'
+          ? 'Nighttime'
+          : 'Unknown Phase';
+
+    return `${settings.sun.name}: ${phase}`;
+  }
+
+  const moon = settings.moons.find(
+    body => body.id === condition.bodyId
+  );
+
+  const zodiac = settings.zodiacs.find(
+    body => body.id === condition.bodyId
+  );
+
+  const body = moon ?? zodiac;
+
+  if (!body) {
+    return `Unknown Body: ${condition.bodyId}`;
+  }
+
+  const cycles = moon
+    ? moon.phaseCycles
+    : zodiac!.cycles;
+
+  const cycle = cycles.find(
+    item => item.id === condition.cycleId
+  );
+
+  const tag = cycle?.tags.find(
+    item => item.id === condition.tagId
+  );
+
+  const phase = tag?.entries.find(
+    item => item.id === condition.entryId
+  );
+
+  return `${body.name}: ${phase?.name ?? 'Unknown Phase'}`;
+}
+
+export function formatCelestialConjunction(
+  conjunction: CelestialConjunction,
+  settings: CelestialSettings
+): string {
+  return conjunction.conditions
+    .map(condition =>
+      formatCelestialConjunctionCondition(
+        condition,
+        settings
+      )
+    )
+    .join(' + ');
+}

@@ -2459,7 +2459,7 @@ input[type="number"]::-webkit-outer-spin-button {
 
 .celestial-season-start-date {
   margin-left: auto;
-  text-align: right;
+  text-align: right; 
 }
 
 .celestial-settings-columns {
@@ -2806,7 +2806,7 @@ input[type="number"]::-webkit-outer-spin-button {
   display: grid;
   grid-template-columns:
     repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 12px;  
 }
 
 .celestial-notable-group,
@@ -2817,13 +2817,12 @@ input[type="number"]::-webkit-outer-spin-button {
 
 /* Five visible rows, using Environment styling. */
 
-
 .celestial-notables-panel
 {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-width: 0;
+  min-width: 0;  
 }
 
 .celestial-notables-grid
@@ -2837,7 +2836,7 @@ input[type="number"]::-webkit-outer-spin-button {
 .celestial-notable-group,
 .celestial-conjunction-group
 {
-  min-width: 0;
+  min-width: 0;  
 }
 
 /* Five visible rows, using Environment styling. */
@@ -2848,6 +2847,7 @@ input[type="number"]::-webkit-outer-spin-button {
   height: 108px;
   min-height: 108px;
   max-height: 108px;
+  
 }
 
 /* Conjunctions: three visible entries. */
@@ -2855,9 +2855,9 @@ input[type="number"]::-webkit-outer-spin-button {
 .celestial-conjunction-group
 .environment-settings-entry-list
 {
-  height: 90px;
+  height: 112px;
   min-height: 90px;
-  max-height: 90px;
+  max-height: 112px;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -2875,9 +2875,11 @@ input[type="number"]::-webkit-outer-spin-button {
 .celestial-conjunction-group
 .environment-settings-entry
 {
-  flex: 0 0 44px;
-  height: 44px;
-  align-items: flex-start;
+  flex: 0 0 30px;
+  height: 30px;
+  align-items: flex-start;  
+  font-size: 12px;
+  margin-bottom: 5px;
 }
 
 .celestial-conjunction-entry
@@ -2898,4 +2900,9 @@ input[type="number"]::-webkit-outer-spin-button {
   white-space: nowrap;
   overflow: visible;
   text-overflow: clip;
+}
+
+.celestial-conjunction-definition
+{
+  margin-left: 14px;
 }

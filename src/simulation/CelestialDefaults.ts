@@ -281,78 +281,30 @@ eclipseSettings: {
       },
     ],
     conjunctions: [
-  {
-    id: 'moon:solar-partial',
-    name: 'Partial Solar Eclipse',
-    type: 'solar-partial',
-    moonId: 'moon',
-    sunPhase: 'daytime',
-    moonPhase: {
-      cycleId: 'lunar-phases',
-      tagId: 'phase',
-      entryId: 'phase-new',
-    },
-  },
-  {
-    id: 'moon:solar-annular',
-    name: 'Annular Solar Eclipse',
-    type: 'solar-annular',
-    moonId: 'moon',
-    sunPhase: 'daytime',
-    moonPhase: {
-      cycleId: 'lunar-phases',
-      tagId: 'phase',
-      entryId: 'phase-new',
-    },
-  },
-  {
-    id: 'moon:solar-total',
-    name: 'Total Solar Eclipse',
-    type: 'solar-total',
-    moonId: 'moon',
-    sunPhase: 'daytime',
-    moonPhase: {
-      cycleId: 'lunar-phases',
-      tagId: 'phase',
-      entryId: 'phase-new',
-    },
-  },
-  {
-    id: 'moon:lunar-penumbral',
-    name: 'Penumbral Lunar Eclipse',
-    type: 'lunar-penumbral',
-    moonId: 'moon',
-    sunPhase: 'nighttime',
-    moonPhase: {
-      cycleId: 'lunar-phases',
-      tagId: 'phase',
-      entryId: 'phase-full',
-    },
-  },
-  {
-    id: 'moon:lunar-partial',
-    name: 'Partial Lunar Eclipse',
-    type: 'lunar-partial',
-    moonId: 'moon',
-    sunPhase: 'nighttime',
-    moonPhase: {
-      cycleId: 'lunar-phases',
-      tagId: 'phase',
-      entryId: 'phase-full',
-    },
-  },
-  {
-    id: 'moon:lunar-total',
-    name: 'Total Lunar Eclipse',
-    type: 'lunar-total',
-    moonId: 'moon',
-    sunPhase: 'nighttime',
-    moonPhase: {
-      cycleId: 'lunar-phases',
-      tagId: 'phase',
-      entryId: 'phase-full',
-    },
-  },
+  ...([
+    ['solar-partial', 'Partial Solar Eclipse', 'daytime', 'phase-new'],
+    ['solar-annular', 'Annular Solar Eclipse', 'daytime', 'phase-new'],
+    ['solar-total', 'Total Solar Eclipse', 'daytime', 'phase-new'],
+    ['lunar-penumbral', 'Penumbral Lunar Eclipse', 'nighttime', 'phase-full'],
+    ['lunar-partial', 'Partial Lunar Eclipse', 'nighttime', 'phase-full'],
+    ['lunar-total', 'Total Lunar Eclipse', 'nighttime', 'phase-full'],
+  ] as const).map(([type, name, solarPhase, entryId]) => ({
+    id: `moon:${type}`,
+    name,
+    type,
+    conditions: [
+      {
+        bodyId: 'sun',
+        solarPhase,
+      },
+      {
+        bodyId: 'moon',
+        cycleId: 'lunar-phases',
+        tagId: 'phase',
+        entryId,
+      },
+    ],
+  })),
 ],
 notables: [
   {
