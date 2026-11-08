@@ -47,7 +47,7 @@ export function generateCelestialOccurrences(
     {
       continue;
     }
-    
+
     let afterTime = startTime;
 
     while (true)
@@ -101,11 +101,8 @@ export function generateCelestialOccurrences(
 
       afterTime = simulationTime;
     }
-  }
-
-   
-  const settings =
-    celestialService.getSettings();
+  }   
+  const settings = celestialService.getSettings();
 
   for (const notable of settings.notables)
   {
@@ -146,6 +143,64 @@ export function generateCelestialOccurrences(
       });
 
       afterTime = simulationTime;
+    }
+  }
+
+  // Eclipse contacts
+  const eclipsePredictions =
+    celestialService.getEclipsePredictions(
+      startTime,
+      endTime,
+      era
+    );
+
+  for (const eclipse of eclipsePredictions) {
+    const moon = settings.moons.find(
+      item => item.id === eclipse.moonId
+    );
+
+    const moonName = moon?.name ?? 'Moon';
+
+    const eclipseName = eclipse.type
+      .split('-')
+      .map(word =>
+        word.charAt(0).toUpperCase() +
+        word.slice(1)
+      )
+      .join(' ');
+
+    for (const contact of eclipse.contacts) {
+      const simulationTime =
+        Math.round(contact.time);
+
+      if (
+        simulationTime <= startTime ||
+        simulationTime > endTime
+      ) {
+        continue;
+      }
+
+      const description =
+        contact.kind === 'start'
+          ? `${moonName}: ${eclipseName} begins.`
+          : contact.kind === 'central-start'
+            ? `${moonName}: Central eclipse begins.`
+            : contact.kind === 'central-end'
+              ? `${moonName}: Central eclipse ends.`
+              : `${moonName}: ${eclipseName} ends.`;
+
+      occurrences.push({
+        id: `${eclipse.id}:${contact.kind}`,
+        sourceModuleId: 'overlay:celestial',
+        simulationTime,
+        pieceId: null,
+        entityId: eclipse.moonId,
+        sectorId: null,
+        type: 'almanac',
+        title: eclipseName,
+        description,
+        reaction: OccurrenceReactions.Notify,
+      });
     }
   }
 

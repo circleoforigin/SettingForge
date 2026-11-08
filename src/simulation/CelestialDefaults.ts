@@ -57,6 +57,18 @@ export const DEFAULT_CELESTIAL_SETTINGS:
         // Approximately 9:02 PM local mean solar time.
         moonriseOffset: 45581,
 
+eclipseSettings: {
+  newPhase: {
+    cycleId: 'lunar-phases',
+    tagId: 'phase',
+    entryId: 'phase-new',
+  },
+  fullPhase: {
+    cycleId: 'lunar-phases',
+    tagId: 'phase',
+    entryId: 'phase-full',
+  },
+},
         phaseCycles: [
           {
             id: 'lunar-phases',

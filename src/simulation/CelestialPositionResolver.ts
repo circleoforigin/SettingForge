@@ -400,6 +400,17 @@ export interface CelestialEclipsePrediction {
   contacts: CelestialEclipseContact[];
 }
 
+export interface CelestialConjunctionPrediction {
+  id: string;
+  moonId: string;
+  kind: CelestialAlignmentKind;
+  time: number;
+
+  // A conjunction may or may not
+  // produce an eclipse.
+  eclipse: CelestialEclipsePrediction | null;
+}
+
 export interface CelestialEclipseGenerationOptions {
   worldSeed: string;
 
@@ -657,3 +668,190 @@ export function generateCelestialEclipsePrediction(
   };
 }
 
+export function prospectCelestialEclipses(
+  startTime: number,
+  endTime: number,
+  settings: CelestialSettings,
+  era: SimClockEra,
+  options: CelestialEclipseGenerationOptions =
+    DEFAULT_ECLIPSE_OPTIONS
+): CelestialEclipsePrediction[] {
+  if (
+    !Number.isFinite(startTime) ||
+    !Number.isFinite(endTime) ||
+    endTime <= startTime
+  ) {
+    return [];
+  }
+
+  const predictions: CelestialEclipsePrediction[] = [];
+  const day = getSimulationDaySeconds(era);
+
+  if (!Number.isFinite(day) || day <= 0) {
+    return [];
+  }
+
+  for (const moon of settings.moons) {
+    const kinds: CelestialAlignmentKind[] =
+      moon.lunarDay === 0
+        ? ['solar']
+        : ['solar', 'lunar'];
+
+    for (const kind of kinds) {
+      let afterTime = startTime;
+
+      for (let attempt = 0; attempt < 100000; attempt++) {
+        const alignment =
+          moon.lunarDay === 0
+            ? resolveNextStationaryAlignment(
+                moon,
+                afterTime,
+                era,
+                day * 30,
+                0
+              )
+            : resolveNextPhysicalAlignment(
+                moon,
+                kind,
+                afterTime,
+                era
+              );
+
+        if (
+          !alignment ||
+          !Number.isFinite(alignment.time) ||
+          alignment.time <= afterTime ||
+          alignment.time > endTime
+        ) {
+          break;
+        }
+
+        afterTime = alignment.time;
+
+        if (!isCelestialEclipseCandidateEligible(
+          moon,
+          kind,
+          alignment.time,
+          settings,
+          era
+        )) {
+          continue;
+        }
+
+        const prediction =
+          generateCelestialEclipsePrediction(
+            alignment,
+            options
+          );
+
+        if (prediction) {
+          predictions.push(prediction);
+        }
+      }
+    }
+  }
+
+  return predictions.sort(
+    (a, b) =>
+      a.startTime - b.startTime ||
+      a.id.localeCompare(b.id)
+  );
+}
+
+export function prospectCelestialConjunctions(
+  startTime: number,
+  endTime: number,
+  settings: CelestialSettings,
+  era: SimClockEra,
+  options: CelestialEclipseGenerationOptions =
+    DEFAULT_ECLIPSE_OPTIONS
+): CelestialConjunctionPrediction[] {
+  if (
+    !Number.isFinite(startTime) ||
+    !Number.isFinite(endTime) ||
+    endTime <= startTime
+  ) {
+    return [];
+  }
+
+  const day = getSimulationDaySeconds(era);
+
+  if (!Number.isFinite(day) || day <= 0) {
+    return [];
+  }
+
+  const predictions: CelestialConjunctionPrediction[] = [];
+
+  for (const moon of settings.moons) {
+    const kinds: CelestialAlignmentKind[] =
+      moon.lunarDay === 0
+        ? ['solar']
+        : ['solar', 'lunar'];
+
+    for (const kind of kinds) {
+      let afterTime = startTime;
+
+      for (let attempt = 0; attempt < 100000; attempt++) {
+        const alignment =
+          moon.lunarDay === 0
+            ? resolveNextStationaryAlignment(
+                moon,
+                afterTime,
+                era,
+                day * 30,
+                0
+              )
+            : resolveNextPhysicalAlignment(
+                moon,
+                kind,
+                afterTime,
+                era
+              );
+
+        if (
+          !alignment ||
+          !Number.isFinite(alignment.time) ||
+          alignment.time <= afterTime ||
+          alignment.time > endTime
+        ) {
+          break;
+        }
+
+        afterTime = alignment.time;
+
+        const eligible =
+          isCelestialEclipseCandidateEligible(
+            moon,
+            kind,
+            alignment.time,
+            settings,
+            era
+          );
+
+        predictions.push({
+          id: [
+            'conjunction',
+            moon.id,
+            kind,
+            alignment.time.toFixed(6),
+          ].join(':'),
+          moonId: moon.id,
+          kind,
+          time: alignment.time,
+          eclipse: eligible
+            ? generateCelestialEclipsePrediction(
+                alignment,
+                options
+              )
+            : null,
+        });
+      }
+    }
+  }
+
+  return predictions.sort(
+    (a, b) =>
+      a.time - b.time ||
+      a.id.localeCompare(b.id)
+  );
+}

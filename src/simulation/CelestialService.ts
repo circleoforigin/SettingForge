@@ -17,6 +17,15 @@ import {
 } from './CelestialSolarResolver';
 import { celestialMarkerRegistry } from './CelestialMarkers';
 import { resolveNextCelestialMarker } from './CelestialMarkerResolver';
+import {
+  prospectCelestialEclipses,
+  type CelestialEclipsePrediction,
+} from './CelestialPositionResolver';
+import { DEFAULT_ECLIPSE_OPTIONS } from './CelestialDefaults';
+import {
+  prospectCelestialConjunctions,
+  type CelestialConjunctionPrediction,
+} from './CelestialPositionResolver';
 
 type CelestialListener = (
   settings: CelestialSettings
@@ -29,6 +38,197 @@ export class CelestialService
 
   private listeners = new Set<CelestialListener>();
 
+  private conjunctionPredictions:
+    CelestialConjunctionPrediction[] = [];
+
+  private conjunctionCoverageStart = Infinity;
+  private conjunctionCoverageEnd = -Infinity;
+
+  private eclipsePredictions:
+    CelestialEclipsePrediction[] = [];
+
+  private eclipseCoverageEnd = -Infinity;
+
+private resetEclipsePredictions(): void {
+  this.eclipsePredictions = [];
+  this.eclipseCoverageEnd = -Infinity;
+}
+
+getUpcomingConjunctions(
+  currentTime: number,
+  era: SimClockEra
+): CelestialConjunctionPrediction[] {
+  if (!Number.isFinite(currentTime)) {
+    return [];
+  }
+  this.conjunctionPredictions = [];
+  this.conjunctionCoverageStart = Infinity;
+  this.conjunctionCoverageEnd = -Infinity;
+
+  const day =
+    era.secondsPerMinute *
+    era.minutesPerHour *
+    era.hoursPerDay;
+
+  if (!Number.isFinite(day) || day <= 0) {
+    return [];
+  }
+
+  if (
+    currentTime < this.conjunctionCoverageStart ||
+    currentTime >= this.conjunctionCoverageEnd
+  ) {
+    this.conjunctionPredictions = [];
+    this.conjunctionCoverageStart = currentTime;
+    this.conjunctionCoverageEnd = currentTime;
+  }
+
+  // Extend the search until five future
+  // conjunctions have been found.
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const upcoming =
+      this.conjunctionPredictions.filter(
+        prediction => prediction.time > currentTime
+      );
+
+    if (upcoming.length >= 5) {
+      break;
+    }
+
+    const nextEnd =
+      this.conjunctionCoverageEnd + day * 365;
+
+    const generated =
+      prospectCelestialConjunctions(
+        this.conjunctionCoverageEnd,
+        nextEnd,
+        this.settings,
+        era
+      );
+
+    this.conjunctionPredictions.push(...generated);
+    this.conjunctionCoverageEnd = nextEnd;
+  }
+
+  this.conjunctionPredictions =
+    this.conjunctionPredictions
+      .filter(
+        prediction => prediction.time > currentTime
+      )
+      .sort(
+        (a, b) =>
+          a.time - b.time ||
+          a.id.localeCompare(b.id)
+      );
+
+  return this.conjunctionPredictions.slice(0, 5);
+}
+
+getEclipsePredictions(
+  startTime: number,
+  endTime: number,
+  era: SimClockEra
+): CelestialEclipsePrediction[] {
+  if (
+    !Number.isFinite(startTime) ||
+    !Number.isFinite(endTime) ||
+    endTime <= startTime
+  ) {
+    return [];
+  }
+
+  // Keep active eclipses until their final contact.
+  this.eclipsePredictions =
+    this.eclipsePredictions.filter(
+      prediction =>
+        prediction.endTime > startTime
+    );
+
+  const day =
+    era.secondsPerMinute *
+    era.minutesPerHour *
+    era.hoursPerDay;
+
+  if (!Number.isFinite(day) || day <= 0) {
+    return [];
+  }
+
+  // Expand in yearly chunks until five predictions
+  // are cached or the requested range is covered.
+  const chunk = day * 365;
+const maximumEclipseDuration = Math.max(
+  ...Object.values(
+    DEFAULT_ECLIPSE_OPTIONS.durations
+  ).map(range => range.maximum)
+);
+
+const lookback = Math.max(
+  day,
+  maximumEclipseDuration
+);
+
+let cursor = Math.max(
+  startTime - lookback,
+  this.eclipseCoverageEnd
+);
+
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const futureCount =
+      this.eclipsePredictions.filter(
+        prediction =>
+          prediction.startTime > startTime
+      ).length;
+
+    if (
+      cursor >= endTime &&
+      futureCount >= 5
+    ) {
+      break;
+    }
+
+    const nextEnd = cursor + chunk;
+
+    const generated = prospectCelestialEclipses(
+      cursor,
+      nextEnd,
+      this.settings,
+      era,
+      DEFAULT_ECLIPSE_OPTIONS
+    );
+
+    const existingIds = new Set(
+      this.eclipsePredictions.map(
+        prediction => prediction.id
+      )
+    );
+
+    for (const prediction of generated) {
+      if (
+        prediction.endTime > startTime &&
+        !existingIds.has(prediction.id)
+      ) {
+        this.eclipsePredictions.push(prediction);
+        existingIds.add(prediction.id);
+      }
+    }
+
+    cursor = nextEnd;
+  }
+
+  this.eclipseCoverageEnd = cursor;
+
+  this.eclipsePredictions.sort(
+    (a, b) =>
+      a.startTime - b.startTime ||
+      a.id.localeCompare(b.id)
+  );
+
+  return this.eclipsePredictions.filter(
+    prediction =>
+      prediction.endTime > startTime &&
+      prediction.startTime <= endTime
+  );
+}
   constructor()
   {
     this.synchronizeMarkers();
@@ -120,9 +320,8 @@ export class CelestialService
     settings: CelestialSettings
   ): void
   {
-    this.settings =
-      structuredClone(settings);
-
+    this.settings = structuredClone(settings);
+    this.resetEclipsePredictions();
     this.notify();
   }
 
@@ -285,6 +484,7 @@ restoreWorldState(
   };
 
   celestialMarkerRegistry.clear();
+  this.resetEclipsePredictions();
   this.notify();
 }
 
@@ -345,7 +545,37 @@ private notify(): void
     );
   }
 }
+
+getUpcomingEclipses(
+  currentTime: number,
+  era: SimClockEra
+): CelestialEclipsePrediction[] {
+  const day =
+    era.secondsPerMinute *
+    era.minutesPerHour *
+    era.hoursPerDay;
+
+  const predictions =
+    this.getEclipsePredictions(
+      currentTime,
+      currentTime + day,
+      era
+    );
+
+  return predictions
+    .filter(
+      prediction =>
+        prediction.endTime > currentTime
+    )
+    .sort(
+      (a, b) =>
+        a.startTime - b.startTime ||
+        a.id.localeCompare(b.id)
+    )
+    .slice(0, 5);
 }
 
-export const celestialService =
-  new CelestialService();
+}
+
+
+export const celestialService = new CelestialService();
