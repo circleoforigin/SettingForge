@@ -77,7 +77,7 @@ export function resolveLunarCycle(
 
   const stepDuration = cycle.cycleDuration / period.stepCount;
 
-  const elapsed = time - cycle.cycleOffset;
+  const elapsed = time + cycle.cycleOffset;
 
   const elapsedInCycle = positiveModulo(
     elapsed,
