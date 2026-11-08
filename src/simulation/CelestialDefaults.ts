@@ -1,6 +1,5 @@
-import type {
-  CelestialSettings,
-} from './CelestialSettings';
+import type { CelestialSettings } from './CelestialSettings';
+import type { CelestialEclipseGenerationOptions } from './CelestialPositionResolver';
 
 export const DEFAULT_CELESTIAL_SETTINGS:
   CelestialSettings = {
@@ -325,6 +324,59 @@ notables: [
 ],
 
   };
+
+
+export const DEFAULT_ECLIPSE_OPTIONS:
+  CelestialEclipseGenerationOptions = {
+    worldSeed: 'settingforge',
+    eclipseChance: 0.08,
+
+    solarWeights: {
+      partial: 60,
+      annular: 15,
+      total: 25,
+    },
+
+    lunarWeights: {
+      penumbral: 35,
+      partial: 40,
+      total: 25,
+    },
+
+    durations: {
+      'solar-partial': {
+        minimum: 3600,
+        maximum: 10800,
+      },
+      'solar-annular': {
+        minimum: 7200,
+        maximum: 14400,
+        centralMinimum: 120,
+        centralMaximum: 600,
+      },
+      'solar-total': {
+        minimum: 7200,
+        maximum: 14400,
+        centralMinimum: 60,
+        centralMaximum: 420,
+      },
+      'lunar-penumbral': {
+        minimum: 3600,
+        maximum: 10800,
+      },
+      'lunar-partial': {
+        minimum: 5400,
+        maximum: 14400,
+      },
+      'lunar-total': {
+        minimum: 10800,
+        maximum: 21600,
+        centralMinimum: 1800,
+        centralMaximum: 5400,
+      },
+    },
+  };
+
 
 export function createDefaultCelestialSettings():
   CelestialSettings

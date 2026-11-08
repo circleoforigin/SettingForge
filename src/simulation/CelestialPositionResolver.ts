@@ -1,28 +1,13 @@
-
 import type {
   CelestialMoon,
   CelestialSettings,
 } from './CelestialSettings';
-
-import type {
-  SimClockEra,
-} from './SimClockSettings';
-
-import {
-  resolveCelestialCycle,
-} from './CelestialCycleStepper';
-
-import {
-  resolveCelestialSolarState,
-} from './CelestialSolarResolver';
-
-import {
-  simulationTimeToCalendar,
-} from './SimCalendar';
-
-import {
-  resolveEclipsePhaseReference,
-} from './CelestialEclipsePhaseResolver';
+import type { SimClockEra } from './SimClockSettings';
+import { resolveCelestialCycle } from './CelestialCycleStepper';
+import { resolveCelestialSolarState } from './CelestialSolarResolver';
+import { simulationTimeToCalendar } from './SimCalendar';
+import { resolveEclipsePhaseReference } from './CelestialEclipsePhaseResolver';
+import { DEFAULT_ECLIPSE_OPTIONS } from './CelestialDefaults';
 
 const TAU = Math.PI * 2;
 
@@ -671,4 +656,4 @@ export function generateCelestialEclipsePrediction(
     contacts,
   };
 }
-s
+
