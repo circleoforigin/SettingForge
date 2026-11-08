@@ -2784,7 +2784,6 @@ input[type="number"]::-webkit-outer-spin-button {
   box-sizing: border-box;
 }
 
-
 .celestial-notables-panel
 {
   display: flex;
@@ -2851,6 +2850,18 @@ input[type="number"]::-webkit-outer-spin-button {
   max-height: 108px;
 }
 
+/* Conjunctions: three visible entries. */
+
+.celestial-conjunction-group
+.environment-settings-entry-list
+{
+  height: 90px;
+  min-height: 90px;
+  max-height: 90px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
 /* Read-only entries. */
 
 .celestial-notables-panel
@@ -2859,4 +2870,32 @@ input[type="number"]::-webkit-outer-spin-button {
   cursor: default;
 }
 
+/* Conjunction entries use two lines. */
 
+.celestial-conjunction-group
+.environment-settings-entry
+{
+  flex: 0 0 44px;
+  height: 44px;
+  align-items: flex-start;
+}
+
+.celestial-conjunction-entry
+{
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  gap: 2px;
+}
+
+.celestial-conjunction-entry
+.environment-settings-static-value
+{
+  display: block;
+  width: 100%;
+  max-width: none;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}

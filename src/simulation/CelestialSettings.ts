@@ -77,7 +77,6 @@ export interface CelestialNotable
   conditions: CelestialNotableCondition[];
 }
 
-
 export interface CelestialPhaseCycle
 {
   id: string;
@@ -147,6 +146,24 @@ export interface CelestialZodiac
   cycles: CelestialCycle[];
 }
 
+export type CelestialConjunctionType =
+  | 'solar-partial'
+  | 'solar-annular'
+  | 'solar-total'
+  | 'lunar-penumbral'
+  | 'lunar-partial'
+  | 'lunar-total';
+
+export interface CelestialConjunction {
+  id: string;
+  name: string;
+  type: CelestialConjunctionType;
+
+  moonId: string;
+  sunPhase: 'daytime' | 'nighttime';
+  moonPhase: CelestialEclipsePhaseReference;
+}
+
 export interface CelestialSettings
 {
   sun: CelestialSun;
@@ -157,6 +174,7 @@ export interface CelestialSettings
   zodiacs: CelestialZodiac[];
 
   notables: CelestialNotable[];
+  conjunctions: CelestialConjunction[];
 }
 
 export {

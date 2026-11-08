@@ -891,14 +891,47 @@ visibility:
     <p>No notables configured.</p>
   )}
 
-  <div className="celestial-conjunction-group">
-    <EnvironmentSettingsSection
-      title="Conjunctions"
-      entries={[]}
-      onChange={() => {}}
-      renderEntry={() => null}
-    />
+<div className="celestial-conjunction-group">
+  <EnvironmentSettingsSection
+    title="Conjunctions"
+    entries={draft.conjunctions ?? []}
+    onChange={() => {}}
+    renderEntry={conjunction => {
+      const moon = draft.moons.find(
+        body => body.id === conjunction.moonId
+      );
+
+      const cycle = moon?.phaseCycles.find(
+        item => item.id === conjunction.moonPhase.cycleId
+      );
+
+      const tag = cycle?.tags.find(
+        item => item.id === conjunction.moonPhase.tagId
+      );
+
+      const phase = tag?.entries.find(
+        item => item.id === conjunction.moonPhase.entryId
+      );
+
+      const sunPhase =
+        conjunction.sunPhase === 'daytime'
+          ? 'Daytime'
+          : 'Nighttime';
+
+return (
+  <div className="celestial-conjunction-entry">
+    <strong>{conjunction.name}</strong>
+
+    <div className="environment-settings-static-value">
+      {draft.sun.name}: {sunPhase}
+      {' + '}
+      {moon?.name ?? 'Unknown Moon'}: {phase?.name ?? 'Unknown Phase'}
+    </div>
   </div>
+);
+    }}
+  />
+</div>
 </div>
 
 ) : (
