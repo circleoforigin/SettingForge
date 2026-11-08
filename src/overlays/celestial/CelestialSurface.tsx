@@ -6,6 +6,26 @@ import type { OverlaySurfaceProps } from '../OverlayDefinition';
 import { celestialService } from '../../simulation/CelestialService';
 import type { CelestialSettings } from '../../simulation/CelestialSettings';
 
+interface CelestialTickerItem {
+  id: string;
+  bodyId: string;
+  bodyName: string;
+  cycleName: string;
+  phaseName: string;
+  notable: boolean;
+}
+
+interface CelestialTickerConjunction {
+  id: string;
+  name: string;
+  bodyNames: string[];
+}
+
+interface CelestialTickerState {
+  items: CelestialTickerItem[];
+  conjunctions: CelestialTickerConjunction[];
+}
+
 export function CelestialSurface({
   mountId = 'bottom-center',
 }: OverlaySurfaceProps)

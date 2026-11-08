@@ -380,6 +380,12 @@ export const DEFAULT_ECLIPSE_OPTIONS:
       total: 25,
     },
 
+    interlunarWeights: {
+      partial: 60,
+      annular: 15,
+      total: 25,
+    },
+
     durations: {
       'solar-partial': {
         minimum: 3600,
@@ -411,6 +417,24 @@ export const DEFAULT_ECLIPSE_OPTIONS:
         centralMinimum: 1800,
         centralMaximum: 5400,
       },
+      'interlunar-partial': {
+  minimum: 3600,
+  maximum: 10800,
+},
+
+'interlunar-annular': {
+  minimum: 7200,
+  maximum: 14400,
+  centralMinimum: 120,
+  centralMaximum: 600,
+},
+
+'interlunar-total': {
+  minimum: 7200,
+  maximum: 14400,
+  centralMinimum: 60,
+  centralMaximum: 420,
+},
     },
   };
 

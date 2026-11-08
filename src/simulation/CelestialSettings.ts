@@ -152,7 +152,10 @@ export type CelestialConjunctionType =
   | 'solar-total'
   | 'lunar-penumbral'
   | 'lunar-partial'
-  | 'lunar-total';
+  | 'lunar-total'
+  | 'interlunar-partial'
+  | 'interlunar-annular'
+  | 'interlunar-total';
 
 export interface CelestialConjunctionCondition {
   bodyId: string;

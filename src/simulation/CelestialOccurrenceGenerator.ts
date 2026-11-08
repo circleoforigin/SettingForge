@@ -103,6 +103,39 @@ export function generateCelestialOccurrences(
     }
   }   
   const settings = celestialService.getSettings();
+  // Ordinary Conjunction starts and ends.
+const conjunctionTransitions =
+  celestialService.prospectConjunctionTransitions(
+    startTime,
+    endTime,
+    era
+  );
+
+for (const transition of conjunctionTransitions) {
+  const conjunction = settings.conjunctions.find(
+    item => item.id === transition.conjunctionId
+  );
+
+  if (!conjunction) {
+    continue;
+  }
+
+  occurrences.push({
+    id: `celestial:conjunction:${transition.id}`,
+    sourceModuleId: 'overlay:celestial',
+    simulationTime: transition.time,
+    pieceId: null,
+    entityId: null,
+    sectorId: null,
+    type: 'almanac',
+    title: conjunction.name,
+    description:
+      transition.kind === 'start'
+        ? `${conjunction.name} begins.`
+        : `${conjunction.name} ends.`,
+    reaction: OccurrenceReactions.Notify,
+  });
+}
 
   for (const notable of settings.notables)
   {
@@ -155,19 +188,31 @@ export function generateCelestialOccurrences(
     );
 
   for (const eclipse of eclipsePredictions) {
-    const moon = settings.moons.find(
-      item => item.id === eclipse.moonId
-    );
+const foregroundMoon = settings.moons.find(
+  item => item.id === eclipse.moonId
+);
 
-    const moonName = moon?.name ?? 'Moon';
+const backgroundMoon = settings.moons.find(
+  item => item.id === eclipse.backgroundMoonId
+);
 
-    const eclipseName = eclipse.type
-      .split('-')
-      .map(word =>
-        word.charAt(0).toUpperCase() +
-        word.slice(1)
-      )
-      .join(' ');
+const moonName =
+  foregroundMoon?.name ?? 'Moon';
+
+const bodiesDescription =
+  eclipse.backgroundMoonId
+    ? `${moonName} obscures ${
+        backgroundMoon?.name ?? 'Moon'
+      }`
+    : moonName;
+
+const eclipseName = eclipse.type
+  .split('-')
+  .map(word =>
+    word.charAt(0).toUpperCase() +
+    word.slice(1)
+  )
+  .join(' ');
 
     for (const contact of eclipse.contacts) {
       const simulationTime =
@@ -180,14 +225,14 @@ export function generateCelestialOccurrences(
         continue;
       }
 
-      const description =
-        contact.kind === 'start'
-          ? `${moonName}: ${eclipseName} begins.`
-          : contact.kind === 'central-start'
-            ? `${moonName}: Central eclipse begins.`
-            : contact.kind === 'central-end'
-              ? `${moonName}: Central eclipse ends.`
-              : `${moonName}: ${eclipseName} ends.`;
+const description =
+  contact.kind === 'start'
+    ? `${bodiesDescription}: ${eclipseName} begins.`
+    : contact.kind === 'central-start'
+      ? `${bodiesDescription}: ${eclipseName} reaches its height.`
+      : contact.kind === 'central-end'
+        ? `${bodiesDescription}: ${eclipseName} begins to wane.`
+        : `${bodiesDescription}: ${eclipseName} ends.`;
 
       occurrences.push({
         id: `${eclipse.id}:${contact.kind}`,

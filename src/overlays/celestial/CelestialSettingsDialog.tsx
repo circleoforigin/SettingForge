@@ -897,7 +897,7 @@ visibility:
     title="Conjunctions"
     entries={draft.conjunctions ?? []}
     onChange={() => {}}
-renderEntry={conjunction => (
+    renderEntry={conjunction => (
   <div className="celestial-conjunction-entry">
     <strong className="celestial-conjunction-name">
       {conjunction.name}
@@ -912,6 +912,25 @@ renderEntry={conjunction => (
   </div>
 )}
   />
+  {draft.moons.length >= 2 && (
+  <div className="celestial-interlunar-types">
+    <strong>
+      Interlunar Eclipses
+    </strong>
+
+    <div>
+      Partial Interlunar Eclipse
+    </div>
+
+    <div>
+      Annular Interlunar Eclipse
+    </div>
+
+    <div>
+      Total Interlunar Eclipse
+    </div>
+  </div>
+)}
 </div>
 </div>
 

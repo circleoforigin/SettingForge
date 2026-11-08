@@ -8,12 +8,14 @@ import { resolveCelestialSolarState } from './CelestialSolarResolver';
 import { simulationTimeToCalendar } from './SimCalendar';
 import { resolveEclipsePhaseReference } from './CelestialEclipsePhaseResolver';
 import { DEFAULT_ECLIPSE_OPTIONS } from './CelestialDefaults';
+import type { CelestialConjunctionType } from './CelestialSettings';
 
 const TAU = Math.PI * 2;
 
 export type CelestialAlignmentKind =
   | 'solar'
-  | 'lunar';
+  | 'lunar'
+  | 'interlunar';
 
 export interface CelestialAlignment {
   moonId: string;
@@ -138,6 +140,70 @@ export function resolveNextPhysicalAlignment(
   return {
     moonId: moon.id,
     kind,
+    time,
+  };
+}
+
+export interface CelestialInterlunarAlignment {
+  foregroundMoonId: string;
+  backgroundMoonId: string;
+  time: number;
+}
+
+export function resolveNextInterlunarAlignment(
+  foreground: CelestialMoon,
+  background: CelestialMoon,
+  afterTime: number
+): CelestialInterlunarAlignment | null {
+  if (
+    foreground.id === background.id ||
+    !Number.isFinite(afterTime) ||
+    !Number.isFinite(foreground.lunarDay) ||
+    !Number.isFinite(background.lunarDay) ||
+    foreground.lunarDay <= 0 ||
+    background.lunarDay <= 0 ||
+    !Number.isFinite(foreground.moonriseOffset) ||
+    !Number.isFinite(background.moonriseOffset)
+  ) {
+    return null;
+  }
+
+  const relativeSpeed =
+    1 / foreground.lunarDay -
+    1 / background.lunarDay;
+
+  if (Math.abs(relativeSpeed) < 1e-15) {
+    return null;
+  }
+
+  const relativeAtZero =
+    background.moonriseOffset /
+      background.lunarDay -
+    foreground.moonriseOffset /
+      foreground.lunarDay;
+
+  const position =
+    relativeAtZero + relativeSpeed * afterTime;
+
+  const nextIndex =
+    relativeSpeed > 0
+      ? Math.floor(position) + 1
+      : Math.ceil(position) - 1;
+
+  const time =
+    (nextIndex - relativeAtZero) /
+    relativeSpeed;
+
+  if (
+    !Number.isFinite(time) ||
+    time <= afterTime
+  ) {
+    return null;
+  }
+
+  return {
+    foregroundMoonId: foreground.id,
+    backgroundMoonId: background.id,
     time,
   };
 }
@@ -366,15 +432,8 @@ export function isCelestialEclipseCandidateEligible(
   );
 }
 
-
 export type CelestialEclipseType =
-  | 'solar-partial'
-  | 'solar-annular'
-  | 'solar-total'
-  | 'lunar-penumbral'
-  | 'lunar-partial'
-  | 'lunar-total';
-
+  CelestialConjunctionType;
 export interface CelestialEclipseContact {
   kind:
     | 'start'
@@ -388,6 +447,7 @@ export interface CelestialEclipseContact {
 export interface CelestialEclipsePrediction {
   id: string;
   moonId: string;
+  backgroundMoonId?: string;
   type: CelestialEclipseType;
 
   maximumTime: number;
@@ -403,11 +463,10 @@ export interface CelestialEclipsePrediction {
 export interface CelestialConjunctionPrediction {
   id: string;
   moonId: string;
+  backgroundMoonId?: string;
   kind: CelestialAlignmentKind;
   time: number;
 
-  // A conjunction may or may not
-  // produce an eclipse.
   eclipse: CelestialEclipsePrediction | null;
 }
 
@@ -430,6 +489,12 @@ export interface CelestialEclipseGenerationOptions {
     total: number;
   };
 
+  interlunarWeights: {
+    partial: number;
+    annular: number;
+    total: number;
+  };
+
   // Durations are simulation seconds.
   durations: Record<
     CelestialEclipseType,
@@ -449,22 +514,37 @@ function selectWeightedEclipseType(
   options: CelestialEclipseGenerationOptions
 ): CelestialEclipseType | null {
   const entries: {
-    type: CelestialEclipseType;
-    weight: number;
-  }[] =
-    kind === 'solar'
+  type: CelestialEclipseType;
+  weight: number;
+}[] =
+  kind === 'solar'
+    ? [
+        {
+          type: 'solar-partial',
+          weight: options.solarWeights.partial,
+        },
+        {
+          type: 'solar-annular',
+          weight: options.solarWeights.annular,
+        },
+        {
+          type: 'solar-total',
+          weight: options.solarWeights.total,
+        },
+      ]
+    : kind === 'interlunar'
       ? [
           {
-            type: 'solar-partial',
-            weight: options.solarWeights.partial,
+            type: 'interlunar-partial',
+            weight: options.interlunarWeights.partial,
           },
           {
-            type: 'solar-annular',
-            weight: options.solarWeights.annular,
+            type: 'interlunar-annular',
+            weight: options.interlunarWeights.annular,
           },
           {
-            type: 'solar-total',
-            weight: options.solarWeights.total,
+            type: 'interlunar-total',
+            weight: options.interlunarWeights.total,
           },
         ]
       : [
@@ -602,10 +682,12 @@ export function generateCelestialEclipsePrediction(
   let centralStartTime: number | undefined;
   let centralEndTime: number | undefined;
 
-  const hasCentralPhase =
-    type === 'solar-annular' ||
-    type === 'solar-total' ||
-    type === 'lunar-total';
+const hasCentralPhase =
+  type === 'solar-annular' ||
+  type === 'solar-total' ||
+  type === 'lunar-total' ||
+  type === 'interlunar-annular' ||
+  type === 'interlunar-total';
 
   if (hasCentralPhase) {
     const centralDuration = seededDuration(
@@ -665,6 +747,37 @@ export function generateCelestialEclipsePrediction(
     centralEndTime,
 
     contacts,
+  };
+}
+
+export function generateInterlunarEclipsePrediction(
+  alignment: CelestialInterlunarAlignment,
+  options: CelestialEclipseGenerationOptions
+): CelestialEclipsePrediction | null {
+  // Include both Moons in the deterministic seed.
+  const pairId = [
+    alignment.foregroundMoonId,
+    alignment.backgroundMoonId,
+  ].join(':');
+
+  const generated =
+    generateCelestialEclipsePrediction(
+      {
+        moonId: pairId,
+        kind: 'interlunar',
+        time: alignment.time,
+      },
+      options
+    );
+
+  if (!generated) {
+    return null;
+  }
+
+  return {
+    ...generated,
+    moonId: alignment.foregroundMoonId,
+    backgroundMoonId: alignment.backgroundMoonId,
   };
 }
 
@@ -785,6 +898,76 @@ export function prospectCelestialConjunctions(
       }
     }
   }
+
+  // --------------------------------------------------
+// INTERLUNAR ALIGNMENTS
+// --------------------------------------------------
+
+for (
+  let foregroundIndex = 0;
+  foregroundIndex < settings.moons.length - 1;
+  foregroundIndex++
+) {
+  const foreground =
+    settings.moons[foregroundIndex];
+
+  for (
+    let backgroundIndex = foregroundIndex + 1;
+    backgroundIndex < settings.moons.length;
+    backgroundIndex++
+  ) {
+    const background =
+      settings.moons[backgroundIndex];
+
+    let afterTime = startTime;
+
+    for (
+      let attempt = 0;
+      attempt < 100000;
+      attempt++
+    ) {
+      const alignment =
+        resolveNextInterlunarAlignment(
+          foreground,
+          background,
+          afterTime
+        );
+
+      if (
+        !alignment ||
+        !Number.isFinite(alignment.time) ||
+        alignment.time <= afterTime ||
+        alignment.time > endTime
+      ) {
+        break;
+      }
+
+      afterTime = alignment.time;
+
+      const eclipse =
+        generateInterlunarEclipsePrediction(
+          alignment,
+          options
+        );
+
+      predictions.push({
+        id: [
+          'conjunction',
+          foreground.id,
+          background.id,
+          'interlunar',
+          alignment.time.toFixed(6),
+        ].join(':'),
+
+        moonId: foreground.id,
+        backgroundMoonId: background.id,
+        kind: 'interlunar',
+        time: alignment.time,
+        eclipse,
+      });
+    }
+  }
+}
 
   return predictions.sort(
     (a, b) =>
