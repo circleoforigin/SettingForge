@@ -48,10 +48,15 @@ export class CelestialService
     CelestialEclipsePrediction[] = [];
 
   private eclipseCoverageEnd = -Infinity;
+  private eclipseCoverageStart = Infinity;
 
 private resetEclipsePredictions(): void {
   this.eclipsePredictions = [];
   this.eclipseCoverageEnd = -Infinity;
+  this.eclipseCoverageStart = Infinity;
+  this.conjunctionPredictions = [];
+  this.conjunctionCoverageStart = Infinity;
+  this.conjunctionCoverageEnd = -Infinity;
 }
 
 getUpcomingConjunctions(
@@ -61,9 +66,6 @@ getUpcomingConjunctions(
   if (!Number.isFinite(currentTime)) {
     return [];
   }
-  this.conjunctionPredictions = [];
-  this.conjunctionCoverageStart = Infinity;
-  this.conjunctionCoverageEnd = -Infinity;
 
   const day =
     era.secondsPerMinute *
@@ -167,10 +169,18 @@ const lookback = Math.max(
   maximumEclipseDuration
 );
 
-let cursor = Math.max(
-  startTime - lookback,
-  this.eclipseCoverageEnd
-);
+const requiredStart = startTime - lookback;
+
+if (
+  requiredStart < this.eclipseCoverageStart ||
+  startTime >= this.eclipseCoverageEnd
+) {
+  this.eclipsePredictions = [];
+  this.eclipseCoverageStart = requiredStart;
+  this.eclipseCoverageEnd = requiredStart;
+}
+
+let cursor = this.eclipseCoverageEnd;
 
   for (let attempt = 0; attempt < 100; attempt++) {
     const futureCount =

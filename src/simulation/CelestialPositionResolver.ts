@@ -676,86 +676,23 @@ export function prospectCelestialEclipses(
   options: CelestialEclipseGenerationOptions =
     DEFAULT_ECLIPSE_OPTIONS
 ): CelestialEclipsePrediction[] {
-  if (
-    !Number.isFinite(startTime) ||
-    !Number.isFinite(endTime) ||
-    endTime <= startTime
-  ) {
-    return [];
-  }
-
-  const predictions: CelestialEclipsePrediction[] = [];
-  const day = getSimulationDaySeconds(era);
-
-  if (!Number.isFinite(day) || day <= 0) {
-    return [];
-  }
-
-  for (const moon of settings.moons) {
-    const kinds: CelestialAlignmentKind[] =
-      moon.lunarDay === 0
-        ? ['solar']
-        : ['solar', 'lunar'];
-
-    for (const kind of kinds) {
-      let afterTime = startTime;
-
-      for (let attempt = 0; attempt < 100000; attempt++) {
-        const alignment =
-          moon.lunarDay === 0
-            ? resolveNextStationaryAlignment(
-                moon,
-                afterTime,
-                era,
-                day * 30,
-                0
-              )
-            : resolveNextPhysicalAlignment(
-                moon,
-                kind,
-                afterTime,
-                era
-              );
-
-        if (
-          !alignment ||
-          !Number.isFinite(alignment.time) ||
-          alignment.time <= afterTime ||
-          alignment.time > endTime
-        ) {
-          break;
-        }
-
-        afterTime = alignment.time;
-
-        if (!isCelestialEclipseCandidateEligible(
-          moon,
-          kind,
-          alignment.time,
-          settings,
-          era
-        )) {
-          continue;
-        }
-
-        const prediction =
-          generateCelestialEclipsePrediction(
-            alignment,
-            options
-          );
-
-        if (prediction) {
-          predictions.push(prediction);
-        }
-      }
-    }
-  }
-
-  return predictions.sort(
-    (a, b) =>
-      a.startTime - b.startTime ||
-      a.id.localeCompare(b.id)
-  );
+  return prospectCelestialConjunctions(
+    startTime,
+    endTime,
+    settings,
+    era,
+    options
+  )
+    .flatMap(conjunction =>
+      conjunction.eclipse
+        ? [conjunction.eclipse]
+        : []
+    )
+    .sort(
+      (a, b) =>
+        a.startTime - b.startTime ||
+        a.id.localeCompare(b.id)
+    );
 }
 
 export function prospectCelestialConjunctions(
