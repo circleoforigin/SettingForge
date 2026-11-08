@@ -1,3 +1,5 @@
+import type { SimClockEra } from './SimClockSettings';
+
 export type SimulationTime = number;
 
 export type SimulationClockListener =
@@ -6,7 +8,26 @@ export type SimulationClockListener =
 export class SimulationClockService
 {
   private time: SimulationTime = 0;
+private activeEra: SimClockEra | undefined;
 
+getActiveEra(): SimClockEra | undefined
+{
+  return this.activeEra
+    ? structuredClone(this.activeEra)
+    : undefined;
+}
+
+setActiveEra(era: SimClockEra): void
+{
+  this.activeEra = structuredClone(era);
+
+  // Existing clock subscribers must also refresh
+  // when calendar configuration changes.
+  for (const listener of this.listeners)
+  {
+    listener(this.time);
+  }
+}
   private readonly listeners =
     new Set<SimulationClockListener>();
 

@@ -137,6 +137,16 @@ export function useSimClockOverlay()
     ) ??
     settings.eras[0];
 
+  useEffect(() =>
+{
+  if (activeEra)
+  {
+    simulationClockService.setActiveEra(
+      activeEra
+    );
+  }
+}, [activeEra]);
+
   const updateActiveEra = (
     update: (
       current: SimClockEra
