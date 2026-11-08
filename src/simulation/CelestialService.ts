@@ -2,13 +2,21 @@ import {
   createDefaultCelestialSettings,
   type CelestialSettings,
   type CelestialNotable,
+  type CelestialConjunctionCondition,
 } from './CelestialSettings';
 import type { SimClockEra } from './SimClockSettings';
 import type { CelestialCycle } from './CelestialSettings';
 import {
   resolveCelestialCycle,
+  getCelestialCyclePeriod,
+  getCelestialCalendarEntryStart,
   type CelestialCycleStepResult,
 } from './CelestialCycleStepper';
+import {
+  simulationTimeToCalendar,
+  calendarToSimulationTime,
+  getMonthDays,
+} from './SimCalendar';
 import type { SimulationTime } from './SimulationClockService';
 import { resolveCelestialSeason } from './CelestialSeasonResolver';
 import {
@@ -30,6 +38,20 @@ import {
 type CelestialListener = (
   settings: CelestialSettings
 ) => void;
+
+export interface CelestialConjunctionInterval {
+  id: string;
+  conjunctionId: string;
+  startTime: SimulationTime;
+  endTime: SimulationTime;
+}
+
+export interface CelestialConjunctionTransition {
+  id: string;
+  conjunctionId: string;
+  time: SimulationTime;
+  kind: 'start' | 'end';
+}
 
 export class CelestialService
 {
@@ -249,6 +271,581 @@ let cursor = this.eclipseCoverageEnd;
     return structuredClone(this.settings);
   }
 
+isConjunctionConditionSatisfied(
+  condition: CelestialConjunctionCondition,
+  time: SimulationTime,
+  era: SimClockEra
+): boolean {
+  if (!Number.isFinite(time)) {
+    return false;
+  }
+
+  // Sun conditions use the configured daylight cycle.
+  if (condition.bodyId === this.settings.sun.id) {
+    if (!condition.solarPhase) {
+      return false;
+    }
+
+    const solar = this.getSolarStateAtTime(
+      time,
+      era
+    );
+
+    const calendar = simulationTimeToCalendar(
+      time,
+      era
+    );
+
+    const hour =
+      calendar.hour +
+      calendar.minute / era.minutesPerHour +
+      calendar.second /
+        (
+          era.secondsPerMinute *
+          era.minutesPerHour
+        );
+
+    const isDaytime =
+      hour >= solar.sunriseHour &&
+      hour < solar.sunsetHour;
+
+    return condition.solarPhase === 'daytime'
+      ? isDaytime
+      : isDaytime === false;
+  }
+
+  // Resolve either a Moon or a Zodiac.
+  const moon = this.settings.moons.find(
+    body => body.id === condition.bodyId
+  );
+
+  const zodiac = this.settings.zodiacs.find(
+    body => body.id === condition.bodyId
+  );
+
+  const cycles = moon
+    ? moon.phaseCycles
+    : zodiac?.cycles;
+
+  if (!cycles) {
+    return false;
+  }
+
+  if (
+    !condition.cycleId ||
+    !condition.tagId ||
+    !condition.entryId
+  ) {
+    return false;
+  }
+
+  const cycle = cycles.find(
+    item => item.id === condition.cycleId
+  );
+
+  if (!cycle) {
+    return false;
+  }
+
+  const result = this.getCycleAtTime(
+    cycle,
+    time,
+    era
+  );
+
+  return result.resolved.tags.some(
+    tag =>
+      tag.tagId === condition.tagId &&
+      tag.entry.id === condition.entryId
+  );
+}
+
+getNextDurationCycleBoundary(
+  cycle: CelestialCycle,
+  afterTime: SimulationTime
+): SimulationTime | undefined {
+  if (cycle.cycleMeasurement === 'calendar') {
+    return undefined;
+  }
+
+  const period = getCelestialCyclePeriod(cycle);
+
+  if (
+    !period ||
+    period.stepCount <= 0 ||
+    !Number.isFinite(cycle.cycleDuration) ||
+    cycle.cycleDuration <= 0 ||
+    !Number.isFinite(cycle.cycleOffset)
+  ) {
+    return undefined;
+  }
+
+  const stepDuration =
+    cycle.cycleDuration / period.stepCount;
+
+  if (
+    !Number.isFinite(stepDuration) ||
+    stepDuration <= 0
+  ) {
+    return undefined;
+  }
+
+  const step = Math.floor(
+    (afterTime + cycle.cycleOffset) /
+      stepDuration
+  );
+
+  const nextBoundary =
+    (step + 1) * stepDuration -
+    cycle.cycleOffset;
+
+  return nextBoundary > afterTime
+    ? nextBoundary
+    : undefined;
+}
+
+getNextCalendarCycleBoundary(
+  cycle: CelestialCycle,
+  afterTime: SimulationTime,
+  era: SimClockEra
+): SimulationTime | undefined {
+  if (cycle.cycleMeasurement !== 'calendar') {
+    return undefined;
+  }
+
+  if (!Number.isFinite(afterTime)) {
+    return undefined;
+  }
+
+  const calendar = simulationTimeToCalendar(
+    afterTime,
+    era
+  );
+
+  let nextBoundary = Infinity;
+
+  // Include the current and following year.
+  for (
+    const year of [
+      calendar.year,
+      calendar.year + 1,
+    ]
+  ) {
+    for (const tag of cycle.tags) {
+      for (const entry of tag.entries) {
+        const month = era.months.find(
+          item => item.id === entry.startMonthId
+        );
+
+        if (
+          !month ||
+          entry.startDay === undefined ||
+          entry.startDay < 1 ||
+          entry.startDay > getMonthDays(
+            month,
+            year,
+            era
+          )
+        ) {
+          continue;
+        }
+
+        const boundary =
+          getCelestialCalendarEntryStart(
+            entry,
+            year,
+            cycle.cycleOffset,
+            era
+          );
+
+        if (
+          boundary !== undefined &&
+          boundary > afterTime &&
+          boundary < nextBoundary
+        ) {
+          nextBoundary = boundary;
+        }
+      }
+    }
+  }
+
+  return Number.isFinite(nextBoundary)
+    ? nextBoundary
+    : undefined;
+}
+
+getNextSolarConjunctionBoundary(
+  afterTime: SimulationTime,
+  era: SimClockEra
+): SimulationTime | undefined {
+  if (!Number.isFinite(afterTime)) {
+    return undefined;
+  }
+
+  const daySeconds =
+    era.secondsPerMinute *
+    era.minutesPerHour *
+    era.hoursPerDay;
+
+  if (!Number.isFinite(daySeconds) || daySeconds <= 0) {
+    return undefined;
+  }
+
+  const calendar = simulationTimeToCalendar(
+    afterTime,
+    era
+  );
+
+  const dayStart = calendarToSimulationTime(
+    {
+      year: calendar.year,
+      monthId: calendar.monthId,
+      day: calendar.day,
+      hour: 0,
+      minute: 0,
+      second: 0,
+    },
+    era
+  );
+
+  let nextBoundary = Infinity;
+
+  // Examine today's and tomorrow's solar transitions.
+  for (const start of [
+    dayStart,
+    dayStart + daySeconds,
+  ]) {
+    const solar = this.getSolarStateAtTime(
+      start,
+      era
+    );
+
+    const secondsPerHour =
+      era.secondsPerMinute *
+      era.minutesPerHour;
+
+    const sunrise =
+      start + solar.sunriseHour * secondsPerHour;
+
+    const sunset =
+      start + solar.sunsetHour * secondsPerHour;
+
+    for (const boundary of [sunrise, sunset]) {
+      if (
+        boundary > afterTime &&
+        boundary < nextBoundary
+      ) {
+        nextBoundary = boundary;
+      }
+    }
+  }
+
+  return Number.isFinite(nextBoundary)
+    ? nextBoundary
+    : undefined;
+}
+
+getNextConjunctionConditionBoundary(
+  condition: CelestialConjunctionCondition,
+  afterTime: SimulationTime,
+  era: SimClockEra
+): SimulationTime | undefined {
+  if (condition.bodyId === this.settings.sun.id) {
+    if (!condition.solarPhase) {
+      return undefined;
+    }
+
+    return this.getNextSolarConjunctionBoundary(
+      afterTime,
+      era
+    );
+  }
+
+  return this.getNextConjunctionCycleBoundary(
+    condition,
+    afterTime,
+    era
+  );
+}
+
+getNextConjunctionBoundary(
+  conjunctionId: string,
+  afterTime: SimulationTime,
+  era: SimClockEra
+): SimulationTime | undefined {
+  const conjunction =
+    this.settings.conjunctions.find(
+      item => item.id === conjunctionId
+    );
+
+  if (
+    !conjunction ||
+    conjunction.conditions.length === 0 ||
+    !Number.isFinite(afterTime)
+  ) {
+    return undefined;
+  }
+
+  let nextBoundary = Infinity;
+
+  for (const condition of conjunction.conditions) {
+    const boundary =
+      this.getNextConjunctionConditionBoundary(
+        condition,
+        afterTime,
+        era
+      );
+
+    if (
+      boundary !== undefined &&
+      Number.isFinite(boundary) &&
+      boundary > afterTime &&
+      boundary < nextBoundary
+    ) {
+      nextBoundary = boundary;
+    }
+  }
+
+  return Number.isFinite(nextBoundary)
+    ? nextBoundary
+    : undefined;
+}
+
+prospectConjunctionIntervals(
+  startTime: SimulationTime,
+  endTime: SimulationTime,
+  era: SimClockEra
+): CelestialConjunctionInterval[] {
+  if (
+    !Number.isFinite(startTime) ||
+    !Number.isFinite(endTime) ||
+    endTime <= startTime
+  ) {
+    return [];
+  }
+
+  const intervals: CelestialConjunctionInterval[] = [];
+
+  for (const conjunction of this.settings.conjunctions) {
+    // Eclipses have their own alignment and duration logic.
+    if (conjunction.type !== undefined) {
+      continue;
+    }
+
+    if (conjunction.conditions.length === 0) {
+      continue;
+    }
+
+    let cursor = startTime;
+
+    let active = this.isConjunctionSatisfied(
+      conjunction.id,
+      cursor,
+      era
+    );
+
+    let activeStart: number | undefined =
+      active ? cursor : undefined;
+
+    while (cursor < endTime) {
+      const boundary = this.getNextConjunctionBoundary(
+        conjunction.id,
+        cursor,
+        era
+      );
+
+      if (
+        boundary === undefined ||
+        !Number.isFinite(boundary) ||
+        boundary <= cursor ||
+        boundary > endTime
+      ) {
+        break;
+      }
+
+      const nextActive = this.isConjunctionSatisfied(
+        conjunction.id,
+        boundary,
+        era
+      );
+
+      if (!active && nextActive) {
+        activeStart = boundary;
+      }
+
+      if (active && !nextActive && activeStart !== undefined) {
+        intervals.push({
+          id: `${conjunction.id}:${activeStart}`,
+          conjunctionId: conjunction.id,
+          startTime: activeStart,
+          endTime: boundary,
+        });
+
+        activeStart = undefined;
+      }
+
+      active = nextActive;
+      cursor = boundary;
+    }
+
+    // The conjunction may continue beyond this window.
+    if (active && activeStart !== undefined) {
+      intervals.push({
+        id: `${conjunction.id}:${activeStart}`,
+        conjunctionId: conjunction.id,
+        startTime: activeStart,
+        endTime,
+      });
+    }
+  }
+
+  return intervals.sort(
+    (a, b) =>
+      a.startTime - b.startTime ||
+      a.id.localeCompare(b.id)
+  );
+}
+
+prospectConjunctionTransitions(
+  startTime: SimulationTime,
+  endTime: SimulationTime,
+  era: SimClockEra
+): CelestialConjunctionTransition[] {
+  if (
+    !Number.isFinite(startTime) ||
+    !Number.isFinite(endTime) ||
+    endTime <= startTime
+  ) {
+    return [];
+  }
+
+  const transitions: CelestialConjunctionTransition[] = [];
+
+  for (const conjunction of this.settings.conjunctions) {
+    if (
+      conjunction.type !== undefined ||
+      conjunction.conditions.length === 0
+    ) {
+      continue;
+    }
+
+    let cursor = startTime;
+
+    // Check whether a transition occurs exactly at
+    // the beginning of the requested window.
+    const beforeStart = this.isConjunctionSatisfied(
+      conjunction.id,
+      startTime - Math.max(
+        Number.EPSILON * Math.abs(startTime) * 2,
+        0.000001
+      ),
+      era
+    );
+
+    let active = this.isConjunctionSatisfied(
+      conjunction.id,
+      startTime,
+      era
+    );
+
+    if (beforeStart !== active) {
+      const kind = active ? 'start' : 'end';
+
+      transitions.push({
+        id: `${conjunction.id}:${kind}:${startTime}`,
+        conjunctionId: conjunction.id,
+        time: startTime,
+        kind,
+      });
+    }
+
+    while (cursor < endTime) {
+      const boundary = this.getNextConjunctionBoundary(
+        conjunction.id,
+        cursor,
+        era
+      );
+
+      // Half-open window: [startTime, endTime).
+      // A transition at endTime belongs to the
+      // following window.
+      if (
+        boundary === undefined ||
+        !Number.isFinite(boundary) ||
+        boundary <= cursor ||
+        boundary >= endTime
+      ) {
+        break;
+      }
+
+      const nextActive = this.isConjunctionSatisfied(
+        conjunction.id,
+        boundary,
+        era
+      );
+
+      if (active !== nextActive) {
+        const kind = nextActive ? 'start' : 'end';
+
+        transitions.push({
+          id: `${conjunction.id}:${kind}:${boundary}`,
+          conjunctionId: conjunction.id,
+          time: boundary,
+          kind,
+        });
+      }
+
+      active = nextActive;
+      cursor = boundary;
+    }
+  }
+
+  return transitions.sort(
+    (a, b) =>
+      a.time - b.time ||
+      a.id.localeCompare(b.id)
+  );
+}
+
+getNextConjunctionCycleBoundary(
+  condition: CelestialConjunctionCondition,
+  afterTime: SimulationTime,
+  era: SimClockEra
+): SimulationTime | undefined {
+  const moon = this.settings.moons.find(
+    body => body.id === condition.bodyId
+  );
+
+  const zodiac = this.settings.zodiacs.find(
+    body => body.id === condition.bodyId
+  );
+
+  const cycles = moon
+    ? moon.phaseCycles
+    : zodiac?.cycles;
+
+  const cycle = cycles?.find(
+    item => item.id === condition.cycleId
+  );
+
+  if (!cycle) {
+    return undefined;
+  }
+
+if (cycle.cycleMeasurement === 'calendar') {
+  return this.getNextCalendarCycleBoundary(
+    cycle,
+    afterTime,
+    era
+  );
+}
+
+return this.getNextDurationCycleBoundary(
+  cycle,
+  afterTime
+);
+}
+
   getCycleAtTime(
     cycle: CelestialCycle,
     time: SimulationTime,
@@ -273,6 +870,33 @@ let cursor = this.eclipseCoverageEnd;
         this.settings.seasonStarts
     );
   }
+
+  isConjunctionSatisfied(
+  conjunctionId: string,
+  time: SimulationTime,
+  era: SimClockEra
+): boolean {
+  const conjunction =
+    this.settings.conjunctions.find(
+      item => item.id === conjunctionId
+    );
+
+  if (
+    !conjunction ||
+    conjunction.conditions.length === 0
+  ) {
+    return false;
+  }
+
+  return conjunction.conditions.every(
+    condition =>
+      this.isConjunctionConditionSatisfied(
+        condition,
+        time,
+        era
+      )
+  );
+}
 
   getSolarStateAtTime(
     time: SimulationTime,

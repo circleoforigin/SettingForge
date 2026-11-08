@@ -1,10 +1,8 @@
 
 import { useState } from 'react';
 import { celestialService } from '../../simulation/CelestialService';
-import type { 
-  CelestialSettings,
-  formatCelestialConjunction,
- } from '../../simulation/CelestialSettings';
+import type { CelestialSettings } from '../../simulation/CelestialSettings';
+import { formatCelestialConjunction } from '../../simulation/CelestialSettings';
 import type { SimClockEra } from '../../simulation/SimClockSettings';
 import { environmentService } from '../../simulation/EnvironmentService';
 import { EnvironmentSettingsSection } from '../environment/EnvironmentSettingsSection';
