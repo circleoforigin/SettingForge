@@ -31,6 +31,7 @@ import {
 } from './CelestialPositionResolver';
 import { DEFAULT_ECLIPSE_OPTIONS } from './CelestialDefaults';
 import { isCelestialNotableActive } from './CelestialNotableResolver';
+import { getMoonAngle } from './CelestialPositionResolver';
 
 type CelestialListener = (
   settings: CelestialSettings
@@ -942,8 +943,21 @@ getTickerSnapshot(
   time: SimulationTime,
   era: SimClockEra
 ) {
-  const items = [
-    ...this.settings.moons.map(moon => ({
+const items = [
+  ...this.settings.moons
+    .filter(moon => {
+      const angle = getMoonAngle(moon, time);
+
+      if (angle === null)
+      {
+        return false;
+      }
+
+      const altitude = Math.sin(angle);
+
+      return altitude > 0;
+    })
+    .map(moon => ({
       id: moon.id,
       name: moon.name,
       cycles: moon.phaseCycles,
