@@ -1023,6 +1023,83 @@ getTickerSnapshot(
         ),
       }));
 
+  // Include active eclipse Conjunctions.
+  const eclipseConjunctions =
+    this.settings.conjunctions.filter(
+      conjunction => conjunction.type !== undefined
+    );
+
+  if (eclipseConjunctions.length > 0)
+  {
+    const day =
+      era.secondsPerMinute *
+      era.minutesPerHour *
+      era.hoursPerDay;
+
+    if (Number.isFinite(day) && day > 0)
+    {
+      const eclipses =
+        this.getEclipsePredictions(
+          time,
+          time + day,
+          era
+        );
+
+      for (const eclipse of eclipses)
+      {
+        if (
+          eclipse.startTime > time ||
+          eclipse.endTime <= time
+        )
+        {
+          continue;
+        }
+
+        const moon =
+          this.settings.moons.find(
+            item => item.id === eclipse.moonId
+          );
+
+        const backgroundMoon =
+          this.settings.moons.find(
+            item =>
+              item.id === eclipse.backgroundMoonId
+          );
+
+        const bodyNames =
+          eclipse.backgroundMoonId
+            ? [
+                moon?.name ?? eclipse.moonId,
+                backgroundMoon?.name ??
+                  eclipse.backgroundMoonId,
+              ]
+            : eclipse.type.startsWith('solar-')
+              ? [
+                  this.settings.sun.name,
+                  moon?.name ?? eclipse.moonId,
+                ]
+              : [
+                  moon?.name ?? eclipse.moonId,
+                  this.settings.sun.name,
+                ];
+
+        for (const conjunction of eclipseConjunctions)
+        {
+          if (conjunction.type !== eclipse.type)
+          {
+            continue;
+          }
+
+          conjunctions.push({
+            id: `${conjunction.id}:${eclipse.id}`,
+            name: conjunction.name,
+            bodyNames,
+          });
+        }
+      }
+    }
+  }
+
   return {
     items,
     conjunctions,
