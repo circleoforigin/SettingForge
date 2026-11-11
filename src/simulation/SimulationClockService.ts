@@ -1,4 +1,5 @@
 import type { SimClockEra } from './SimClockSettings';
+import { hostEventBroker } from '../events/HostEventBroker';
 
 export type SimulationTime = number;
 
@@ -27,6 +28,8 @@ setActiveEra(era: SimClockEra): void
   {
     listener(this.time);
   }
+
+  this.broadcastClockState();
 }
   private readonly listeners =
     new Set<SimulationClockListener>();
@@ -35,6 +38,17 @@ setActiveEra(era: SimClockEra): void
   {
     return this.time;
   }
+
+  private broadcastClockState(): void
+{
+  hostEventBroker.broadcast(
+    'Simulation.TimeCommitted',
+    {
+      time: this.time,
+      era: this.getActiveEra(),
+    }
+  );
+}
 
   setTime(time: SimulationTime): void
 {
@@ -53,6 +67,8 @@ setActiveEra(era: SimClockEra): void
   {
     listener(this.time);
   }
+
+  this.broadcastClockState();
 }
 
   subscribe(
@@ -70,3 +86,17 @@ setActiveEra(era: SimClockEra): void
 
 export const simulationClockService =
   new SimulationClockService();
+
+hostEventBroker.registerRequestHandler(
+  'Simulation.GetClockState',
+  async () =>
+  {
+    return {
+      time:
+        simulationClockService.getTime(),
+
+      era:
+        simulationClockService.getActiveEra(),
+    };
+  }
+);
