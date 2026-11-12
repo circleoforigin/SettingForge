@@ -8,7 +8,7 @@ import type {
   EnvironmentDefinitionOverrides,
 } from './EnvironmentDefinitions';
 import { resolveEffectiveEnvironmentDefinitions } from './EnvironmentDefinitionResolver';
-import { createInitialEnvironmentState } from './EnvironmentStateFactory';
+import { hostEventBroker } from '../events/HostEventBroker';import { createInitialEnvironmentState } from './EnvironmentStateFactory';
 
 type EnvironmentListener = (
   state: EnvironmentState | undefined,
@@ -230,17 +230,44 @@ else
     };
   }
 
-  private notify(): void
+private notify(): void
+{
+  for (const listener of this.listeners)
   {
-    for (const listener of this.listeners)
-    {
-      listener(
-        this.getState(),
-        this.getSettings()
-      );
-    }
+    listener(
+      this.getState(),
+      this.getSettings()
+    );
   }
+
+  hostEventBroker.broadcast(
+    'Environment.DefinitionsChanged',
+    {
+      definitions: this.getDefinitions(),
+
+      overrides: this.getDefinitionOverrides(),
+
+      seasonId: this.state?.seasonId,
+    }
+  );
+}
 }
 
-export const environmentService =
-  new EnvironmentService();
+export const environmentService = new EnvironmentService();
+
+hostEventBroker.registerRequestHandler(
+  'Environment.GetDefinitions',
+  async () =>
+  {
+    return {
+      definitions:
+        environmentService.getDefinitions(),
+
+      overrides:
+        environmentService.getDefinitionOverrides(),
+
+      seasonId:
+        environmentService.getState()?.seasonId,
+    };
+  }
+);
