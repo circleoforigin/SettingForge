@@ -39,6 +39,52 @@ export const celestialQueryDefinitions:
         },
       ],
     },
+
+{
+  id: 'Celestial.GetSeasonCalendar',
+  label: 'Get Season Calendar',
+
+  description:
+    'Returns configured season starts and solar solstice dates ' +
+    'for the requested calendar year and its adjacent years.',
+
+  input: [
+    {
+      key: 'year',
+      label: 'Calendar Year',
+      type: 'number',
+      required: true,
+    },
+    {
+      key: 'era',
+      label: 'Calendar Era',
+      type: 'object',
+      required: true,
+    },
+  ],
+
+  output: [
+    {
+      key: 'previous',
+      label: 'Previous Year',
+      type: 'object',
+      required: true,
+    },
+    {
+      key: 'current',
+      label: 'Current Year',
+      type: 'object',
+      required: true,
+    },
+    {
+      key: 'next',
+      label: 'Next Year',
+      type: 'object',
+      required: true,
+    },
+  ],
+},
+
     {
   id: 'Celestial.GenerateOccurrences',
   label: 'Generate Celestial Occurrences',
