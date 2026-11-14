@@ -3,6 +3,7 @@ import type { SimClockEra } from '../../simulation/SimClockSettings';
 import {
   calendarToSimulationTime,
   getMonthDays,
+  simulationTimeToCalendar,
 } from '../../simulation/SimCalendar';
 import { celestialService } from '../../simulation/CelestialService';
 import { generateCelestialOccurrences } from '../../simulation/CelestialOccurrenceGenerator';
@@ -28,7 +29,7 @@ interface ResolveMarkerPayload
 
 interface GetSeasonCalendarPayload
 {
-  year: number;
+  time: number;
   era: SimClockEra;
 }
 
@@ -233,21 +234,25 @@ export function registerCelestialQueryHandlers(
           Partial<GetSeasonCalendarPayload>
           | undefined;
 
-      if (
-        !payload ||
-        typeof payload.year !== 'number' ||
-        !Number.isInteger(payload.year) ||
-        !payload.era ||
-        !Array.isArray(payload.era.months) ||
-        payload.era.months.length === 0
-      )
-      {
-        throw new Error(
-          'Celestial.GetSeasonCalendar received invalid input.'
-        );
-      }
+if (
+  !payload ||
+  typeof payload.time !== 'number' ||
+  !Number.isFinite(payload.time) ||
+  !payload.era ||
+  !Array.isArray(payload.era.months) ||
+  payload.era.months.length === 0
+)
+{
+  throw new Error(
+    'Celestial.GetSeasonCalendar received invalid input.'
+  );
+}
 
-      const year = payload.year;
+const year =
+  simulationTimeToCalendar(
+    payload.time,
+    payload.era
+  ).year;
 
       return {
         previous: getSeasonCalendar(

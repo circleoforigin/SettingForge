@@ -49,12 +49,12 @@ export const celestialQueryDefinitions:
     'for the requested calendar year and its adjacent years.',
 
   input: [
-    {
-      key: 'year',
-      label: 'Calendar Year',
-      type: 'number',
-      required: true,
-    },
+{
+  key: 'time',
+  label: 'Simulation Time',
+  type: 'number',
+  required: true,
+},
     {
       key: 'era',
       label: 'Calendar Era',
